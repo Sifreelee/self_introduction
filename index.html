@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="个人网站 · 新中式风格 · 简介与行迹">
+  <title>山水清音 · 个人主页</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23A83A32'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-size='36' font-family='KaiTi,serif' fill='%23F7EFE2'%3E清%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ══════════ 导航 ══════════ -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a class="nav-logo" href="#hero" data-nav>
+        <span class="nav-seal" id="nav-seal">清</span>
+        <span class="nav-name" id="nav-name">山水清音</span>
+      </a>
+      <button class="nav-toggle" id="nav-toggle" aria-label="打开菜单">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#hero" data-nav>卷首</a></li>
+        <li><a href="#profile" data-nav>其人</a></li>
+        <li><a href="#works" data-nav>行迹</a></li>
+        <li><a href="#hobbies" data-nav>所好</a></li>
+        <li><a href="#contact" data-nav>相邀</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ══════════ 卷首 ══════════ -->
+  <header class="hero" id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-mist"></div>
+    <div class="hero-content">
+      <div class="hero-vertical">
+        <h1 class="hero-title" id="hero-title">山水清音</h1>
+        <span class="hero-seal" id="hero-seal">清远之印</span>
+      </div>
+      <p class="hero-quote" id="hero-quote">行到水穷处，坐看云起时</p>
+      <p class="hero-sub" id="hero-sub">一个人的行走、记录与热爱</p>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ══════════ 壹 · 其人 ══════════ -->
+    <section class="section" id="profile">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-num">壹</span>
+          <div class="section-title-wrap">
+            <h2 class="section-title">其人</h2>
+            <span class="section-en">A B O U T &nbsp; M E</span>
+          </div>
+          <i class="section-rule"></i>
+        </div>
+        <div class="profile-grid" id="profile-content"><!-- JS 渲染 --></div>
+      </div>
+    </section>
+
+    <!-- ══════════ 贰 · 行迹（作品集） ══════════ -->
+    <section class="section section-alt" id="works">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-num">贰</span>
+          <div class="section-title-wrap">
+            <h2 class="section-title">行迹</h2>
+            <span class="section-en">M Y &nbsp; W O R K S</span>
+          </div>
+          <i class="section-rule"></i>
+        </div>
+
+        <div class="tabs reveal" id="works-tabs">
+          <button class="tab active" data-tab="travel">旅行随笔</button>
+          <button class="tab" data-tab="photos">照片集</button>
+          <button class="tab" data-tab="videos">影像集</button>
+        </div>
+
+        <!-- 旅行随笔 -->
+        <div class="tab-panel active" id="panel-travel">
+          <div class="travel-list" id="travel-list"><!-- JS 渲染 --></div>
+        </div>
+
+        <!-- 照片集 -->
+        <div class="tab-panel" id="panel-photos">
+          <div class="photo-grid" id="photo-grid"><!-- JS 渲染 --></div>
+        </div>
+
+        <!-- 影像集 -->
+        <div class="tab-panel" id="panel-videos">
+          <div class="video-grid" id="video-grid"><!-- JS 渲染 --></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ 叁 · 所好 ══════════ -->
+    <section class="section" id="hobbies">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-num">叁</span>
+          <div class="section-title-wrap">
+            <h2 class="section-title">所好</h2>
+            <span class="section-en">M Y &nbsp; H O B B I E S</span>
+          </div>
+          <i class="section-rule"></i>
+        </div>
+        <div class="hobby-grid" id="hobby-grid"><!-- JS 渲染 --></div>
+      </div>
+    </section>
+
+    <!-- ══════════ 肆 · 相邀 ══════════ -->
+    <section class="section section-alt" id="contact">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-num">肆</span>
+          <div class="section-title-wrap">
+            <h2 class="section-title">相邀</h2>
+            <span class="section-en">C O N T A C T</span>
+          </div>
+          <i class="section-rule"></i>
+        </div>
+        <div class="contact-wrap reveal" id="contact-content"><!-- JS 渲染 --></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ══════════ 页脚 ══════════ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-vertical" id="footer-motto">且将新火试新茶，诗酒趁年华</div>
+      <p class="footer-text" id="footer-text">© 2026 山水清音 · 以文会友，以影存真</p>
+    </div>
+  </footer>
+
+  <!-- ══════════ 照片灯箱 ══════════ -->
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <div class="lightbox-backdrop"></div>
+    <button class="lightbox-close" id="lightbox-close" aria-label="关闭">&times;</button>
+    <figure class="lightbox-figure">
+      <img id="lightbox-img" src="" alt="">
+      <figcaption id="lightbox-caption"></figcaption>
+    </figure>
+  </div>
+
+  <!-- ══════════ 随笔正文 卷轴模态 ══════════ -->
+  <div class="modal" id="article-modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <button class="modal-close" id="modal-close" aria-label="关闭">&times;</button>
+    <article class="modal-paper" id="modal-body"><!-- JS 渲染 --></article>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
