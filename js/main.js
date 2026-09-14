@@ -154,37 +154,25 @@ function renderPhotos() {
   bindPagination(box, "photos");
 }
 
-function renderVideos() {
-  const list = SITE_DATA.videos || [];
-  const box = $("#video-grid");
+function renderSocial() {
+  const list = SITE_DATA.social || [];
+  const box = $("#social-grid");
   if (!list.length) {
-    box.innerHTML = emptyTip("还没有影像 · 把 mp4 视频放进 assets/videos，并在 js/data.js 登记");
+    box.innerHTML = emptyTip("还没有社交平台 · 在 js/data.js 的 social 中添加");
     return;
   }
-  const size = PAGE_SIZE.videos;
-  const total = Math.ceil(list.length / size);
-  pageState.videos = Math.min(Math.max(1, pageState.videos), total);
-  const start = (pageState.videos - 1) * size;
-  const slice = list.slice(start, start + size);
-
-  box.innerHTML = slice.map((v) => `
-    <div class="video-card reveal">
-      <video controls preload="metadata"
-             src="${esc(v.src)}"
-             poster="${esc(v.poster || "assets/images/video-poster.svg")}"></video>
-      <div class="video-meta">
-        <span class="video-title">${esc(v.title)}</span>
-        <span class="video-sub">${esc(v.sub)}</span>
-      </div>
-    </div>`).join("") + paginationHTML("videos", total);
-
-  bindPagination(box, "videos");
+  box.innerHTML = list.map((s) => `
+    <a class="social-card reveal" href="${esc(s.link)}" target="_blank" rel="noopener">
+      <div class="social-name">${esc(s.name)}</div>
+      <div class="social-desc">${esc(s.desc)}</div>
+      <span class="social-arrow">进入 →</span>
+    </a>`).join("");
 }
 
 /* ─────────── 分页 ─────────── */
 /* 每页显示的条数，可自行调整 */
-const PAGE_SIZE = { travel: 3, photos: 6, videos: 4 };
-const pageState = { travel: 1, photos: 1, videos: 1 };
+const PAGE_SIZE = { travel: 3, photos: 6 };
+const pageState = { travel: 1, photos: 1 };
 
 function paginationHTML(key, total) {
   if (total <= 1) return "";
@@ -206,7 +194,6 @@ function bindPagination(box, key) {
       pageState[key] = Math.min(Math.max(1, pageState[key] + step), total);
       if (key === "travel") renderTravel();
       else if (key === "photos") renderPhotos();
-      else if (key === "videos") renderVideos();
       initReveal();
       const panel = document.getElementById("panel-" + key);
       if (panel) {
@@ -358,7 +345,7 @@ renderSite();
 renderProfile();
 renderTravel();
 renderPhotos();
-renderVideos();
+renderSocial();
 renderHobbies();
 renderContact();
 initReveal();

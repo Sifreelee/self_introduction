@@ -403,26 +403,37 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 }
 .photo-card:hover .photo-seal { opacity: 1; transform: scale(1) rotate(-8deg); }
 
-/* — 影像集 — */
-.video-grid {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 26px;
+/* — 影像集（社交平台入口） — */
+.social-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px;
 }
-.video-card {
+.social-card {
+  position: relative; display: flex; flex-direction: column; align-items: center;
   background: var(--card); border: 1px solid var(--line);
-  padding: 10px 10px 0;
-  transition: transform .4s, box-shadow .4s;
+  padding: 44px 24px 38px; text-align: center;
+  transition: transform .4s, box-shadow .4s, border-color .4s;
+  overflow: hidden;
 }
-.video-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 38px rgba(70, 58, 32, 0.14);
+.social-card::before {
+  content: ""; position: absolute; inset: 10px;
+  border: 1px dashed var(--line); pointer-events: none; transition: border-color .4s;
 }
-.video-card video {
-  width: 100%; aspect-ratio: 3/2; object-fit: cover;
-  background: #20282C; display: block;
+.social-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--cinnabar);
+  box-shadow: 0 18px 40px rgba(140, 47, 40, 0.14);
 }
-.video-meta { padding: 12px 8px 14px; display: flex; justify-content: space-between; align-items: baseline; }
-.video-title { font-family: var(--font-kai); font-size: 19px; letter-spacing: 0.1em; }
-.video-sub { font-size: 12.5px; color: var(--ink-3); letter-spacing: 0.14em; }
+.social-card:hover::before { border-color: rgba(168, 58, 50, 0.5); }
+.social-name {
+  font-family: var(--font-kai); font-size: 30px; letter-spacing: 0.2em;
+  color: var(--ink); margin-bottom: 12px;
+}
+.social-desc { font-size: 14.5px; color: var(--ink-2); margin-bottom: 20px; }
+.social-arrow {
+  font-family: var(--font-kai); font-size: 14.5px; letter-spacing: 0.15em;
+  color: var(--cinnabar); transition: letter-spacing .3s;
+}
+.social-card:hover .social-arrow { letter-spacing: 0.3em; }
 
 /* ─────────── 叁 · 所好 ─────────── */
 .hobby-grid {
@@ -650,7 +661,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 @media (max-width: 1020px) {
   .profile-grid { grid-template-columns: 320px 1fr; gap: 40px; }
   .hobby-grid { grid-template-columns: repeat(2, 1fr); }
-  .video-grid { grid-template-columns: 1fr; }
+  .social-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; }
 }
 
 @media (max-width: 860px) {
@@ -672,6 +683,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   .travel-item { grid-template-columns: 1fr; }
   .travel-cover img { aspect-ratio: 16/8; }
   .photo-grid { grid-template-columns: repeat(2, 1fr); }
+  .social-grid { grid-template-columns: 1fr; }
   .section { padding: 76px 0 64px; }
   .section-head { flex-wrap: wrap; gap: 14px; }
   .section-rule { display: none; }

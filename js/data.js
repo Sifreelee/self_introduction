@@ -27,10 +27,10 @@ const SITE_DATA = {
 
   /* ─────────── 壹 · 其人（个人简介） ─────────── */
   profile: {
-    name: "李博轩",            // 您的名字
+    name: "丝芙荔",            // 您的名字
     enName: "Sifree",   // 拼音或英文名
     portrait: "assets/images/gerenzhaopian.jpg",  // 肖像照片路径（换成您的照片文件名）
-    portraitCaption: "示意",   // 肖像上的小签条文字
+    portraitCaption: "摄影中",   // 肖像上的小签条文字
     // 身份标签，可增删
     tags: ["旅行爱好者", "摄影学徒", "文博爱好者", "古建研究者"],
     // 简介段落，一段一个 ""，想加段落就按格式续写
@@ -114,18 +114,13 @@ const SITE_DATA = {
     { src: "assets/images/travel-6.svg", title: "雪岭孤松", place: "香格里拉 · 白马雪山" }
   ],
 
-  /* ─────────── 贰 · 行迹 之 影像集 ───────────
-     把视频文件（建议 mp4 格式）放进 assets/videos 文件夹，
-     然后按下面的格式登记。poster 是封面图，可不填（自动使用占位封面）。
-     下方第一条是示例：删掉或改成您自己的视频即可。 */
-  videos: [
-    {
-      src: "assets/videos/my-trip.mp4",
-      poster: "",
-      title: "我的旅行混剪",
-      sub: "漓江 · 敦煌 · 梅里"
-    }
-    
+  /* ─────────── 贰 · 行迹 之 影像集（社交视频平台入口） ───────────
+     点击卡片直接跳转到对应平台主页。
+     name: 平台名；desc: 一句话说明；link: 平台主页链接 */
+  social: [
+    { name: "抖音", desc: "我的旅行与日常短视频", link: "https://v.douyin.com/0_a546z2xug/" },
+    { name: "小红书", desc: "图文笔记与攻略分享", link: "https://xhslink.cn/o/8HhwbL6wKRb" },
+    { name: "Instagram", desc: "摄影作品与行迹瞬间", link: "https://www.instagram.com/sifree_lee?stkn=MWw1YXBscWVxMTEweA==" }
   ],
 
   /* ─────────── 叁 · 所好（个人爱好） ───────────
@@ -190,7 +185,7 @@ const SITE_DATA = {
     { label: "邮箱", value: "1582763936@qq.com", link: "mailto:1582763936@qq.com" },
     { label: "微信", value: "yisorelfd", link: "" },
     { label: "坐标", value: "山东·淄博", link: "" },
-    { label: "抖音", value: "热爱生活的保暖裤", link: "https://v.douyin.com/0_a546z2xug/ 4@7.com :3pm" },
+    { label: "抖音", value: "热爱生活的保暖裤", link: "https://v.douyin.com/0_a546z2xug/" },
     { label: "Bilibili", value: "热爱生活的丝芙荔", link: "https://b23.tv/t9qoj72" },
     { label: "小红书", value: "丝芙荔", link: "https://xhslink.cn/o/8HhwbL6wKRb" },
     { label: "微博", value: "丝芙荔", link: "https://weibo.com/u/6128243925" },
