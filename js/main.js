@@ -217,6 +217,7 @@ function renderHobbies() {
 }
 
 function renderContact() {
+  const s = SITE_DATA.site || {};
   const list = SITE_DATA.contact || [];
   const items = list.map((c) => {
     const inner = c.value
@@ -227,8 +228,8 @@ function renderContact() {
       : `<div class="contact-item">${inner}</div>`;
   }).join("");
   $("#contact-content").innerHTML = `
-    <p class="contact-poem">愿 以 山 水 之 名 · 与 君 相 遇</p>
-    <p class="contact-sub">若想聊聊旅行、摄影或茶饭闲事，欢迎随时来敲门</p>
+    <p class="contact-poem">${esc(s.contactPoem || "愿 以 山 水 之 名 · 与 君 相 遇")}</p>
+    <p class="contact-sub">${esc(s.contactSub || "若想聊聊旅行、摄影或茶饭闲事，欢迎随时来敲门")}</p>
     <div class="contact-list">${items}</div>`;
 }
 

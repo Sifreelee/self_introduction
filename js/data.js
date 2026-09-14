@@ -21,8 +21,10 @@ const SITE_DATA = {
     heroSeal: "絲芙荔行跡",       // 竖排大标题旁的印章文字（建议 2 ~ 4 字）
     heroQuote: "人生如逆旅，我亦是行人",   // 首屏诗句
     heroSub: "一个人的行走、记录与热爱",     // 首屏小字副标题
-    footerMotto: "且将新火试新茶，诗酒趁年华", // 页脚竖排诗句
-    footerText: "© 洛晴跃飞·享受自然，热爱生活"  // 页脚版权行
+    footerMotto: "诗意趁年华", // 页脚竖排诗句
+    footerText: "© 洛晴跃飞·享受自然，热爱生活",  // 页脚版权行
+    contactPoem: "愿以随性之名·与君相遇",   // 相邀区主标题
+    contactSub: "若想聊聊旅行、摄影或茶饭闲事，欢迎随时来敲门!"  // 相邀区副标题
   },
 
   /* ─────────── 壹 · 其人（个人简介） ─────────── */
@@ -32,7 +34,7 @@ const SITE_DATA = {
     portrait: "assets/images/gerenzhaopian.jpg",  // 肖像照片路径（换成您的照片文件名）
     portraitCaption: "摄影中",   // 肖像上的小签条文字
     // 身份标签，可增删
-    tags: ["旅行爱好者", "摄影学徒", "文博爱好者", "古建研究者"],
+    tags: ["旅行爱好者", "摄影初学者", "文博爱好者", "古建研究小白"],
     // 简介段落，一段一个 ""，想加段落就按格式续写
     bio: [
       "得闲便背起相机，去人少的山径走一走。相信天地有大美而不言，愿意做那个替山水说话的人。",
@@ -42,7 +44,7 @@ const SITE_DATA = {
     stats: [
       { num: "5+", label: "行走年头" },
       { num: "32", label: "抵达城市" },
-      { num: "3万", label: "快门次数" },
+      { num: "30000+", label: "快门次数" },
       { num: "∞", label: "热爱程度" }
     ]
   },
@@ -55,49 +57,41 @@ const SITE_DATA = {
       title: "茶啊冲往事",
       place: "吉林 · 长春",
       date: "2021-09",
-      cover: "assets/images/travel-1.jpg",
+      cover: "assets/images/trip-1.jpg",
       excerpt: "茶啊冲往事，长春的秋天是金色的。走在南湖公园的林荫道上，落叶铺满了脚下的路。阳光透过枝叶洒在身上，暖得像一杯刚泡好的龙井。",
       content: [
-        "雨是从竹筏离岸时落下来的。船家说，漓江的雨不要躲，那是山在给你斟茶。远处的峰林便在这盏茶里洇开了——近处的一层黛青尚且分明，远处的几重便淡成宣纸上的笔痕，再远，就与天光混作一处，分不清是山还是云了。",
-        "竹筏走得极慢，慢到可以数清水下的卵石。两岸的凤尾竹湿漉漉地垂着，偶尔一只白鹭起落，翅尖挑破雾气，又很快被合拢。我忽然明白古人为什么总画烟雨：不是技法如此，是江南的本相如此。",
-        "过九马画山时雨停了。石壁上的驳色果然像马，也像什么都不像。船家笑问看出几匹，我说看出一匹，正在饮水。他说那是好眼力——看山看得从容的人，日子也会过得从容。",
-        "归途暮色四合，渔火次第亮起来。江面浮着一层极薄的金。我想，山水待人，从来是不偏不倚的：你来，它便展颜；你去，它不挽留。所谓行旅的意义，大概就是学着用山水的眼睛，看一看自己的生活。"
+        "第一次背井离乡",
+        "南湖的风。",
+        "净月潭的水。",
+        "忘不掉的大学时光",
+        "难忘怀的第二故乡"
       ]
     },
     {
       title: "雾都记录簿",
       place: "中国 · 重庆",
       date: "2025-09",
-      cover: "assets/images/travel-2.jpg",
+      cover: "assets/images/trip-2.jpg",
       excerpt: "山城的雾是有温度的。清晨，雾气从江面升起，像一条白色的绸带，把整座城市裹在柔软的怀里。走在鹅卵石铺就的老街上，脚下的水声和远处的钟声交织成一首低沉的乐章。",
       content: [
-        "鸣沙山的沙是有声音的。风起时，整座山像一面被轻轻叩响的鼓，嗡嗡的，从脚底一路震到心口。傍晚爬沙山，进一步退半步，登到山脊时天边正烧着最后一线赭红。",
-        "月牙泉就卧在山下，一弯极秀气的碧水，被四面沙山团团围住，却千年不涸。导游说这是风水的奇迹：风在山坳里回旋，沙永远落不进泉里。我倒宁愿相信是沙漠也有心软的时候，特意给水留了一个怀抱。",
-        "夜里在沙地躺了许久。戈壁的星空低得吓人，银河像一道被谁失手泼翻的奶。忽然想起千年前那些画工，也是这样的夜晚，就着一盏油灯在洞窟里调色。他们画飞天的时候，抬头是不是也看见了这样的星河？",
-        "翌日去看莫高窟。九层楼的大佛垂目含笑，壁画上的青绿与朱砂历千年而不褪。走出洞窟，风沙扑面，我回头又看了一眼——所谓敦煌，就是沙漠替人类保管的一颗心脏，一跳，就是一千年。"
-      ]
-    },
-    {
-      title: "雪岭夜行车",
-      place: "云南 · 香格里拉",
-      date: "2025-01",
-      cover: "assets/images/travel-6.svg",
-      excerpt: "凌晨五点的白马雪山，车灯是唯一的光。翻过垭口时，梅里十三峰在晨光里一字排开，金山灼灼，车厢里所有人同时安静了下来……",
-      content: [
-        "凌晨五点的白马雪山，车灯是唯一的光。司机师傅放着不知名的藏族歌谣，转着一个又一个发卡弯。窗外漆黑，只有雪线偶尔反着幽幽的微光，像大地睡着了，呼吸都放轻了。",
-        "翻过垭口，天色将明未明。忽然有人低呼一声——远处，梅里十三峰在晨光里一字排开。卡瓦格博的峰顶最先被点燃，金红一寸寸漫下来，像神明拨亮了一盏灯。车厢里所有人同时安静了。那种安静不是无声，是心里忽然装满了东西，腾不出地方说话。",
-        "那一天我懂得了为什么当地人不去攀登梅里，只远远地朝拜。有些美，是拿来敬畏的，不是拿来征服的。人类与山最好的关系，是山站在那里，我们走在路上，彼此遥遥致意。",
-        "下山时买了一串当地的星月菩提，摊主老阿妈用生硬的普通话说：戴着，山神记得你来过。我把手串戴到现在。有时夜里写字倦了，捻一捻珠子，就想起那座金色的山——记得山神也记得，我来过。"
+        "嘞是雾都！",
+        "永远爱重庆。",
+        "热情的土地孕育热情的人",
+        "夏天的闷热和冬天的湿冷都无法阻挡我对这座城市的热爱。雾气弥漫的早晨，走在解放碑的街头，仿佛置身于一幅水墨画中。",
+        "江水缓缓流淌，船只穿梭其间，灯火映照在水面上，闪烁着温暖的光。"
       ]
     },
         {
       title: "北平半载",
       place: "中国 • 北京",
-      date: "2026 08",
-      cover: "assets/images/travel-4.png",
-      excerpt: "北平之行",
+      date: "2026-08",
+      cover: "assets/images/trip-3.png",
+      excerpt: "北平之行。",
       content: [
-        ""
+        "北平结缘",
+        "机缘巧合，我到了北京。",
+        "嗅到了历史的芬芳。",
+        "圆了我的古建梦。"
       ]
     },
   ],
@@ -106,12 +100,25 @@ const SITE_DATA = {
      src: 照片路径。把照片放进 assets/images，文件名写在这里即可。
      目前展示的是示例水墨占位图，替换后即为您的照片。 */
   photos: [
-    { src: "assets/images/travel-1.svg", title: "春江泛舟", place: "桂林 · 漓江" },
-    { src: "assets/images/travel-2.svg", title: "秋山落照", place: "北京 · 香山" },
-    { src: "assets/images/travel-3.svg", title: "寒江月夜", place: "杭州 · 西湖" },
-    { src: "assets/images/travel-4.svg", title: "水巷烟波", place: "苏州 · 平江路" },
-    { src: "assets/images/travel-5.svg", title: "大漠驼铃", place: "敦煌 · 鸣沙山" },
-    { src: "assets/images/travel-6.svg", title: "雪岭孤松", place: "香格里拉 · 白马雪山" }
+    { src: "assets/images/travel-4.jpg", title: "北陵公园", place: "辽宁·沈阳" },
+    { src: "assets/images/travel-5.jpg", title: "户部山", place: "江苏·徐州" },
+    { src: "assets/images/travel-6.jpg", title: "泰山 南天门", place: "山东·泰安" },
+    { src: "assets/images/travel-7.jpg", title: "青州古城落日", place: "山东·青州市" },
+    { src: "assets/images/travel-8.jpg", title: "净月潭", place: "吉林·长春" },
+    { src: "assets/images/travel-9.jpg", title: "星海广场", place: "辽宁·大连" },
+    { src: "assets/images/travel-10.jpg", title: "黄鹤楼之夜", place: "湖北·武汉" },
+    { src: "assets/images/travel-11.jpg", title: "津湾广场", place: "中国·天津" },
+    { src: "assets/images/travel-12.jpg", title: "在海一方公园", place: "江苏·连云港" },
+    { src: "assets/images/travel-13.jpg", title: "四宝山俯拍", place: "山东·淄博" },
+    { src: "assets/images/travel-14.jpg", title: "叹淄景", place: "山东·淄博" },
+    { src: "assets/images/travel-15.jpg", title: "天府广场", place: "四川·成都" },
+    { src: "assets/images/travel-16.jpg", title: "嘉陵江意", place: "中国·重庆" },
+    { src: "assets/images/travel-17.jpg", title: "长江国际", place: "中国·重庆" },
+    { src: "assets/images/travel-18.jpg", title: "南岸夜潮", place: "中国·重庆" },
+    { src: "assets/images/travel-19.jpg", title: "川美后街", place: "中国·重庆" },
+    { src: "assets/images/travel-20.jpg", title: "南川金佛山登山处", place: "中国·重庆" },
+    { src: "assets/images/travel-21.jpg", title: "金佛山云海", place: "中国·重庆" },
+    
   ],
 
   /* ─────────── 贰 · 行迹 之 影像集（社交视频平台入口） ───────────
@@ -120,6 +127,7 @@ const SITE_DATA = {
   social: [
     { name: "抖音", desc: "我的旅行与日常短视频", link: "https://v.douyin.com/0_a546z2xug/" },
     { name: "小红书", desc: "图文笔记与攻略分享", link: "https://xhslink.cn/o/8HhwbL6wKRb" },
+    { name: "Bilibili", desc: "学习资料干货分享", link: "https://b23.tv/t9qoj72" },
     { name: "Instagram", desc: "摄影作品与行迹瞬间", link: "https://www.instagram.com/sifree_lee?stkn=MWw1YXBscWVxMTEweA==" }
   ],
 
@@ -128,52 +136,52 @@ const SITE_DATA = {
                  book(书) guqin(琴) chess(棋) flower(花) music(乐) run(跑) */
   hobbies: [
     {
-      name: "书法",
-      en: "CALLIGRAPHY",
+      name: "写作",
+      en: "WRITING",
       icon: "brush",
-      desc: "每晚一炷香的时间，临一页《灵飞经》。字如其人不敢说，字能静心倒是真的。"
+      desc: "摘抄、记录、分享。"
     },
     {
       name: "摄影",
       en: "PHOTOGRAPHY",
       icon: "camera",
-      desc: "偏爱山水的呼吸与市井的烟火。快门按下的那一刻，时间就为我停了一次。"
+      desc: "定格自然与烟火气。"
     },
     {
       name: "品茶",
       en: "TEA CEREMONY",
       icon: "tea",
-      desc: "春饮花，夏饮绿，秋饮乌龙，冬饮熟普。一盏在手，四时有序。"
+      desc: "春饮花，夏饮绿，秋饮乌龙，冬饮熟普。"
     },
     {
-      name: "登山",
+      name: "徒步",
       en: "HIKING",
       icon: "mountain",
-      desc: "步履不停。海拔越高的地方，人心越简单——只想好好走稳下一步。"
+      desc: "尝试感受自我的来源。"
     },
     {
-      name: "读书",
+      name: "阅读",
       en: "READING",
       icon: "book",
-      desc: "山水诗与游记看得最多。读万卷书与行万里路，原是同一件事的两面。"
+      desc: "徜徉文字的世界。"
     },
     {
-      name: "抚琴",
-      en: "GUQIN",
+      name: "复古",
+      en: "VINTAGE",
       icon: "guqin",
-      desc: "初学《仙翁操》，指下生涩，心中欢喜。弦上山水，别有洞天。"
+      desc: "HIPHOP、LO-FI、R&B、JAZZ、FUNK！！"
     },
     {
-      name: "对弈",
-      en: "GO & CHESS",
+      name: "游戏",
+      en: "GAME",
       icon: "chess",
-      desc: "棋逢对手时最快乐。输赢之外，更爱那种漫长的、沉默的对话。"
+      desc: "OVERWATCH、LOL、Cyberpunk2077。"
     },
     {
-      name: "莳花",
-      en: "GARDENING",
+      name: "赏花",
+      en: "FLOWER",
       icon: "flower",
-      desc: "阳台上一缸睡莲、几盆兰草。草木无言，却最守信用——你对它好，它就长给你看。"
+      desc: "模拟蜜蜂。"
     }
   ],
 
