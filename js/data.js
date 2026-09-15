@@ -207,7 +207,7 @@ const SITE_DATA = {
       seal: "济",
       photos: [
         { src: "assets/images/travel-23.jpg", title: "曲水亭街" },
-        { src: "assets/images/travel-23.jpg", title: "胶济铁路博物馆" }
+        { src: "assets/images/travel-24.jpg", title: "胶济铁路博物馆" }
       ]
     }
   ],
