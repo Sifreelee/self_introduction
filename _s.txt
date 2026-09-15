@@ -1,9 +1,0 @@
-﻿HTTP_PROXY = http://127.0.0.1:60494
-HTTPS_PROXY = http://127.0.0.1:60494
-http_proxy = http://127.0.0.1:60494
-https_proxy = http://127.0.0.1:60494
-ALL_PROXY = 
-all_proxy = 
---- git config proxy ---
-
-
