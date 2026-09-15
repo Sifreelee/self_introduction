@@ -342,7 +342,16 @@ document.querySelectorAll("#works-tabs .tab").forEach((btn) => {
     document.querySelectorAll("#works-tabs .tab").forEach((b) => b.classList.remove("active"));
     document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
     btn.classList.add("active");
-    $("#panel-" + btn.dataset.tab).classList.add("active");
+    const panel = $("#panel-" + btn.dataset.tab);
+    panel.classList.add("active");
+    // 面板刚从隐藏变可见，视口内的卡片直接显示，避免渐显动画不触发留下空白
+    initReveal();
+    requestAnimationFrame(() => {
+      panel.querySelectorAll(".reveal:not(.visible)").forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight && r.bottom > 0) el.classList.add("visible");
+      });
+    });
   });
 });
 
