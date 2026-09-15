@@ -134,6 +134,8 @@ exit /b 1
 
 :NO_COMMIT
 echo No new changes to commit.
+echo Checking with GitHub whether anything is still waiting to be uploaded...
+"!GITEXE!" fetch origin !BRANCH! >nul 2>nul
 set "AHEAD=0"
 for /f "delims=" %%C in ('"!GITEXE!" rev-list --count origin/!BRANCH!..HEAD 2^>nul') do set "AHEAD=%%C"
 if "!AHEAD!"=="0" goto NOTHING_TODO
