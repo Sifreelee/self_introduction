@@ -107,7 +107,7 @@
     <form class="form active" id="form-photo" onsubmit="return false">
       <div class="field"><label>城市名</label><input id="p-city" placeholder="例如：中国 重庆"><div class="hint">同一个城市的多张照片会归为一个图集</div></div>
       <div class="field"><label>印章文字（可留空）</label><input id="p-seal" placeholder="留空则用统一印章字，例如：渝"><div class="hint">鼠标悬浮在这个图集上时浮现的朱红印章，建议 1 个字</div></div>
-      <div class="field"><label>照片清单（每行一张）</label><textarea id="p-list" placeholder="my-photo.jpg 落日渡口&#10;my-photo2.jpg 江边夜色&#10;my-photo3.jpg"></textarea><div class="hint">格式：文件名 + 空格 + 标题，标题可省略。先把照片放进 assets/images 文件夹</div></div>
+      <div class="field"><label>照片清单（每行一张）</label><textarea id="p-list" placeholder="travel-28 落日渡口&#10;travel-29 江边夜色&#10;travel-30"></textarea><div class="hint">格式：文件名 + 空格 + 标题，标题可省略。<b>不用打 .jpg，会自动补上</b>（其它格式请写全，如 a.png）。照片先放进 assets/images 文件夹</div></div>
     </form>
 
     <!-- 社交平台表单 -->
@@ -176,6 +176,17 @@
     function val(id) { return $(id).value.trim(); }
     function esc(s) { return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"'); }
 
+    // 文件名没写扩展名时自动补 .jpg；已带图片扩展名的保持原样
+    var IMG_EXT = ["jpg", "jpeg", "png", "webp", "gif", "svg", "avif", "bmp"];
+    function fixExt(name) {
+      var dot = name.lastIndexOf(".");
+      if (dot > -1) {
+        var ext = name.slice(dot + 1).toLowerCase();
+        if (IMG_EXT.indexOf(ext) > -1) return name;
+      }
+      return name + ".jpg";
+    }
+
     // 生成单条代码片段
     function buildSnippet(type, withComma) {
       var comma = withComma ? "," : "";
@@ -189,6 +200,7 @@
           var sp = ln.indexOf(" ");
           var src = sp > -1 ? ln.slice(0, sp) : ln;
           var title = sp > -1 ? ln.slice(sp + 1).trim() : "";
+          src = fixExt(src);
           return '        { src: "assets/images/' + src + '", title: "' + esc(title) + '" }';
         }).join(",\n");
         var sealLine = seal ? '      seal: "' + esc(seal) + '",\n' : "";

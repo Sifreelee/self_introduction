@@ -39,12 +39,12 @@ const SITE_DATA = {
     // 简介段落，一段一个 ""，想加段落就按格式续写
     bio: [
       "得闲便背起相机，去人少的山径走一走。相信天地有大美而不言，愿意做那个替山水说话的人。",
-      "这些年去过一些地方，看过重庆的雾、东北的雪。每一段路都值得被记住，于是有了这个小站——记录行走的点滴，分享旅途的风景。"
+      "这些年去过一些地方，看过重庆的雾，更看过东北的雪。每一段路都值得被记住，于是有了这个小站—记录行走的点滴，分享旅途的风景。"
     ],
     // 底部数据条：数字 + 说明，可自行更换内容
     stats: [
       { num: "5+", label: "行走年头" },
-      { num: "32", label: "抵达城市" },
+      { num: "32+", label: "抵达城市" },
       { num: "30000+", label: "快门次数" },
       { num: "∞", label: "热爱程度" }
     ]
@@ -64,8 +64,8 @@ const SITE_DATA = {
         "第一次背井离乡",
         "南湖的风。",
         "净月潭的水。",
-        "忘不掉的大学时光",
-        "难忘怀的第二故乡"
+        "忘不掉的大学时光。",
+        "难忘怀的第二故乡。"
       ]
     },
     {
@@ -77,8 +77,8 @@ const SITE_DATA = {
       content: [
         "嘞是雾都！",
         "永远爱重庆。",
-        "热情的土地孕育热情的人",
-        "夏天的闷热和冬天的湿冷都无法阻挡我对这座城市的热爱。雾气弥漫的早晨，走在解放碑的街头，仿佛置身于一幅水墨画中。",
+        "热情的土地孕育热情的人。",
+        "重庆的冬天忧郁又温润。",
         "江水缓缓流淌，船只穿梭其间，灯火映照在水面上，闪烁着温暖的光。"
       ]
     },
@@ -86,7 +86,7 @@ const SITE_DATA = {
       title: "北平半载",
       place: "中国 • 北京",
       date: "2026-08",
-      cover: "assets/images/trip-3.png",
+      cover: "assets/images/trip-3.jpg",
       excerpt: "北平之行。",
       content: [
         "北平结缘",
@@ -105,6 +105,29 @@ const SITE_DATA = {
      想加新城市/新照片，复制一段照着改即可。
      照片放进 assets/images 文件夹。 */
   photos: [
+     {
+      city: "中国 北京",
+      seal: "京",
+      photos: [
+        { src: "assets/images/travel-28.jpg", title: "古今同框：中国尊故宫" },
+        { src: "assets/images/travel-29.jpg", title: "雍和宫" },
+        { src: "assets/images/travel-30.jpg", title: "中山公园 中山堂：社稷坛" },
+        { src: "assets/images/travel-31.jpg", title: "颐和园 谐趣园" },
+        { src: "assets/images/travel-32.jpg", title: "颐和园 佛香阁" },
+        { src: "assets/images/travel-33.jpg", title: "天坛祈年殿" },
+        { src: "assets/images/travel-34.jpg", title: "圜丘坛" },
+        { src: "assets/images/travel-35.jpg", title: "西开教堂" },
+        { src: "assets/images/travel-36.jpg", title: "太庙大殿" },
+        { src: "assets/images/travel-37.jpg", title: "东交民巷" },
+        { src: "assets/images/travel-38.jpg", title: "方泽坛" },
+        { src: "assets/images/travel-39.jpg", title: "国子监街" },
+        { src: "assets/images/travel-40.jpg", title: "中轴线北望" },
+        { src: "assets/images/travel-41.jpg", title: "中轴线南望" },
+        { src: "assets/images/travel-42.jpg", title: "天坛俯拍远景" },
+        { src: "assets/images/travel-43.jpg", title: "圜丘坛与回音壁" },
+        { src: "assets/images/travel-44.jpg", title: "北海之夏" }
+      ]
+    },
     {
       city: "中国 重庆",
       seal: "渝",          // 本图集专属印章字（不想要就删掉这一行，会统一用 site.photoSeal）
