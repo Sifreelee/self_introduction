@@ -112,7 +112,8 @@ const SITE_DATA = {
         { src: "assets/images/bowu1.jpg", title: "国家博物馆" },
         { src: "assets/images/bowu2.jpg", title: "首都博物馆" },
         { src: "assets/images/bowu3.jpg", title: "辽宁省博物馆" },
-        { src: "assets/images/bowu4.jpg", title: "湖北省博物馆" }
+        { src: "assets/images/bowu4.jpg", title: "湖北省博物馆" },
+        { src: "assets/images/bowu5.jpg", title: "吉林省博物馆" }
       ]
     },
      {
