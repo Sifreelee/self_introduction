@@ -15,14 +15,8 @@ for %%P in (
   "C:\Program Files\Git\cmd\git.exe"
   "C:\Program Files (x86)\Git\bin\git.exe"
   "C:\Program Files (x86)\Git\cmd\git.exe"
-) do (
-  if not defined GITEXE if exist "%%~P" set "GITEXE=%%~P"
-)
-if not defined GITEXE (
-  for /f "delims=" %%P in ('where git 2^>nul') do (
-    if not defined GITEXE set "GITEXE=%%P"
-  )
-)
+) do if not defined GITEXE if exist "%%~P" set "GITEXE=%%~P"
+if not defined GITEXE for /f "delims=" %%P in ('where git 2^>nul') do if not defined GITEXE set "GITEXE=%%P"
 if not defined GITEXE (
   echo [ERROR] Git is not installed on this computer.
   echo Please install it from: https://git-scm.com/
@@ -57,21 +51,43 @@ if errorlevel 1 (
 )
 
 rem ---------- 4. remote address ----------
-"!GITEXE!" remote get-url origin >nul 2>nul
-if errorlevel 1 (
-  echo First run: link this folder to your GitHub repository.
-  echo Create an EMPTY repository on GitHub first, then paste its URL.
-  echo Example: https://github.com/yourname/my-site.git
+echo Folder: %CD%
+set "CURURL="
+for /f "delims=" %%U in ('"!GITEXE!" config --get remote.origin.url 2^>nul') do set "CURURL=%%U"
+if defined CURURL (
+  echo Already linked to GitHub:
+  echo   !CURURL!
+  set "KEEP=y"
+  set /p KEEP=Use this repo? Y/n: 
+  if /i "!KEEP!"=="n" (
+    set "NEWURL="
+    set /p NEWURL=Paste the new repo URL: 
+    if defined NEWURL (
+      "!GITEXE!" remote set-url origin !NEWURL!
+      set "CURURL=!NEWURL!"
+      echo Address updated.
+    ) else (
+      echo Keeping the old address.
+    )
+  )
   echo.
-  set "REPOURL="
-  set /p REPOURL=  Repo URL: 
-  if not defined REPOURL (
+) else (
+  echo Not linked to any GitHub repo yet.
+  echo Paste your repo URL, for example:
+  echo   https://github.com/yourname/my-site.git
+  echo.
+  set "CURURL="
+  set /p CURURL=Repo URL: 
+  if not defined CURURL (
     echo.
     echo [ERROR] No URL entered. Nothing was uploaded.
     pause
     exit /b 1
   )
-  "!GITEXE!" remote add origin !REPOURL!
+  "!GITEXE!" remote add origin !CURURL! >nul 2>nul
+  if errorlevel 1 (
+    "!GITEXE!" remote set-url origin !CURURL!
+  )
   echo Linked.
   echo.
 )
@@ -79,16 +95,16 @@ if errorlevel 1 (
 rem ---------- 5. reject oversized files (GitHub limit) ----------
 echo Checking for files over 25MB...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Get-ChildItem -Path . -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\.git\\' -and $_.Length -gt 25MB }) { exit 1 } else { exit 0 }"
-if errorlevel 1 (
-  echo.
-  echo [STOPPED] These files are too big for GitHub:
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-ChildItem -Path . -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\.git\\' -and $_.Length -gt 25MB } | ForEach-Object { Write-Host ('   ' + [math]::Round($_.Length/1MB,1) + ' MB  ' + $_.FullName) }"
-  echo.
-  echo Please run compress.bat first, then run this again.
-  echo.
-  pause
-  exit /b 1
-)
+if not errorlevel 1 goto SIZE_OK
+echo.
+echo [STOPPED] These files are too big for GitHub:
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-ChildItem -Path . -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\.git\\' -and $_.Length -gt 25MB } | ForEach-Object { Write-Host ('   ' + [math]::Round($_.Length/1MB,1) + ' MB  ' + $_.FullName) }"
+echo.
+echo Please run compress.bat first, then run this again.
+echo.
+pause
+exit /b 1
+:SIZE_OK
 
 rem ---------- 6. commit message ----------
 set "MSG="

@@ -164,7 +164,9 @@ const SITE_DATA = {
       city: "辽宁 大连",
       seal: "连",
       photos: [
-        { src: "assets/images/travel-9.jpg", title: "星海广场" }
+        { src: "assets/images/travel-9.jpg", title: "星海广场" },
+        { src: "assets/images/travel-26.jpg", title: "莲花山顶" },
+        { src: "assets/images/travel-27.jpg", title: "渔人码头" }
       ]
     },
     {
