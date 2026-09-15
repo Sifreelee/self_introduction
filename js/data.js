@@ -163,7 +163,7 @@ const SITE_DATA = {
       ]
     },
     {
-      city: "山东泰安",
+      city: "山东 泰安",
       seal: "泰",
       photos: [
         { src: "assets/images/travel-6.jpg", title: "泰山 南天门" }
