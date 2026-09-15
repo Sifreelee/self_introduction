@@ -92,6 +92,10 @@ if defined CURURL (
   echo.
 )
 
+rem ---------- 4b. current branch ----------
+set "BRANCH=main"
+for /f "delims=" %%B in ('"!GITEXE!" rev-parse --abbrev-ref HEAD 2^>nul') do set "BRANCH=%%B"
+
 rem ---------- 5. reject oversized files (GitHub limit) ----------
 echo Checking for files over 25MB...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Get-ChildItem -Path . -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\.git\\' -and $_.Length -gt 25MB }) { exit 1 } else { exit 0 }"
@@ -117,27 +121,34 @@ echo Adding all files...
 "!GITEXE!" add -A
 
 "!GITEXE!" diff --cached --quiet
-if errorlevel 1 (
-  echo Creating commit...
-  "!GITEXE!" commit -m "!MSG!"
-  if errorlevel 1 (
-    echo.
-    echo [ERROR] Commit failed. Nothing was uploaded.
-    echo.
-    pause
-    exit /b 1
-  )
-) else (
-  echo.
-  echo Nothing changed since the last upload. Nothing to do.
-  echo.
-  pause
-  exit /b 0
-)
+if not errorlevel 1 goto NO_COMMIT
 
-set "BRANCH=main"
-for /f "delims=" %%B in ('"!GITEXE!" rev-parse --abbrev-ref HEAD 2^>nul') do set "BRANCH=%%B"
+echo Creating commit...
+"!GITEXE!" commit -m "!MSG!"
+if not errorlevel 1 goto DO_PUSH
+echo.
+echo [ERROR] Commit failed. Nothing was uploaded.
+echo.
+pause
+exit /b 1
 
+:NO_COMMIT
+echo No new changes to commit.
+set "AHEAD=0"
+for /f "delims=" %%C in ('"!GITEXE!" rev-list --count origin/!BRANCH!..HEAD 2^>nul') do set "AHEAD=%%C"
+if "!AHEAD!"=="0" goto NOTHING_TODO
+echo.
+echo Found !AHEAD! commit(s) that were never uploaded. Sending them now...
+goto DO_PUSH
+
+:NOTHING_TODO
+echo.
+echo Nothing changed since the last upload. Nothing to do.
+echo.
+pause
+exit /b 0
+
+:DO_PUSH
 echo.
 echo Uploading to GitHub (branch !BRANCH!) ...
 echo If a login window pops up, sign in with your GitHub account.
