@@ -1,12 +1,9 @@
-﻿push exit=128
-git.exe : fatal: unable to access 'https://github.com/sifreelee/self_introducti
-on.git/': CONNECT tunnel failed, response 502
-所在位置 行:445 字符: 137
-+ ... NAL_PROMPT = "0"; $out = @(); $p = & $g push origin main 2>&1 | Out-S ...
-+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (fatal: unable t...d, response 502 
-   :String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
-=== status after ===
-## main...origin/main [ahead 1]
-?? _s.txt
+﻿HTTP_PROXY = http://127.0.0.1:60494
+HTTPS_PROXY = http://127.0.0.1:60494
+http_proxy = http://127.0.0.1:60494
+https_proxy = http://127.0.0.1:60494
+ALL_PROXY = 
+all_proxy = 
+--- git config proxy ---
+
+
