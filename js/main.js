@@ -15,6 +15,7 @@ const ICONS = {
   flower: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.2"/><path d="M12 9.8C12 7 13 5 12 3M12 14.2c0 2.8-1 4.8 0 6.8M9.8 12c-2.8 0-4.8-1-6.8 0M14.2 12c2.8 0 4.8 1 6.8 0"/><path d="M10.4 10.4C8.4 8.6 7.6 6.6 5.8 5.8M13.6 13.6c2 1.8 2.8 3.8 4.6 4.6M13.6 10.4c1.8-2 3.8-2.8 4.6-4.6M10.4 13.6c-1.8 2-3.8 2.8-4.6 4.6"/></svg>`,
   music: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>`,
   run: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="14.5" cy="4.5" r="1.8"/><path d="M13 8.5l-3 3 2.5 3-1.5 6M13 8.5l3.5 2 3-1M13 8.5L9 9 6.5 6M10 11.5l-3.5 1.5L4 11"/></svg>`,
+  stamp: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17"/><rect x="6" y="6" width="12" height="12" stroke-width="1"/><path d="M6 9.5c1.5 0 1.5-1.5 3-1.5s1.5 1.5 3 1.5 1.5-1.5 3-1.5M6 14.5c1.5 0 1.5-1.5 3-1.5s1.5 1.5 3 1.5 1.5-1.5 3-1.5"/></svg>`,
   mail: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="1.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>`,
   wechat: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4C5.9 4 3 6.3 3 9.2c0 1.7 1 3.2 2.6 4.2L5 15.5l2.4-1.2c.6.1 1.3.2 2 .2h.5"/><path d="M21 14.5c0-2.5-2.4-4.5-5.3-4.5S10.5 12 10.5 14.5 12.8 19 15.7 19c.6 0 1.3-.1 1.8-.2l2 1-.5-1.7c1.2-.8 2-2 2-3.6z"/><circle cx="8" cy="8.5" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="8.5" r=".8" fill="currentColor" stroke="none"/><circle cx="14" cy="13.5" r=".7" fill="currentColor" stroke="none"/><circle cx="17.5" cy="13.5" r=".7" fill="currentColor" stroke="none"/></svg>`,
   weibo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12c-2.8.3-5 2-5 4 0 2.2 2.7 3.8 6 3.5 3.5-.3 6-2.3 5.5-4.5"/><circle cx="10.5" cy="16" r="1.6"/><path d="M13.5 10.5c1.5-.5 3 .3 3.5 1.8M13.5 7.5c3-1 6 .5 7 3.5M13.5 7.5c.3 0 .5.2.5.5"/></svg>`,
@@ -119,36 +120,53 @@ function renderTravel() {
   bindPagination(box, "travel");
 }
 
+/* 图集卡片悬浮印章：优先用该城市自己的 seal，其次用 site.photoSeal，都没有则用「影」
+   字数变多时自动缩小字号并改成长条，避免撑破方框 */
+function sealHTML(group) {
+  const text = group.seal || (SITE_DATA.site && SITE_DATA.site.photoSeal) || "影";
+  const n = text.length;
+  const size = n <= 1 ? 16 : n === 2 ? 12 : 10;
+  const box = n <= 1 ? "" : `width:auto;min-width:34px;padding:0 7px;letter-spacing:.06em;`;
+  return `<span class="photo-seal" style="font-size:${size}px;${box}">${esc(text)}</span>`;
+}
+
 function renderPhotos() {
-  const list = SITE_DATA.photos || [];
+  const groups = SITE_DATA.photos || [];
   const box = $("#photo-grid");
-  if (!list.length) {
+  if (!groups.length) {
     box.innerHTML = emptyTip("还没有照片 · 把照片放进 assets/images，并在 js/data.js 登记");
     return;
   }
+  // 按图集（城市）数量分页，每页显示 PAGE_SIZE.photos 本图集
   const size = PAGE_SIZE.photos;
-  const total = Math.ceil(list.length / size);
+  const total = Math.ceil(groups.length / size);
   pageState.photos = Math.min(Math.max(1, pageState.photos), total);
   const start = (pageState.photos - 1) * size;
-  const slice = list.map((item, idx) => ({ item, idx })).slice(start, start + size);
+  const slice = groups.map((g, gi) => ({ g, gi })).slice(start, start + size);
 
-  box.innerHTML = slice.map(({ item: ph, idx }) => `
-    <figure class="photo-card reveal" data-idx="${idx}" tabindex="0" role="button" aria-label="查看 ${esc(ph.title)}">
-      <img src="${esc(ph.src)}" alt="${esc(ph.title)}" loading="lazy">
-      <span class="photo-seal">影</span>
-      <figcaption class="photo-meta">
-        <span class="photo-title">${esc(ph.title)}</span>
-        <span class="photo-place">${esc(ph.place)}</span>
-      </figcaption>
-    </figure>`).join("") + paginationHTML("photos", total);
+  // 每个城市一张封面卡片（用第一张照片做封面）
+  box.innerHTML = slice.map(({ g, gi }) => {
+    const cover = g.photos[0];
+    if (!cover) return "";
+    return `
+      <figure class="photo-card photo-album reveal" data-gi="${gi}" tabindex="0" role="button" aria-label="查看 ${esc(g.city)} 图集">
+        <img src="${esc(cover.src)}" alt="${esc(g.city)}" loading="lazy">
+        ${sealHTML(g)}
+        <span class="album-count">${g.photos.length} 张</span>
+        <figcaption class="photo-meta">
+          <span class="photo-title">${esc(g.city)}</span>
+          <span class="photo-place">共 ${g.photos.length} 张</span>
+        </figcaption>
+      </figure>`;
+  }).join("") + paginationHTML("photos", total);
 
   box.querySelectorAll("img").forEach((img, i) =>
     bindImgFallback(img, `assets/images/travel-${(i % 6) + 1}.svg`));
 
-  box.querySelectorAll(".photo-card").forEach((el) => {
-    el.addEventListener("click", () => openLightbox(+el.dataset.idx));
+  box.querySelectorAll(".photo-album").forEach((el) => {
+    el.addEventListener("click", () => openAlbum(+el.dataset.gi));
     el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(+el.dataset.idx); }
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAlbum(+el.dataset.gi); }
     });
   });
   bindPagination(box, "photos");
@@ -171,7 +189,7 @@ function renderSocial() {
 
 /* ─────────── 分页 ─────────── */
 /* 每页显示的条数，可自行调整 */
-const PAGE_SIZE = { travel: 3, photos: 6 };
+const PAGE_SIZE = { travel: 3, photos: 9};
 const pageState = { travel: 1, photos: 1 };
 
 function paginationHTML(key, total) {
@@ -237,18 +255,41 @@ function emptyTip(text) {
   return `<div class="empty-tip reveal">${esc(text)}</div>`;
 }
 
-/* ═══════════ 灯箱 ═══════════ */
+/* ═══════════ 灯箱（支持图集内多张切换） ═══════════ */
 const lightbox = $("#lightbox");
-function openLightbox(idx) {
-  const ph = SITE_DATA.photos[idx];
+let albumPhotos = [];   // 当前图集的照片数组
+let albumCity = "";     // 当前图集城市名
+let albumIndex = 0;     // 当前照片索引
+
+function showLightboxPhoto() {
+  const ph = albumPhotos[albumIndex];
   if (!ph) return;
   $("#lightbox-img").src = ph.src;
   $("#lightbox-img").alt = ph.title;
-  $("#lightbox-caption").textContent = `${ph.title} · ${ph.place}`;
+  $("#lightbox-caption").textContent = `${ph.title} · ${albumCity}`;
+  // 只有一张照片时隐藏切换按钮
+  $("#lightbox-prev").style.display = albumPhotos.length > 1 ? "flex" : "none";
+  $("#lightbox-next").style.display = albumPhotos.length > 1 ? "flex" : "none";
+}
+
+function openAlbum(gi) {
+  const group = SITE_DATA.photos[gi];
+  if (!group || !group.photos.length) return;
+  albumPhotos = group.photos;
+  albumCity = group.city;
+  albumIndex = 0;
+  showLightboxPhoto();
   lightbox.classList.add("open");
   lightbox.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
 }
+
+function lightboxStep(delta) {
+  if (!albumPhotos.length) return;
+  albumIndex = (albumIndex + delta + albumPhotos.length) % albumPhotos.length;
+  showLightboxPhoto();
+}
+
 function closeLightbox() {
   lightbox.classList.remove("open");
   lightbox.setAttribute("aria-hidden", "true");
@@ -256,6 +297,8 @@ function closeLightbox() {
 }
 $("#lightbox-close").addEventListener("click", closeLightbox);
 lightbox.querySelector(".lightbox-backdrop").addEventListener("click", closeLightbox);
+$("#lightbox-prev").addEventListener("click", (e) => { e.stopPropagation(); lightboxStep(-1); });
+$("#lightbox-next").addEventListener("click", (e) => { e.stopPropagation(); lightboxStep(1); });
 
 /* ═══════════ 随笔卷轴 ═══════════ */
 const modal = $("#article-modal");
@@ -287,6 +330,10 @@ modal.querySelector(".modal-backdrop").addEventListener("click", closeModal);
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { closeLightbox(); closeModal(); }
+  if (lightbox.classList.contains("open")) {
+    if (e.key === "ArrowLeft") lightboxStep(-1);
+    if (e.key === "ArrowRight") lightboxStep(1);
+  }
 });
 
 /* ═══════════ Tab 切换 ═══════════ */

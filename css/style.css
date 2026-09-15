@@ -433,6 +433,14 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 }
 .photo-card:hover .photo-seal { opacity: 1; transform: scale(1) rotate(-8deg); }
 
+/* 图集封面的「N 张」角标 */
+.album-count {
+  position: absolute; top: 16px; left: 16px;
+  background: rgba(43, 43, 38, 0.72); color: #EDE6D3;
+  font-family: var(--font-kai); font-size: 13px; letter-spacing: 0.08em;
+  padding: 4px 10px; border-radius: 2px; backdrop-filter: blur(3px);
+}
+
 /* — 影像集（社交平台入口） — */
 .social-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px;
@@ -615,6 +623,18 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   background: var(--cinnabar); border-color: var(--cinnabar);
   transform: rotate(90deg);
 }
+.lightbox-nav {
+  position: absolute; z-index: 5; top: 50%; transform: translateY(-50%);
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(242, 237, 221, 0.12); color: #EFE9D8;
+  border: 1px solid rgba(239, 233, 216, 0.4);
+  font-size: 30px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .3s;
+}
+.lightbox-nav:hover { background: var(--cinnabar); border-color: var(--cinnabar); }
+.lightbox-prev { left: 28px; }
+.lightbox-next { right: 28px; }
 
 /* ─────────── 随笔卷轴模态 ─────────── */
 .modal {

@@ -24,7 +24,8 @@ const SITE_DATA = {
     footerMotto: "诗意趁年华", // 页脚竖排诗句
     footerText: "© 洛晴跃飞·享受自然，热爱生活",  // 页脚版权行
     contactPoem: "愿以随性之名·与君相遇",   // 相邀区主标题
-    contactSub: "若想聊聊旅行、摄影或茶饭闲事，欢迎随时来敲门!"  // 相邀区副标题
+    contactSub: "若想聊聊旅行、摄影或茶饭闲事，欢迎随时来敲门!",  // 相邀区副标题
+    photoSeal: "影"          // 照片集图集卡片鼠标悬浮时浮现的朱红印章文字（建议 1 个字，不填则默认「影」）
   },
 
   /* ─────────── 壹 · 其人（个人简介） ─────────── */
@@ -96,29 +97,119 @@ const SITE_DATA = {
     },
   ],
 
-  /* ─────────── 贰 · 行迹 之 照片集 ───────────
-     src: 照片路径。把照片放进 assets/images，文件名写在这里即可。
-     目前展示的是示例水墨占位图，替换后即为您的照片。 */
+  /* ─────────── 贰 · 行迹 之 照片集（图集，按城市分组） ───────────
+     每个城市是一个图集 { city, cover, photos: [...] }：
+       · city：城市名
+       · photos：该城市的照片数组，每张 { src, title }
+       · seal：（可选）这个城市专属的悬浮印章文字，不写就用上面 site.photoSeal 的统一文字
+     想加新城市/新照片，复制一段照着改即可。
+     照片放进 assets/images 文件夹。 */
   photos: [
-    { src: "assets/images/travel-4.jpg", title: "北陵公园", place: "辽宁·沈阳" },
-    { src: "assets/images/travel-5.jpg", title: "户部山", place: "江苏·徐州" },
-    { src: "assets/images/travel-6.jpg", title: "泰山 南天门", place: "山东·泰安" },
-    { src: "assets/images/travel-7.jpg", title: "青州古城落日", place: "山东·青州市" },
-    { src: "assets/images/travel-8.jpg", title: "净月潭", place: "吉林·长春" },
-    { src: "assets/images/travel-9.jpg", title: "星海广场", place: "辽宁·大连" },
-    { src: "assets/images/travel-10.jpg", title: "黄鹤楼之夜", place: "湖北·武汉" },
-    { src: "assets/images/travel-11.jpg", title: "津湾广场", place: "中国·天津" },
-    { src: "assets/images/travel-12.jpg", title: "在海一方公园", place: "江苏·连云港" },
-    { src: "assets/images/travel-13.jpg", title: "四宝山俯拍", place: "山东·淄博" },
-    { src: "assets/images/travel-14.jpg", title: "叹淄景", place: "山东·淄博" },
-    { src: "assets/images/travel-15.jpg", title: "天府广场", place: "四川·成都" },
-    { src: "assets/images/travel-16.jpg", title: "嘉陵江意", place: "中国·重庆" },
-    { src: "assets/images/travel-17.jpg", title: "长江国际", place: "中国·重庆" },
-    { src: "assets/images/travel-18.jpg", title: "南岸夜潮", place: "中国·重庆" },
-    { src: "assets/images/travel-19.jpg", title: "川美后街", place: "中国·重庆" },
-    { src: "assets/images/travel-20.jpg", title: "南川金佛山登山处", place: "中国·重庆" },
-    { src: "assets/images/travel-21.jpg", title: "金佛山云海", place: "中国·重庆" },
-    
+    {
+      city: "中国 重庆",
+      seal: "渝",          // 本图集专属印章字（不想要就删掉这一行，会统一用 site.photoSeal）
+      photos: [
+        { src: "assets/images/travel-16.jpg", title: "嘉陵江意" },
+        { src: "assets/images/travel-17.jpg", title: "长江国际" },
+        { src: "assets/images/travel-18.jpg", title: "南岸夜潮" },
+        { src: "assets/images/travel-19.jpg", title: "川美后街" },
+        { src: "assets/images/travel-20.jpg", title: "南川金佛山登山处" },
+        { src: "assets/images/travel-21.jpg", title: "金佛山云海" }
+      ]
+    },
+    {
+      city: "山东 淄博",
+      seal: "淄", 
+      photos: [
+        { src: "assets/images/travel-13.jpg", title: "四宝山俯拍" },
+        { src: "assets/images/travel-14.jpg", title: "叹淄景" }
+      ]
+    },
+    {
+      city: "辽宁 沈阳",
+      seal: "沈",
+      photos: [
+        { src: "assets/images/travel-4.jpg", title: "北陵公园" }
+      ]
+    },
+    {
+      city: "江苏 徐州",
+      seal: "彭",
+      photos: [
+        { src: "assets/images/travel-5.jpg", title: "户部山" }
+      ]
+    },
+    {
+      city: "山东泰安",
+      seal: "泰",
+      photos: [
+        { src: "assets/images/travel-6.jpg", title: "泰山 南天门" }
+      ]
+    },
+    {
+      city: "山东 青州",
+      seal: "青",
+      photos: [
+        { src: "assets/images/travel-7.jpg", title: "青州古城落日" }
+      ]
+    },
+    {
+      city: "吉林 长春",
+      seal: "长",
+      photos: [
+        { src: "assets/images/travel-8.jpg", title: "净月潭" }
+      ]
+    },
+    {
+      city: "辽宁 大连",
+      seal: "连",
+      photos: [
+        { src: "assets/images/travel-9.jpg", title: "星海广场" }
+      ]
+    },
+    {
+      city: "湖北 武汉",
+      seal: "汉",
+      photos: [
+        { src: "assets/images/travel-10.jpg", title: "黄鹤楼之夜" }
+      ]
+    },
+    {
+      city: "中国 天津",
+      seal: "津",
+      photos: [
+        { src: "assets/images/travel-11.jpg", title: "津湾广场" }
+      ]
+    },
+    {
+      city: "江苏 连云港",
+      seal: "海",
+      photos: [
+        { src: "assets/images/travel-12.jpg", title: "在海一方公园" }
+      ]
+    },
+    {
+      city: "四川 成都",
+      seal: "蓉",
+      photos: [
+        { src: "assets/images/travel-15.jpg", title: "天府广场" }
+      ]
+    },
+    {
+      city: "黑龙江 哈尔滨",
+      seal: "哈",
+      photos: [
+        { src: "assets/images/travel-22.jpg", title: "中央大街" }
+      ]
+    },
+    {
+      city: "山东 济南",
+      seal: "济",
+      photos: [
+        { src: "assets/images/travel-23.jpg", title: "曲水亭街" },
+        { src: "assets/images/travel-23.jpg", title: "胶济铁路博物馆" }
+      ]
+    }
   ],
 
   /* ─────────── 贰 · 行迹 之 影像集（社交视频平台入口） ───────────
@@ -178,10 +269,10 @@ const SITE_DATA = {
       desc: "OVERWATCH、LOL、Cyberpunk2077。"
     },
     {
-      name: "赏花",
-      en: "FLOWER",
-      icon: "flower",
-      desc: "模拟蜜蜂。"
+      name: "集邮",
+      en: "STAMP",
+      icon: "stamp",
+      desc: "方寸之间，藏尽山河岁月。"
     }
   ],
 
