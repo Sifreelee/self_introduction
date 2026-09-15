@@ -192,7 +192,8 @@ const SITE_DATA = {
       city: "四川 成都",
       seal: "蓉",
       photos: [
-        { src: "assets/images/travel-15.jpg", title: "天府广场" }
+        { src: "assets/images/travel-15.jpg", title: "天府广场" },
+        { src: "assets/images/travel-25.jpg", title: "青羊宫" }
       ]
     },
     {
