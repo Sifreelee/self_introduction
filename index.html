@@ -32,7 +32,23 @@
 
   <!-- ══════════ 卷首 ══════════ -->
   <header class="hero" id="hero">
-    <div class="hero-bg"></div>
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="hero-clouds" aria-hidden="true">
+      <svg class="cloud-layer" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stop-color="#FBFDFE"/>
+            <stop offset="55%"  stop-color="#EFF4F7"/>
+            <stop offset="100%" stop-color="#CFDDE5"/>
+          </linearGradient>
+        </defs>
+        <g class="ink-cloud cloud-a"><path d="M0,22 C8,20 18,22 28,20 C34,14 46,14 52,20 C60,16 74,16 82,21 C90,18 94,22 90,25 C76,28 60,28 44,26 C30,28 14,28 4,26 C-2,25 -2,23 0,22 Z"/></g>
+        <g class="ink-cloud cloud-b"><path d="M0,40 C-14,40 -20,30 -12,25 C-18,15 -8,6 4,10 C8,-2 24,-5 32,3 C42,-5 58,-1 62,11 C72,9 80,20 74,28 C82,34 76,44 64,43 C56,46 40,46 30,43 C18,46 8,46 0,40 Z"/></g>
+        <g class="ink-cloud cloud-c"><path d="M0,30 C10,26 22,30 34,27 C42,18 58,18 66,27 C76,22 92,24 100,30 C108,26 120,28 122,34 C106,40 86,40 66,38 C46,40 26,40 12,38 C2,37 -2,33 0,30 Z"/></g>
+        <g class="ink-cloud cloud-d"><path d="M0,22 C8,20 18,22 28,20 C34,14 46,14 52,20 C60,16 74,16 82,21 C90,18 94,22 90,25 C76,28 60,28 44,26 C30,28 14,28 4,26 C-2,25 -2,23 0,22 Z"/></g>
+        <g class="ink-cloud cloud-e"><path d="M0,40 C-14,40 -20,30 -12,25 C-18,15 -8,6 4,10 C8,-2 24,-5 32,3 C42,-5 58,-1 62,11 C72,9 80,20 74,28 C82,34 76,44 64,43 C56,46 40,46 30,43 C18,46 8,46 0,40 Z"/></g>
+      </svg>
+    </div>
     <div class="hero-mist"></div>
     <div class="hero-content">
       <div class="hero-vertical">

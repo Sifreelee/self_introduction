@@ -5,10 +5,10 @@
 
 :root {
   /* 传统色板 */
-  --paper:      #F6F2E7;   /* 宣纸 */
-  --paper-2:    #EFE9D8;   /* 老纸 */
-  --paper-3:    #E8E1CD;   /* 陈纸 */
-  --card:       #FBF8F0;   /* 卡面 */
+  --paper:      #EFE8D6;   /* 宣纸（加深一档） */
+  --paper-2:    #E7DFC8;   /* 老纸 */
+  --paper-3:    #DFD6BC;   /* 陈纸 */
+  --card:       #F6F0E2;   /* 卡面 */
   --ink:        #2B2B26;   /* 松烟墨 */
   --ink-2:      #55524A;   /* 淡墨 */
   --ink-3:      #8C877A;   /* 灰墨 */
@@ -17,8 +17,8 @@
   --teal:       #2C4A52;   /* 黛青 */
   --teal-2:     #3E616B;   /* 青碧 */
   --gold:       #A98545;   /* 鎏金 */
-  --line:       #D9D1BB;   /* 纸纹线 */
-  --line-2:     #C6BCA2;   /* 深纹线 */
+  --line:       #D3C8AC;   /* 纸纹线 */
+  --line-2:     #BFB394;   /* 深纹线 */
 
   /* 字体 */
   --font-kai: "KaiTi", "STKaiti", "Kaiti SC", "KaiTi_GB2312", "DFKai-SB", serif;
@@ -87,7 +87,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   border-bottom: 1px solid transparent;
 }
 .navbar.scrolled {
-  background: rgba(246, 242, 231, 0.92);
+  background: rgba(239, 232, 214, 0.92);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom-color: var(--line);
@@ -144,17 +144,89 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 }
 .hero-bg {
   position: absolute; inset: 0;
-  background: url("../assets/images/hero-mountains.svg") bottom center / cover no-repeat;
-  opacity: .95;
+  overflow: hidden;
+  /* 水墨山水背景：cover 占满屏幕；定位偏下露出小船 */
+  background: url("../assets/images/hero-ink-bg.jpg") center bottom / cover no-repeat;
+  /* 缓慢缩放（呼吸感）：轻微拉近再回落 */
+  animation: heroZoom 30s ease-in-out infinite;
+  will-change: transform;
+}
+/* 卷首底部渐隐：背景淡出到下一页宣纸色，过渡自然 */
+.hero-bg::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 40%;
+  background: linear-gradient(180deg,
+    rgba(239,232,214,0) 0%,
+    rgba(239,232,214,0.55) 55%,
+    rgba(239,232,214,0.95) 100%);
+  pointer-events: none;
+}
+@keyframes heroZoom {
+  0%, 100% { transform: scale(1.0); }
+  50%      { transform: scale(1.06); }
+}
+/* 动态白云层：覆盖在背景图之上，preserveAspectRatio 与背景一致，跟随裁剪缩放 */
+.hero-clouds {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cloud-layer {
+  position: absolute; left: 0; top: 0;
+  width: 100%; height: 100%;
+  display: block;
+}
+.ink-cloud path {
+  fill: url(#cloudGrad);
+  fill-opacity: .92;
+  stroke: none;
+}
+
+/* 动态：五朵多形态云缓缓漂移，带呼吸感（厚实一些） */
+@keyframes cloudDriftA {
+  0%   { transform: translate(90px, 250px) scale(2.8, 2.1); opacity: .88; }
+  100% { transform: translate(1560px, 250px) scale(2.8, 2.1); opacity: .88; }
+}
+@keyframes cloudDriftB {
+  0%   { transform: translate(720px, 170px) scale(2.0, 1.7); opacity: .66; }
+  100% { transform: translate(-320px, 170px) scale(2.0, 1.7); opacity: .66; }
+}
+@keyframes cloudDriftC {
+  0%   { transform: translate(300px, 350px) scale(2.2, 1.6); opacity: .5; }
+  100% { transform: translate(1580px, 350px) scale(2.2, 1.6); opacity: .5; }
+}
+@keyframes cloudDriftD {
+  0%   { transform: translate(-160px, 430px) scale(2.6, 1.9); opacity: .6; }
+  100% { transform: translate(1620px, 430px) scale(2.6, 1.9); opacity: .6; }
+}
+@keyframes cloudDriftE {
+  0%   { transform: translate(1080px, 520px) scale(1.7, 1.4); opacity: .48; }
+  100% { transform: translate(-260px, 520px) scale(1.7, 1.4); opacity: .48; }
+}
+.cloud-a { animation: cloudDriftA 70s ease-in-out infinite; will-change: transform; }
+.cloud-b { animation: cloudDriftB 90s ease-in-out infinite; will-change: transform; }
+.cloud-c { animation: cloudDriftC 110s ease-in-out infinite; will-change: transform; }
+.cloud-d { animation: cloudDriftD 130s ease-in-out infinite; will-change: transform; }
+.cloud-e { animation: cloudDriftE 150s ease-in-out infinite; will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg { animation: none; }
+  .ink-cloud { animation: none; }
 }
 .hero-mist {
   position: absolute; inset: 0;
   background: linear-gradient(180deg,
-    rgba(246,242,231,0.88) 0%,
-    rgba(246,242,231,0.30) 34%,
-    rgba(246,242,231,0.05) 55%,
-    rgba(246,242,231,0.02) 72%,
-    rgba(246,242,231,0.9) 100%);
+    rgba(239,232,214,0.5) 0%,
+    rgba(239,232,214,0) 30%,
+    rgba(239,232,214,0) 58%,
+    rgba(239,232,214,0.25) 70%,
+    rgba(239,232,214,0.05) 80%,
+    rgba(239,232,214,0) 100%);
+  animation: mistFlow 12s ease-in-out infinite alternate;
+}
+@keyframes mistFlow {
+  from { opacity: .9; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(10px); }
 }
 .hero-content {
   position: relative; z-index: 2;
@@ -169,7 +241,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   font-family: var(--font-kai); font-weight: 400;
   font-size: clamp(58px, 9vw, 104px);
   letter-spacing: 0.18em; color: var(--ink);
-  text-shadow: 0 1px 0 rgba(246,242,231,0.8);
+  text-shadow: 0 1px 0 rgba(239,232,214,0.8);
 }
 .hero-seal {
   writing-mode: vertical-rl;
@@ -222,8 +294,58 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 }
 
 /* ─────────── 章节标题 ─────────── */
-.section { padding: 104px 0 92px; position: relative; }
+.section { padding: 104px 0 92px; position: relative; overflow: hidden; }
 .section-alt { background: var(--paper-2); }
+
+/* 各板块顶部淡入遮罩：与上一屏自然衔接（首屏尤其衔接卷首渐隐） */
+.section::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0;
+  height: 140px; z-index: 2;
+  background: linear-gradient(180deg,
+    rgba(239,232,214,0.95) 0%,
+    rgba(239,232,214,0.55) 45%,
+    rgba(239,232,214,0) 100%);
+  pointer-events: none;
+}
+.section-alt::before {
+  background: linear-gradient(180deg,
+    rgba(231,223,200,0.95) 0%,
+    rgba(231,223,200,0.55) 45%,
+    rgba(231,223,200,0) 100%);
+}
+
+.section > .container { position: relative; z-index: 1; }
+
+/* 各板块柔和浮云：淡色半透明，缓慢漂移；置于内容之下，不遮挡 */
+.sec-cloud-layer {
+  position: absolute; inset: 0;
+  overflow: hidden; pointer-events: none; z-index: 0;
+}
+.sec-cloud-layer svg {
+  position: absolute; left: 0; top: 0;
+  width: 100%; height: 100%; display: block;
+}
+.sec-cloud-layer .scloud path {
+  fill-opacity: .6; stroke: none;
+}
+/* 每朵云由 JS 写入的随机变量驱动：起始位置、漂移方向、距离、时长、尺寸、透明度 */
+.sec-cloud-layer .scloud {
+  animation: secCloudDrift var(--dur, 80s) ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes secCloudDrift {
+  from {
+    transform: translate(var(--cx, 0px), var(--cy, 0px)) scale(var(--sc, 1.4), calc(var(--sc, 1.4) * 0.72));
+    opacity: var(--o, .65);
+  }
+  to {
+    transform: translate(calc(var(--cx, 0px) + var(--dx, 160px)), var(--cy, 0px)) scale(var(--sc, 1.4), calc(var(--sc, 1.4) * 0.72));
+    opacity: calc(var(--o, .65) * 0.6);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sec-cloud-layer .scloud { animation: none; }
+}
 
 .section-head {
   display: flex; align-items: center; gap: 22px;
@@ -718,7 +840,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   .nav-toggle { display: flex; }
   .nav-links {
     position: fixed; top: var(--nav-h); left: 0; right: 0;
-    background: rgba(246, 242, 231, 0.97);
+    background: rgba(239, 232, 214, 0.97);
     backdrop-filter: blur(12px);
     flex-direction: column; align-items: center;
     padding: 18px 0 26px; gap: 4px;

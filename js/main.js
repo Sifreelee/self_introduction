@@ -397,6 +397,53 @@ function onScroll() {
 }
 window.addEventListener("scroll", onScroll, { passive: true });
 
+/* ═══════════ 各板块柔和浮云 ═══════════
+   每板块注入云层，多形态，缓慢柔和漂移 */
+const SECTION_CLOUDS = [
+  // 扁平低云
+  "M0,22 C8,20 18,22 28,20 C34,14 46,14 52,20 C60,16 74,16 82,21 C90,18 94,22 90,25 C76,28 60,28 44,26 C30,28 14,28 4,26 C-2,25 -2,23 0,22 Z",
+  // 圆润朵云
+  "M0,40 C-14,40 -20,30 -12,25 C-18,15 -8,6 4,10 C8,-2 24,-5 32,3 C42,-5 58,-1 62,11 C72,9 80,20 74,28 C82,34 76,44 64,43 C56,46 40,46 30,43 C18,46 8,46 0,40 Z",
+  // 长条舒展云
+  "M0,30 C10,26 22,30 34,27 C42,18 58,18 66,27 C76,22 92,24 100,30 C108,26 120,28 122,34 C106,40 86,40 66,38 C46,40 26,40 12,38 C2,37 -2,33 0,30 Z"
+];
+
+function addSectionClouds() {
+  document.querySelectorAll("#profile, #works, #hobbies, #contact").forEach((sec, i) => {
+    const layer = document.createElement("div");
+    layer.className = "sec-cloud-layer";
+    layer.setAttribute("aria-hidden", "true");
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 1440 800");
+    svg.setAttribute("preserveAspectRatio", "xMidYMax slice");
+    const gradId = "secCloudGrad" + i;
+    svg.innerHTML =
+      '<defs><linearGradient id="' + gradId + '" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#FFFFFF"/><stop offset="55%" stop-color="#EAF1F6"/>' +
+      '<stop offset="100%" stop-color="#B8CBD8"/></linearGradient></defs>';
+    // 每板块 4 朵云：形态轮换、位置与漂移方向随机
+    for (let k = 0; k < 4; k++) {
+      const d = SECTION_CLOUDS[(i + k) % 3];
+      const cx = 120 + Math.random() * 1200;          // 初始横向位置随机
+      const cy = 120 + Math.random() * 520;           // 初始纵向位置随机
+      const dir = Math.random() < 0.5 ? 1 : -1;       // 左右漂移方向随机
+      const dist = 120 + Math.random() * 280;         // 漂移距离随机
+      const dur = 5 + Math.random() * 2.3;           // 时长随机 5~7.3s，最低速约为之前的 1/3
+      const sc = 1.3 + Math.random() * 1.6;           // 尺寸随机
+      const o = 0.35 + Math.random() * 0.25;          // 不透明度随机（更透）
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("class", "scloud");
+      g.setAttribute("style",
+        "--cx:" + cx + "px; --cy:" + cy + "px; --dx:" + (dist * dir) + "px;" +
+        "--dur:" + dur.toFixed(1) + "s; --sc:" + sc.toFixed(2) + "; --o:" + o.toFixed(2) + ";");
+      g.innerHTML = '<path fill="url(#' + gradId + ')" d="' + d + '"/>';
+      svg.appendChild(g);
+    }
+    layer.appendChild(svg);
+    sec.appendChild(layer);
+  });
+}
+
 /* ═══════════ 启动 ═══════════ */
 renderSite();
 renderProfile();
@@ -406,4 +453,5 @@ renderSocial();
 renderHobbies();
 renderContact();
 initReveal();
+addSectionClouds();
 onScroll();

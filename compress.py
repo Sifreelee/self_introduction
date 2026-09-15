@@ -13,6 +13,10 @@
   · 原图备份到 网站文件夹外 的 _原图备份_个人网站
   · 文件名变了（如 png→jpg）会自动把 data.js 里的引用同步改掉
   · 自动扫描 data.js 是否引用了不存在的图片文件，并提示
+
+不会碰的文件：
+  · .svg 矢量图（网站的山水背景、占位图等）—— 原样保留
+  · .gif 动图 —— 原样保留（转成 jpg 会丢动画）
 """
 import os
 import shutil
@@ -29,6 +33,10 @@ MAX_SIDE = 1600
 QUALITY = 82
 SIZE_THRESHOLD = 800 * 1024            # jpg 超过 800KB 才重压
 CONVERT_EXTS = (".png", ".webp", ".bmp")  # 这些格式一律转成 jpg
+
+# 永不处理的文件类型：svg 是矢量图（网站的山水背景、占位图等），
+# gif 可能是动图，转成 jpg 都会损坏，这里一律跳过，原样保留。
+NEVER_TOUCH = (".svg", ".gif")
 
 
 def to_jpg(path):
@@ -100,7 +108,8 @@ def check_missing_refs():
 
 def main():
     os.makedirs(BACKUP_DIR, exist_ok=True)
-    exts = (".jpg", ".jpeg", ".png", ".webp", ".bmp")
+    # 扫描范围包含 svg / gif，好让下面的「已保护」提示能如实列出它们
+    exts = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".svg", ".gif")
     files = sorted(f for f in os.listdir(IMG_DIR)
                    if f.lower().endswith(exts) and not f.startswith("_"))
 
@@ -108,11 +117,17 @@ def main():
     rename_map = {}   # 旧文件名 -> 新文件名
     changed = 0
     skipped = 0
+    protected = []    # svg / gif，原样保留
 
     for name in files:
         path = os.path.join(IMG_DIR, name)
-        size = os.path.getsize(path)
         ext = os.path.splitext(name)[1].lower()
+
+        if ext in NEVER_TOUCH:
+            protected.append(name)
+            continue
+
+        size = os.path.getsize(path)
         must_convert = ext in CONVERT_EXTS   # 非 jpg 一律转 jpg
 
         if not must_convert:
@@ -165,7 +180,11 @@ def main():
         report.append("没有需要处理的图片（已全部是 jpg，且都在 800KB / 1600px 以内）")
     report.append("")
     report.append("共处理 %d 张，跳过 %d 张（已合格的 jpg）。" % (changed, skipped))
-    report.append("现在 assets/images 里已全部是 jpg。")
+    if protected:
+        shown = "、".join(protected[:8])
+        more = " 等 %d 个" % len(protected) if len(protected) > 8 else ""
+        report.append("已保护 %d 个文件，原样不动：%s%s" % (len(protected), shown, more))
+        report.append("（svg 矢量图与 gif 动图不会被压缩或转换）")
     if rename_map:
         report.append("已自动更新 data.js 中 %d 处文件名引用（如 png→jpg）。" % sync_count)
     if missing:
