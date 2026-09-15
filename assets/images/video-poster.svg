@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="vbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E3B40"/>
+      <stop offset="1" stop-color="#1F2A30"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#vbg)"/>
+
+  <!-- 远山淡影 -->
+  <path d="M0,600 Q260,470 520,580 Q780,690 1040,560 Q1130,520 1200,570 L1200,800 L0,800 Z" fill="#3C4E52" opacity="0.8"/>
+  <path d="M0,680 Q400,560 800,670 Q1020,730 1200,650 L1200,800 L0,800 Z" fill="#2A3A40" opacity="0.9"/>
+
+  <!-- 月 -->
+  <circle cx="920" cy="220" r="88" fill="#EAE3CE" opacity="0.25"/>
+  <circle cx="920" cy="220" r="56" fill="#EAE3CE" opacity="0.5"/>
+
+  <!-- 播放键 -->
+  <g transform="translate(600,360)">
+    <circle r="84" fill="none" stroke="#D8CDB2" stroke-width="2.4" opacity="0.85"/>
+    <circle r="72" fill="#EFE8D6" opacity="0.14"/>
+    <path d="M-18,-34 L42,0 L-18,34 Q-8,0 -18,-34 Z" fill="#EFE8D6"/>
+  </g>
+
+  <!-- 文案 -->
+  <text x="600" y="540" text-anchor="middle" font-family="KaiTi, STKaiti, SimSun, serif" font-size="34" fill="#E4DCC6" letter-spacing="10">待 添 影 像</text>
+  <text x="600" y="588" text-anchor="middle" font-family="KaiTi, STKaiti, SimSun, serif" font-size="18" fill="#9FAA9E" letter-spacing="4">将视频文件放入 assets/videos 后，在 js/data.js 中登记即可播放</text>
+
+  <!-- 印章 -->
+  <g transform="translate(1090,90) rotate(3)">
+    <rect width="52" height="52" rx="5" fill="#A83A32"/>
+    <text x="26" y="35" text-anchor="middle" font-family="KaiTi, STKaiti, serif" font-size="28" fill="#F7EFE2">影</text>
+  </g>
+</svg>
