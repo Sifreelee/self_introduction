@@ -106,6 +106,16 @@ const SITE_DATA = {
      照片放进 assets/images 文件夹。 */
   photos: [
      {
+      city: "镇馆之宝",
+      seal: "珍",
+      photos: [
+        { src: "assets/images/bowu1.jpg", title: "国家博物馆" },
+        { src: "assets/images/bowu2.jpg", title: "首都博物馆" },
+        { src: "assets/images/bowu3.jpg", title: "辽宁省博物馆" },
+        { src: "assets/images/bowu4.jpg", title: "湖北省博物馆" }
+      ]
+    },
+     {
       city: "中国 北京",
       seal: "京",
       photos: [
