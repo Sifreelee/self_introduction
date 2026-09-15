@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>内容添加小工具 · 洛晴跃飞</title>
+  <style>
+    :root {
+      --paper: #F6F2E7; --paper-2: #EFE9D8; --card: #FBF8F0;
+      --ink: #2B2B26; --ink-2: #55524A; --ink-3: #8C877A;
+      --cinnabar: #A83A32; --gold: #A98545; --line: #D9D1BB; --line-2: #C6BCA2;
+      --font-kai: "KaiTi", "STKaiti", "Kaiti SC", serif;
+      --font-song: "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--font-song); color: var(--ink); background: var(--paper);
+      line-height: 1.8; padding: 40px 20px 80px;
+      background-image: radial-gradient(rgba(120,105,70,0.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; }
+    h1 {
+      font-family: var(--font-kai); font-weight: 400; text-align: center;
+      font-size: 34px; letter-spacing: 0.3em; margin-bottom: 6px;
+    }
+    .sub { text-align: center; color: var(--ink-3); font-size: 14px; letter-spacing: 0.1em; margin-bottom: 34px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line); padding: 30px 32px;
+      margin-bottom: 26px;
+    }
+    .card-title {
+      font-family: var(--font-kai); font-size: 20px; letter-spacing: 0.15em;
+      margin-bottom: 18px; padding-left: 12px; border-left: 4px solid var(--cinnabar);
+    }
+
+    /* 类型切换 */
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab {
+      flex: 1; min-width: 120px; background: none; border: 1px solid var(--line);
+      font-family: var(--font-kai); font-size: 16px; letter-spacing: 0.15em;
+      color: var(--ink-2); padding: 12px 10px; cursor: pointer; transition: all .3s;
+    }
+    .tab.active { color: #fff; background: var(--cinnabar); border-color: var(--cinnabar); }
+
+    /* 表单 */
+    .form { display: none; }
+    .form.active { display: block; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 14px; color: var(--ink-2); margin-bottom: 6px; letter-spacing: 0.08em; }
+    .field input, .field textarea {
+      width: 100%; padding: 10px 12px; font-family: var(--font-song); font-size: 15px;
+      color: var(--ink); background: #fff; border: 1px solid var(--line);
+      transition: border-color .3s; outline: none;
+    }
+    .field input:focus, .field textarea:focus { border-color: var(--cinnabar); }
+    .field textarea { resize: vertical; min-height: 110px; line-height: 1.7; }
+    .hint { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+
+    /* 按钮 */
+    .btn-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+    .btn {
+      flex: 1; min-width: 140px; padding: 13px 20px; border: none; cursor: pointer;
+      font-family: var(--font-kai); font-size: 16px; letter-spacing: 0.2em;
+      transition: all .3s;
+    }
+    .btn-primary { background: var(--cinnabar); color: #fff; }
+    .btn-primary:hover { background: #8C2F28; }
+    .btn-ghost { background: var(--card); color: var(--ink-2); border: 1px solid var(--line-2); }
+    .btn-ghost:hover { border-color: var(--cinnabar); color: var(--cinnabar); }
+
+    /* 输出 */
+    .output {
+      width: 100%; min-height: 150px; margin-top: 18px; padding: 14px;
+      font-family: "Consolas", "Monaco", monospace; font-size: 13px; line-height: 1.7;
+      color: var(--ink); background: #FFFDF6; border: 1px solid var(--line);
+      white-space: pre; overflow: auto;
+    }
+    .msg { font-size: 14px; margin-top: 10px; letter-spacing: 0.05em; }
+    .msg.ok { color: #3E6B4A; }
+    .msg.err { color: var(--cinnabar); }
+
+    /* 分割 */
+    .divider { text-align: center; margin: 34px 0 22px; color: var(--ink-3); font-family: var(--font-kai); letter-spacing: 0.4em; font-size: 14px; }
+    .divider::before, .divider::after { content: "—"; margin: 0 14px; color: var(--line-2); }
+
+    .file-box { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .file-status { font-size: 13px; color: var(--ink-3); }
+    .steps { font-size: 14px; color: var(--ink-2); margin: 14px 0 4px; }
+    .steps li { margin-bottom: 6px; list-style: none; padding-left: 22px; position: relative; }
+    .steps li::before { content: attr(data-n); position: absolute; left: 0; top: 0; color: var(--cinnabar); font-family: var(--font-kai); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>内容添加小工具</h1>
+    <p class="sub">填表自动生成代码，一键复制粘贴，或导入 data.js 自动插入</p>
+
+    <!-- 类型切换 -->
+    <div class="tabs">
+      <button class="tab active" data-type="photo">添加图集</button>
+      <button class="tab" data-type="video">添加平台入口</button>
+      <button class="tab" data-type="travel">添加游记</button>
+    </div>
+
+    <!-- 照片表单（图集：一个城市多张照片） -->
+    <form class="form active" id="form-photo" onsubmit="return false">
+      <div class="field"><label>城市名</label><input id="p-city" placeholder="例如：中国 重庆"><div class="hint">同一个城市的多张照片会归为一个图集</div></div>
+      <div class="field"><label>印章文字（可留空）</label><input id="p-seal" placeholder="留空则用统一印章字，例如：渝"><div class="hint">鼠标悬浮在这个图集上时浮现的朱红印章，建议 1 个字</div></div>
+      <div class="field"><label>照片清单（每行一张）</label><textarea id="p-list" placeholder="my-photo.jpg 落日渡口&#10;my-photo2.jpg 江边夜色&#10;my-photo3.jpg"></textarea><div class="hint">格式：文件名 + 空格 + 标题，标题可省略。先把照片放进 assets/images 文件夹</div></div>
+    </form>
+
+    <!-- 社交平台表单 -->
+    <form class="form" id="form-video" onsubmit="return false">
+      <div class="field"><label>平台名</label><input id="v-title" placeholder="例如：抖音"></div>
+      <div class="field"><label>一句话说明</label><input id="v-sub" placeholder="例如：旅行碎片与随手拍"></div>
+      <div class="field"><label>主页链接</label><input id="v-src" placeholder="例如：https://v.douyin.com/xxxxx/"><div class="hint">填完整网址，点击卡片会跳转到这里</div></div>
+    </form>
+
+    <!-- 游记表单 -->
+    <form class="form" id="form-travel" onsubmit="return false">
+      <div class="field"><label>标题</label><input id="t-title" placeholder="例如：金陵旧梦"></div>
+      <div class="field"><label>地点</label><input id="t-place" placeholder="例如：江苏 · 南京"></div>
+      <div class="field"><label>日期</label><input id="t-date" placeholder="例如：2026-09"></div>
+      <div class="field"><label>封面图文件名（可留空）</label><input id="t-cover" placeholder="留空则用默认封面"></div>
+      <div class="field"><label>摘要（卡片上显示的一两句）</label><input id="t-excerpt" placeholder="例如：金陵的秋天，梧桐叶落满了整条中山路。"></div>
+      <div class="field"><label>正文（每行一段）</label><textarea id="t-content" placeholder="第一段文字&#10;第二段文字&#10;第三段文字"></textarea><div class="hint">每一行就是一段，直接回车换行即可</div></div>
+    </form>
+
+    <!-- 生成 -->
+    <div class="btn-row">
+      <button class="btn btn-primary" id="generate">生成代码</button>
+      <button class="btn btn-ghost" id="copy">复制代码</button>
+    </div>
+    <textarea class="output" id="output" readonly placeholder="生成的代码会显示在这里"></textarea>
+    <p class="msg" id="msg"></p>
+
+    <!-- 一键导入 -->
+    <div class="divider">更省事的一键方式</div>
+    <div class="card">
+      <div class="card-title">导入 data.js 自动插入</div>
+      <ol class="steps">
+        <li data-n="1">先在左边填好要添加的内容</li>
+        <li data-n="2">点下方「选择 data.js」，选中 js 文件夹里的 data.js</li>
+        <li data-n="3">点「插入并下载」，会下载一个改好的 data.js</li>
+        <li data-n="4">用下载的文件覆盖 js/data.js 即可</li>
+      </ol>
+      <div class="file-box" style="margin-top:16px;">
+        <input type="file" id="file" accept=".js" style="font-family:var(--font-song);font-size:14px;">
+        <span class="file-status" id="file-status">尚未选择文件</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="insert">插入并下载 data.js</button>
+      </div>
+      <p class="msg" id="msg2"></p>
+    </div>
+  </div>
+
+  <script>
+    var $ = function (id) { return document.getElementById(id); };
+    var currentType = "photo";
+    var fileContent = "";
+
+    // 类型切换
+    var tabs = document.querySelectorAll(".tab");
+    tabs.forEach(function (t) {
+      t.addEventListener("click", function () {
+        tabs.forEach(function (x) { x.classList.remove("active"); });
+        t.classList.add("active");
+        currentType = t.getAttribute("data-type");
+        document.querySelectorAll(".form").forEach(function (f) { f.classList.remove("active"); });
+        $("form-" + currentType).classList.add("active");
+      });
+    });
+
+    function val(id) { return $(id).value.trim(); }
+    function esc(s) { return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"'); }
+
+    // 生成单条代码片段
+    function buildSnippet(type, withComma) {
+      var comma = withComma ? "," : "";
+      if (type === "photo") {
+        // 图集：城市名 + 照片清单（每行：文件名 标题）
+        var city = val("p-city"), seal = val("p-seal");
+        if (!city) return { err: "请填写城市名" };
+        var lines = $("p-list").value.split("\n").map(function (s) { return s.trim(); }).filter(function (s) { return s; });
+        if (!lines.length) return { err: "请至少填写一张照片" };
+        var items = lines.map(function (ln) {
+          var sp = ln.indexOf(" ");
+          var src = sp > -1 ? ln.slice(0, sp) : ln;
+          var title = sp > -1 ? ln.slice(sp + 1).trim() : "";
+          return '        { src: "assets/images/' + src + '", title: "' + esc(title) + '" }';
+        }).join(",\n");
+        var sealLine = seal ? '      seal: "' + esc(seal) + '",\n' : "";
+        return { text: '    {\n      city: "' + esc(city) + '",\n' + sealLine + '      photos: [\n' + items + '\n      ]\n    }' + comma };
+      }
+      if (type === "video") {
+        // 社交平台入口
+        var vt = val("v-title"), vs = val("v-sub"), link = val("v-src");
+        if (!vt) return { err: "请填写平台名" };
+        return { text: '    {\n      name: "' + esc(vt) + '",\n      desc: "' + esc(vs) + '",\n      link: "' + esc(link) + '"\n    }' + comma };
+      }
+      if (type === "travel") {
+        var t = val("t-title"), place2 = val("t-place"), date = val("t-date"), cover = val("t-cover"), excerpt = val("t-excerpt");
+        if (!t) return { err: "请填写游记标题" };
+        var paras = val("t-content").split("\n").map(function (s) { return s.trim(); }).filter(function (s) { return s; });
+        var contentLines = paras.map(function (p) { return '        "' + esc(p) + '"'; }).join(",\n");
+        var coverLine = cover ? ('assets/images/' + cover) : "assets/images/travel-1.svg";
+        return { text: '    {\n      title: "' + esc(t) + '",\n      place: "' + esc(place2) + '",\n      date: "' + esc(date) + '",\n      cover: "' + coverLine + '",\n      excerpt: "' + esc(excerpt) + '",\n      content: [\n' + (contentLines || '        ""') + '\n      ]\n    }' + comma };
+      }
+      return { err: "未知类型" };
+    }
+
+    function showMsg(el, text, ok) {
+      el.textContent = text || "";
+      el.className = "msg " + (ok ? "ok" : "err");
+    }
+
+    // 生成
+    $("generate").addEventListener("click", function () {
+      var r = buildSnippet(currentType, true);
+      if (r.err) { $("output").value = ""; showMsg($("msg"), r.err, false); return; }
+      $("output").value = r.text;
+      showMsg($("msg"), "已生成，复制后粘贴到 data.js 对应数组的最后一条后面即可", true);
+    });
+
+    // 复制
+    $("copy").addEventListener("click", function () {
+      var code = $("output").value;
+      if (!code) { showMsg($("msg"), "请先点「生成代码」", false); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(function () {
+          showMsg($("msg"), "已复制到剪贴板", true);
+        }).catch(function () { fallbackCopy(code); });
+      } else { fallbackCopy(code); }
+    });
+    function fallbackCopy(text) {
+      var ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); showMsg($("msg"), "已复制到剪贴板", true); }
+      catch (e) { showMsg($("msg"), "复制失败，请手动选中代码复制", false); }
+      document.body.removeChild(ta);
+    }
+
+    // 导入 data.js
+    $("file").addEventListener("change", function () {
+      var f = this.files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        fileContent = reader.result;
+        $("file-status").textContent = "已导入：" + f.name;
+        showMsg($("msg2"), "文件已读取，现在可以点「插入并下载」", true);
+      };
+      reader.readAsText(f);
+    });
+
+    // 插入并下载
+    $("insert").addEventListener("click", function () {
+      if (!fileContent) { showMsg($("msg2"), "请先选择 data.js 文件", false); return; }
+      var r = buildSnippet(currentType, false);
+      if (r.err) { showMsg($("msg2"), r.err, false); return; }
+      var map = { photo: "photos", video: "social", travel: "travel" };
+      var key = map[currentType];
+      var startIdx = fileContent.indexOf(key + ": [");
+      if (startIdx < 0) { showMsg($("msg2"), "没找到 " + key + " 数组，请确认选择的是正确的 data.js", false); return; }
+      var endIdx = fileContent.indexOf("\n  ],", startIdx);
+      if (endIdx < 0) { endIdx = fileContent.indexOf("\n  ]", startIdx); }
+      if (endIdx < 0) { showMsg($("msg2"), "没找到 " + key + " 数组的结束位置", false); return; }
+      var between = fileContent.slice(startIdx + key.length + 3, endIdx).trim();
+      var insertText = (between === "" ? "\n" : ",\n") + r.text;
+      var newText = fileContent.slice(0, endIdx) + insertText + fileContent.slice(endIdx);
+
+      var blob = new Blob([newText], { type: "text/javascript" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = "data.js";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showMsg($("msg2"), "已下载新的 data.js，用它覆盖 js/data.js 后刷新网页即可", true);
+    });
+  </script>
+</body>
+</html>
