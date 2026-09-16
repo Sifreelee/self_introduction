@@ -108,7 +108,7 @@ const SITE_DATA = {
               想取消就删掉这行（或改成 star: false）。
      想加新城市/新照片，复制一段照着改即可。
      照片放进 assets/images 文件夹。 */
-  photos: [
+  photos: [ 
      {
       city: "镇馆之宝",
       seal: "珍",
@@ -156,6 +156,45 @@ const SITE_DATA = {
         { src: "assets/images/travel-19.jpg", title: "川美后街" },
         { src: "assets/images/travel-20.jpg", title: "南川金佛山登山处" },
         { src: "assets/images/travel-21.jpg", title: "金佛山云海" }
+      ]
+    },
+        {
+      city: "长春市伪满和建国初期建筑",
+      seal: "伪满",
+      star: true,  
+      photos: [
+        { src: "assets/images/weiman1.jpg", title: "东本愿寺" },
+        { src: "assets/images/weiman2.jpg", title: "伪满中央银行旧址" },
+        { src: "assets/images/weiman3.jpg", title: "伪满交通部旧址" },
+        { src: "assets/images/weiman4.jpg", title: "伪满关东军司令部旧址" },
+        { src: "assets/images/weiman5.jpg", title: "伪满兴农部旧址" },
+        { src: "assets/images/weiman6.jpg", title: "伪满民生部旧址" },
+        { src: "assets/images/weiman7.jpg", title: "伪满皇宫 勤民楼" },
+        { src: "assets/images/weiman8.jpg", title: "伪满皇宫 勤民楼二" },
+        { src: "assets/images/weiman9.jpg", title: "伪满皇宫 勤民楼勤民殿一" },
+        { src: "assets/images/weiman10.jpg", title: "伪满皇宫 勤民楼勤民殿二" },
+        { src: "assets/images/weiman11.jpg", title: "伪满皇宫 同德殿" },
+        { src: "assets/images/weiman12.jpg", title: "伪满皇宫 同德殿2" },
+        { src: "assets/images/weiman13.jpg", title: "伪满皇宫 同德殿3" },
+        { src: "assets/images/weiman14.jpg", title: "伪满皇宫兴运门" },
+        { src: "assets/images/weiman15.jpg", title: "伪满皇宫同德殿 御学问所" },
+        { src: "assets/images/weiman16.jpg", title: "伪满皇宫缉熙楼" },
+        { src: "assets/images/weiman17.jpg", title: "伪满皇宫缉熙楼二" },
+        { src: "assets/images/weiman18.jpg", title: "伪满皇宫花园" },
+        { src: "assets/images/weiman19.jpg", title: "伪满综合法衙旧址" },
+        { src: "assets/images/weiman20.jpg", title: "吉林大学基础医学院（伪满司法部旧址）" },
+        { src: "assets/images/weiman21.jpg", title: "吉林大学新民校区教学楼（伪满国务院旧址）" },
+        { src: "assets/images/weiman22.jpg", title: "吉林大学白求恩医学部（伪满司法部旧址）" },
+        { src: "assets/images/weiman23.jpg", title: "吉林大学白求恩第一医院（伪满军事部旧址）" },
+        { src: "assets/images/weiman24.jpg", title: "吉林大学第三医院（伪满经济部旧址）" },
+        { src: "assets/images/weiman25.jpg", title: "吉长道尹公署旧址" },
+        { src: "assets/images/weiman26.jpg", title: "地质宫" },
+        { src: "assets/images/weiman27.jpg", title: "建国鬼子庙" },
+        { src: "assets/images/weiman28.jpg", title: "建国鬼子庙二" },
+        { src: "assets/images/weiman29.jpg", title: "长春站" },
+        { src: "assets/images/weiman30.jpg", title: "鸣放宫" },
+        { src: "assets/images/weiman31.jpg", title: "鸣放宫二" },
+        { src: "assets/images/weiman32.jpg", title: "鸣放宫摩天轮同框" }
       ]
     },
     {

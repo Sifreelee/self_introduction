@@ -10,16 +10,21 @@
   · 把 png / webp / bmp 等统一转成 .jpg（透明的地方补白底）
   · 压缩过大的图片（超过 800KB 或长边超过 1600px 的，缩到长边1600、质量82）
   · 已经是 jpg 且不大不小的，原样保留，不做无谓的二次压缩
-  · 原图备份到 网站文件夹外 的 _原图备份_个人网站
   · 文件名变了（如 png→jpg）会自动把 data.js 里的引用同步改掉
   · 自动扫描 data.js 是否引用了不存在的图片文件，并提示
+
+关于原图（重要）：
+  · 不保留原图，压缩后直接覆盖源文件，图片只留一份
+  · 安全兜底：先写入临时文件，确认生成成功后才替换原图，
+    所以「压缩中途报错 / 断电」的情况下原图仍然是完好的
+  · 唯一例外：若 a.png 要转成的 a.jpg 已被另一张不同的图占用，
+    则跳过不处理（不会覆盖、也不会删除），并在报告里提示
 
 不会碰的文件：
   · .svg 矢量图（网站的山水背景、占位图等）—— 原样保留
   · .gif 动图 —— 原样保留（转成 jpg 会丢动画）
 """
 import os
-import shutil
 import re
 from PIL import Image, ImageOps
 
@@ -27,7 +32,6 @@ from PIL import Image, ImageOps
 BASE = r"F:\WorkBuddy\personal-website"
 IMG_DIR = os.path.join(BASE, "assets", "images")
 DATA_JS = os.path.join(BASE, "js", "data.js")
-BACKUP_DIR = r"F:\WorkBuddy\_原图备份_个人网站"
 
 MAX_SIDE = 1600
 QUALITY = 82
@@ -39,34 +43,31 @@ CONVERT_EXTS = (".png", ".webp", ".bmp")  # 这些格式一律转成 jpg
 NEVER_TOUCH = (".svg", ".gif")
 
 
-def to_jpg(path):
-    """把任意图片转成 jpg：统一白底 + 缩到长边 MAX_SIDE，返回输出文件名。"""
-    img = Image.open(path)
-    try:
-        img = ImageOps.exif_transpose(img)
-    except Exception:
-        pass
+def save_jpg(path, out_path):
+    """把任意图片转成 jpg 存到 out_path：统一白底 + 缩到长边 MAX_SIDE。"""
+    # 用 with 打开，确保下面替换 / 删除原图时文件句柄已释放（否则 Windows 会报占用）
+    with Image.open(path) as src:
+        try:
+            src = ImageOps.exif_transpose(src)
+        except Exception:
+            pass
 
-    # 有透明通道的先合到白底，避免透明区变黑
-    has_alpha = img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info)
-    if has_alpha:
-        img = img.convert("RGBA")
-        bg = Image.new("RGB", img.size, (255, 255, 255))
-        bg.paste(img, mask=img.split()[-1])
-        img = bg
-    else:
-        img = img.convert("RGB")
+        # 有透明通道的先合到白底，避免透明区变黑
+        has_alpha = src.mode in ("RGBA", "LA") or (src.mode == "P" and "transparency" in src.info)
+        if has_alpha:
+            src = src.convert("RGBA")
+            bg = Image.new("RGB", src.size, (255, 255, 255))
+            bg.paste(src, mask=src.split()[-1])
+            img = bg
+        else:
+            img = src.convert("RGB")
 
     w, h = img.size
     scale = MAX_SIDE / float(max(w, h))
     if scale < 1.0:
         img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
 
-    base, _ext = os.path.splitext(os.path.basename(path))
-    out_name = base + ".jpg"
-    img.save(os.path.join(IMG_DIR, out_name), "JPEG",
-             quality=QUALITY, optimize=True, progressive=True)
-    return out_name
+    img.save(out_path, "JPEG", quality=QUALITY, optimize=True, progressive=True)
 
 
 def update_data_js(rename_map):
@@ -107,7 +108,6 @@ def check_missing_refs():
 
 
 def main():
-    os.makedirs(BACKUP_DIR, exist_ok=True)
     # 扫描范围包含 svg / gif，好让下面的「已保护」提示能如实列出它们
     exts = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".svg", ".gif")
     files = sorted(f for f in os.listdir(IMG_DIR)
@@ -143,31 +143,33 @@ def main():
                 skipped += 1
                 continue
 
-        # 目标文件名若已被别的图占用，不覆盖，只备份并清理源文件
+        # 目标文件名若已被别的图占用，跳过（不覆盖、也不删除，因为没有原图备份了）
         base, _e = os.path.splitext(name)
         target_path = os.path.join(IMG_DIR, base + ".jpg")
-        if os.path.exists(target_path) and os.path.abspath(target_path) != os.path.abspath(path):
-            bak = os.path.join(BACKUP_DIR, name)
-            if not os.path.exists(bak):
-                shutil.copy2(path, bak)
-            os.remove(path)
-            report.append("%s  ->  已存在同名 %s.jpg，原文件已备份并移除（未覆盖）"
-                          % (name, base))
-            changed += 1
+        same_file = (os.path.normcase(os.path.abspath(target_path))
+                     == os.path.normcase(os.path.abspath(path)))
+        if os.path.exists(target_path) and not same_file:
+            report.append("%s  ->  跳过：已存在另一张 %s.jpg，为避免覆盖未处理" % (name, base))
+            skipped += 1
             continue
 
-        # 备份原图
-        bak = os.path.join(BACKUP_DIR, name)
-        if not os.path.exists(bak):
-            shutil.copy2(path, bak)
+        # 先写临时文件，成功后再替换原图：压缩失败时原图不受影响
+        tmp_path = os.path.join(IMG_DIR, "__tmp_%d.jpg" % os.getpid())
+        try:
+            save_jpg(path, tmp_path)
+            new_size = os.path.getsize(tmp_path)
+        except Exception as e:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            report.append("%s  ->  处理失败，原图已保留：%s" % (name, e))
+            continue
 
-        out = to_jpg(path)
-        new_size = os.path.getsize(os.path.join(IMG_DIR, out))
-        if out != name:
-            os.remove(path)          # 删除旧格式文件
-            rename_map[name] = out   # 记录改名，稍后同步 data.js
+        os.replace(tmp_path, target_path)   # 原地覆盖，不保留原图
+        if not same_file:
+            os.remove(path)                        # 删除旧格式文件
+            rename_map[name] = base + ".jpg"       # 记录改名，稍后同步 data.js
         report.append("%s  ->  %s   %.2fMB -> %.2fMB" % (
-            name, out, size / 1048576.0, new_size / 1048576.0))
+            name, base + ".jpg", size / 1048576.0, new_size / 1048576.0))
         changed += 1
 
     # 自动更新 data.js
