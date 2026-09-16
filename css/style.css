@@ -461,11 +461,38 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 .tab.active { color: var(--cinnabar); }
 .tab.active::after { width: 60%; }
 
-.tab-panel { display: none; animation: fadeUp .55s ease both; }
+.tab-panel { display: none; position: relative; animation: fadeUp .55s ease both; }
 .tab-panel.active { display: block; }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 可点击的统计数字：悬停微抬，点击轻按（版块缩放由 js 驱动） ── */
+.profile-stats .stat[data-goto],
+.profile-stats .stat[data-city] { transition: transform .28s, box-shadow .28s; }
+.profile-stats .stat[data-goto]:hover,
+.profile-stats .stat[data-city]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(43, 43, 38, .08);
+}
+/* 数据条：四个依次渐入，带一点极轻的缩放（呼吸感），幅度很小、节奏舒缓 */
+.profile-stats .stat.reveal {
+  transform: translateY(7px) scale(.985);
+  transition-duration: .52s;
+  transition-timing-function: cubic-bezier(.22, .85, .26, 1);
+  transition-delay: calc(var(--i, 0) * .08s);
+}
+.profile-stats .stat.reveal.visible { transform: translateY(0) scale(1); }
+.stat-tap { animation: statTap .34s ease; }
+@keyframes statTap {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(.975); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-tap { animation: none; }
 }
 
 /* — 旅行随笔 — */
@@ -812,7 +839,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   border: 1px solid var(--line-2);
   box-shadow: 0 40px 90px rgba(0, 0, 0, 0.4);
   padding: 58px 64px 50px;
-  transform: translateY(26px) scale(.98); transition: transform .45s;
+  transform: translateY(12px) scale(.994); transition: transform .34s;
   animation: paperIn .5s ease both;
 }
 .modal.open .modal-paper { transform: translateY(0) scale(1); }
@@ -864,7 +891,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   border: 1px solid var(--line-2);
   box-shadow: 0 40px 90px rgba(0, 0, 0, 0.4);
   padding: 48px 52px 44px;
-  transform: translateY(26px) scale(.98); transition: transform .45s;
+  transform: translateY(12px) scale(.994); transition: transform .34s;
   animation: paperIn .5s ease both;
 }
 .modal.open .city-map-paper { transform: translateY(0) scale(1); }
@@ -904,23 +931,70 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 .city-map-svg {
   width: 100%; max-width: 760px; height: auto; display: block;
 }
-/* 省份轮廓：未点亮为淡墨灰，点亮的省为朱砂红（纯展示，不可点击） */
-.province {
+/* ── 省份：填充层 + 描边层分开画 ──
+   SVG 按文档顺序绘制。若一个 path 同时带 fill 与 stroke，后画的邻省填充会盖掉
+   先画省份靠外侧的那一半描边，边界于是显得断续、粗细不匀。
+   拆成「先全部填色、再全部描边」两层，每条边界都压在填充之上，完整连续。 */
+.province { pointer-events: none; }
+.province-fill {
   fill: #EAE6D9;
-  stroke: #CFC8B4;
-  stroke-width: 1;
-  stroke-linejoin: round;
-  pointer-events: none;
+  stroke: none;
+  transition: fill .3s ease;
 }
-.province.lit {
+.province-fill.lit {
   fill: var(--cinnabar);
-  stroke: var(--cinnabar-2);
   filter: drop-shadow(0 2px 4px rgba(168, 58, 50, 0.35));
-  animation: provinceLight 1s ease both;
+  /* 不加 fill-mode：动画播完把 fill 交还给 CSS，高亮层才盖得住 */
+  animation: provinceLight .8s ease;
 }
 @keyframes provinceLight {
   from { fill: #EAE6D9; }
   to   { fill: var(--cinnabar); }
+}
+/* 描边层：只画线不填色，压在所有填充之上。底图为深朱红细边 */
+.province-line {
+  fill: none;
+  stroke: #5A1D18;                  /* 深红边界（比朱砂再压深，近乎墨朱） */
+  stroke-width: .6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: stroke .3s ease;
+}
+/* 已点亮的省：填充已是朱砂，边界再压深一档才看得出 */
+.province-line.lit { stroke: #43150F; }
+
+/* ── 高亮省：在最上层单独重画一份，填充 + 白描边都在最上面 ──
+   点（或悬停）城市词条时出现，只有那一座城市所在的省「跳起来」呼吸、缩放、发光；
+   其余省份保持原色，不做淡化。城市之间互不关联：点淄博只亮山东。 */
+.province-active-layer { pointer-events: none; }
+.pa-fill, .pa-line {
+  transform-box: fill-box;          /* 以省份自身为中心缩放，而不是整张地图 */
+  transform-origin: center;
+  animation: provinceBreathe 1.9s ease-in-out infinite;
+}
+.pa-fill {
+  fill: #D9604B;                    /* 比已点亮的深朱更浅一档，一眼区分开 */
+  stroke: none;
+}
+.pa-line {
+  fill: none;
+  stroke: #3A100B;                  /* 深红边界：比底图的 #5A1D18 再压深一档，轮廓更沉、更实 */
+  stroke-width: 1.3;                /* 保持原粗细，只改颜色 */
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+@keyframes provinceBreathe {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 1px rgba(226, 116, 98, .30));   /* 淡红光晕 */
+  }
+  50% {
+    transform: scale(1.04);
+    filter: drop-shadow(0 0 5px rgba(226, 116, 98, .60));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pa-fill, .pa-line, .province-fill.lit { animation: none; }
 }
 /* 南海诸岛附图（仅岛礁示意，无九段线） */
 .scs-island { fill: var(--ink-3); }
@@ -933,6 +1007,12 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 .city-map-hint {
   text-align: center; font-size: 13px; color: var(--ink-3);
   margin-bottom: 16px; letter-spacing: 0.04em;
+}
+
+/* 列表上方的小提示 */
+.city-map-tip {
+  text-align: center; font-size: 12.5px; letter-spacing: 0.08em;
+  color: var(--ink-3); opacity: .75; margin: -6px 0 16px;
 }
 
 /* 城市词条列表 */
@@ -949,9 +1029,9 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   border-radius: 2px;
   background: var(--paper-2);
   opacity: 0;
-  transform: translateY(14px) scale(.9);
-  animation: cityGlow .5s ease forwards;
-  animation-delay: calc(var(--i, 0) * 0.08s + 0.15s);
+  transform: translateY(5px) scale(.99);
+  animation: cityGlow .3s ease forwards;
+  animation-delay: calc(var(--i, 0) * 0.02s + 0.04s);
   transition: box-shadow .3s, border-color .3s, color .3s;
 }
 .city-chip::before {
@@ -962,10 +1042,18 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   font-style: normal; font-size: 12px; color: var(--ink-3);
   margin-left: 6px; letter-spacing: 0.06em;
 }
+.city-chip[data-pid] { cursor: pointer; }
 .city-chip:hover {
   border-color: var(--cinnabar); color: var(--cinnabar);
   box-shadow: 0 0 0 1px rgba(168, 58, 50, 0.25), 0 6px 16px rgba(168, 58, 50, 0.12);
 }
+/* 选中状态：与地图上高亮的省份对应 */
+.city-chip.active {
+  border-color: var(--cinnabar); color: var(--cinnabar);
+  background: #FBF0EB;
+  box-shadow: 0 0 0 1px rgba(168, 58, 50, 0.35), 0 5px 14px rgba(168, 58, 50, 0.14);
+}
+.city-chip.active::before { color: var(--cinnabar-2); }   /* 选中圆点用深朱，不用鎏金（避免泛黄） */
 @keyframes cityGlow {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }

@@ -56,14 +56,18 @@ function renderSite() {
 function renderProfile() {
   const p = SITE_DATA.profile;
   const cityCount = (SITE_DATA.cities || []).length;
-  const stats = (p.stats || []).map((t) => {
-    // 抵达城市：数字自动跟随 cities 数量；快门次数：可点击跳转到行迹
+  const stats = (p.stats || []).map((t, i) => {
+    // 抵达城市：数字自动跟随 cities 数量
+    // data-goto：点击后跳转，works = 滚到行迹；photos/travel/videos = 切到对应标签页
     let num = t.num;
     let extra = "";
     if (t.label === "抵达城市") { num = cityCount + "+"; extra = ' data-city'; }
-    if (t.label === "快门次数") { extra = ' data-goto="works"'; }
+    if (t.label === "快门次数") { extra = ' data-goto="photos"'; }   // → 照片集
+    if ((t.label || "").indexOf("年头") > -1) { extra = ' data-goto="travel"'; }
+    // 「热爱程度」「爱好广泛度」这类标签都指向「所好」版块
+    if (/热爱|爱好/.test(t.label || "")) { extra = ' data-goto="hobbies"'; }
     return `
-    <div class="stat reveal reveal-d2"${extra}>
+    <div class="stat reveal reveal-d2" style="--i:${i}"${extra}>
       <div class="stat-num">${esc(num)}</div>
       <div class="stat-label">${esc(t.label)}</div>
     </div>`;
@@ -88,24 +92,82 @@ function renderProfile() {
 
   bindImgFallback($("#profile-content img"), "assets/images/placeholder-portrait.svg");
 
-  // 「抵达城市」→ 打开点亮中国地图；「快门次数」→ 跳转到行迹
+  // 「抵达城市」→ 打开点亮中国地图；带 data-goto 的 → 跳转到对应版块
   $("#profile-content").querySelectorAll(".stat").forEach((el) => {
     if (el.hasAttribute("data-city")) {
       el.style.cursor = "pointer";
       el.setAttribute("role", "button");
       el.setAttribute("tabindex", "0");
-      el.addEventListener("click", openCityMap);
-      el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCityMap(); } });
-    } else if (el.getAttribute("data-goto") === "works") {
+      el.title = "看看去过哪些地方";
+      const open = () => { tapStat(el); openCityMap(); };
+      el.addEventListener("click", open);
+      el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+    } else if (el.getAttribute("data-goto")) {
+      const key = el.getAttribute("data-goto");
       el.style.cursor = "pointer";
       el.setAttribute("role", "button");
       el.setAttribute("tabindex", "0");
-      el.addEventListener("click", () => {
-        const target = document.getElementById("works");
-        if (target) target.scrollIntoView({ behavior: "smooth" });
+      el.title = { travel: "去看看旅行随笔", photos: "去看看照片集",
+                   videos: "去看看影像集", hobbies: "去看看所好" }[key] || "去看看行迹";
+      el.addEventListener("click", () => gotoWorksPanel(key, el));
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); gotoWorksPanel(key, el); }
       });
     }
   });
+}
+
+/* ═══════════ 统计数字跳转（切标签 + 缩放聚焦） ═══════════ */
+function gotoWorksPanel(key, triggerEl) {
+  const REDUCED = prefersReducedMotion();
+
+  // 1) 数字本身轻轻一按，给出点击反馈
+  tapStat(triggerEl);
+
+  // 2) 找目标：先找「行迹」里的标签页，找不到就当作整块版块（如 hobbies / works）
+  const panel = document.getElementById("panel-" + key) || document.getElementById(key);
+  if (!panel) return;
+
+  // 3) 切到目标标签页（已激活就不重复切，只重播动效）
+  const btn = document.querySelector('#works-tabs .tab[data-tab="' + key + '"]');
+  if (btn && !btn.classList.contains("active")) btn.click();
+
+  // 4) 平滑滚动过去；先切页再算位置，高度才准
+  requestAnimationFrame(() => {
+    const y = panel.getBoundingClientRect().top + window.scrollY - 90;
+    window.scrollTo({ top: y, behavior: REDUCED ? "auto" : "smooth" });
+  });
+
+  // 5) 轻微缩放后落定，把视线引过去
+  //    整块版块（如「爱好」）只缩放内容区，避免整屏缩放撑出横向滚动条
+  if (!REDUCED) zoomPulse(panel.querySelector("[data-zoom-target]") || panel);
+}
+
+// 数字轻按反馈（四个统计项统一）
+function tapStat(el) {
+  if (!el || prefersReducedMotion()) return;
+  el.classList.remove("stat-tap");
+  void el.offsetWidth;          // 强制重排，保证动画能重播
+  el.classList.add("stat-tap");
+}
+
+function prefersReducedMotion() {
+  return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+/* 缩放聚焦：版块从略大收回原尺寸。
+   用脚本驱动动画，播完自动结束，页面里不会留下任何残留元素。 */
+function zoomPulse(panel) {
+  if (typeof panel.animate !== "function") return;   // 老浏览器直接跳过
+  panel.style.transformOrigin = "50% 22%";
+  panel.animate(
+    [
+      { transform: "scale(1.016)" },
+      { transform: "scale(.998)", offset: .6 },
+      { transform: "scale(1)" }
+    ],
+    { duration: 440, easing: "cubic-bezier(.22,.9,.24,1)" }
+  );
 }
 
 function renderTravel() {
@@ -574,17 +636,28 @@ function renderCityMap() {
     return { name, prov };
   });
 
-  // 渲染 34 个省级行政区 path，点亮的省上色（仅展示，不可点击）
-  const provincePaths = Object.keys(CHINA_PROVINCES).map((pid) => {
+  // 渲染 34 个省级行政区：填充与描边分成两层。
+  // 原因：SVG 按文档顺序绘制，若一个 path 同时带 fill+stroke，后画的邻省填充会
+  // 盖掉先画省份一半的描边，边界就会显得断断续续。拆层后所有描边统一压在填充之上。
+  const pids = Object.keys(CHINA_PROVINCES);
+  const fillPaths = pids.map((pid) => {
     const p = CHINA_PROVINCES[pid];
-    const lit = litProvinces.has(pid);
-    return `<path class="province${lit ? " lit" : ""}" data-pid="${pid}" d="${p.d}"/>`;
+    return `<path class="province province-fill${litProvinces.has(pid) ? " lit" : ""}" data-pid="${pid}" d="${p.d}"/>`;
+  }).join("");
+  const linePaths = pids.map((pid) => {
+    const p = CHINA_PROVINCES[pid];
+    return `<path class="province province-line${litProvinces.has(pid) ? " lit" : ""}" data-pid="${pid}" d="${p.d}"/>`;
   }).join("");
 
   // 城市列表（词条 + 逐个点亮动画，附小字：直辖市/特别行政区显示「中国」）
+  // data-pid：能对应到省份的词条才可点，点了地图上同省会高亮
   const chips = parsed.map((c, i) => {
     const sub = citySubLabel(c.name, c.prov);
-    return `<span class="city-chip" style="--i:${i}">${esc(c.name)}<i>${esc(sub)}</i></span>`;
+    const pid = PROVINCE_ID[c.prov] || "";
+    const attr = pid
+      ? ` data-pid="${pid}" title="看看${esc(c.name)}在哪儿"`
+      : ` title="还没匹配到省份，可在 data.js 里写成「${esc(c.name)}@省份」"`;
+    return `<span class="city-chip" style="--i:${i}"${attr}>${esc(c.name)}<i>${esc(sub)}</i></span>`;
   }).join("");
 
   const hint = unpaired.length
@@ -598,13 +671,67 @@ function renderCityMap() {
     </div>
     <div class="city-map-stage">
       <svg class="city-map-svg" viewBox="0 0 1000 810" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-        <g class="province-layer">${provincePaths}</g>
+        <g class="province-layer">${fillPaths}</g>
+        <g class="province-line-layer">${linePaths}</g>
         ${southChinaSeaInset()}
+        <!-- 高亮省：整块压在最上层，填充 + 描边一起画，边界一定完整 -->
+        <g class="province-active-layer" id="map-active-layer"></g>
       </svg>
       <span class="map-disclaimer">地图仅示意，非标准地图</span>
     </div>
     ${hint}
+    ${parsed.length ? '<div class="city-map-tip">点城市名，地图上会高亮它所在的省</div>' : ""}
     <div class="city-map-list">${chips}</div>`;
+
+  bindCityChipFocus();
+}
+
+/* ─────────── 城市词条 ↔ 地图省份 联动 ───────────
+   点（或悬停）下方城市词条，地图上对应的省份高亮、其余淡下去；
+   再点一次取消，点别的则切换。未匹配到省份的词条不可点。 */
+let cityMapLockedPid = "";
+
+/* pid 为空 = 取消高亮。city 与 city 之间互不关联：
+   点淄博只亮山东、只高亮「淄博」这一个词条，同省的济南不会被牵动，
+   其余省份也保持原色不淡化。 */
+function focusProvince(pid, chipEl) {
+  const body = document.getElementById("city-map-body");
+  if (!body) return;
+  // 词条：只高亮被点（或被悬停）的那一个
+  body.querySelectorAll(".city-chip").forEach((el) => {
+    el.classList.toggle("active", !!chipEl && el === chipEl);
+  });
+  // 省份：在最上层重画一份「填充 + 黑边」的副本。
+  // 若只给底层省份加粗描边，邻省的描边会在共享边界上盖掉它，轮廓就断了；
+  // 放到最上层单独画，整圈边界都在最上面，完整且连续。
+  const layer = body.querySelector("#map-active-layer");
+  if (!layer) return;
+  const p = pid ? CHINA_PROVINCES[pid] : null;
+  layer.innerHTML = p
+    ? `<path class="pa-fill" data-pid="${pid}" d="${p.d}"/>` +
+      `<path class="pa-line" data-pid="${pid}" d="${p.d}"/>`
+    : "";
+}
+
+function bindCityChipFocus() {
+  cityMapLockedPid = "";
+  const chips = document.querySelectorAll("#city-map-body .city-chip[data-pid]");
+  chips.forEach((chip) => {
+    const pid = chip.getAttribute("data-pid");
+    chip.setAttribute("role", "button");
+    chip.setAttribute("tabindex", "0");
+    const toggle = () => {
+      cityMapLockedPid = (cityMapLockedPid === pid) ? "" : pid;
+      focusProvince(cityMapLockedPid, cityMapLockedPid ? chip : null);
+    };
+    chip.addEventListener("click", toggle);
+    chip.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    });
+    // 没锁定时，鼠标划过即预览高亮
+    chip.addEventListener("mouseenter", () => { if (!cityMapLockedPid) focusProvince(pid, chip); });
+    chip.addEventListener("mouseleave", () => { if (!cityMapLockedPid) focusProvince(""); });
+  });
 }
 
 function openCityMap() {
