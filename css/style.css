@@ -148,7 +148,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   /* 水墨山水背景：cover 占满屏幕；定位偏下露出小船 */
   background: url("../assets/images/hero-ink-bg.jpg") center bottom / cover no-repeat;
   /* 缓慢缩放（呼吸感）：轻微拉近再回落 */
-  animation: heroZoom 30s ease-in-out infinite;
+  animation: heroZoom 12s ease-in-out infinite;
   will-change: transform;
 }
 /* 卷首底部渐隐：背景淡出到下一页宣纸色，过渡自然 */
@@ -163,7 +163,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 }
 @keyframes heroZoom {
   0%, 100% { transform: scale(1.0); }
-  50%      { transform: scale(1.06); }
+  50%      { transform: scale(1.09); }
 }
 /* 动态白云层：覆盖在背景图之上，preserveAspectRatio 与背景一致，跟随裁剪缩放 */
 .hero-clouds {
@@ -820,6 +820,114 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 .article-end {
   text-align: center; margin-top: 34px;
   font-family: var(--font-kai); color: var(--gold); letter-spacing: 0.5em; font-size: 15px;
+}
+
+/* ─────────── 点亮中国 · 城市列表弹窗 ─────────── */
+.city-map-paper {
+  position: relative; z-index: 2;
+  width: min(860px, 100%);
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.4);
+  padding: 48px 52px 44px;
+  transform: translateY(26px) scale(.98); transition: transform .45s;
+  animation: paperIn .5s ease both;
+}
+.modal.open .city-map-paper { transform: translateY(0) scale(1); }
+.city-map-paper::before, .city-map-paper::after {
+  content: ""; position: absolute; left: 22px; right: 22px; height: 3px;
+  background: var(--gold); opacity: .5; border-radius: 2px;
+}
+.city-map-paper::before { top: 12px; }
+.city-map-paper::after { bottom: 12px; }
+
+.city-map-head { text-align: center; margin-bottom: 26px; }
+.city-map-title {
+  font-family: var(--font-kai); font-size: 34px; letter-spacing: 0.16em;
+  color: var(--ink); margin-bottom: 10px;
+}
+.city-map-count { font-size: 14px; letter-spacing: 0.2em; color: var(--ink-3); }
+.city-map-count em {
+  font-style: normal; font-family: var(--font-kai); font-size: 26px;
+  color: var(--cinnabar); margin: 0 4px;
+}
+
+/* 地图舞台 */
+.city-map-stage {
+  margin-bottom: 24px;
+  display: flex; justify-content: center;
+}
+.city-map-svg {
+  width: 100%; max-width: 760px; height: auto; display: block;
+}
+/* 省份轮廓：未点亮为淡墨灰，点亮的省为朱砂红（纯展示，不可点击） */
+.province {
+  fill: #EAE6D9;
+  stroke: #CFC8B4;
+  stroke-width: 1;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.province.lit {
+  fill: var(--cinnabar);
+  stroke: var(--cinnabar-2);
+  filter: drop-shadow(0 2px 4px rgba(168, 58, 50, 0.35));
+  animation: provinceLight 1s ease both;
+}
+@keyframes provinceLight {
+  from { fill: #EAE6D9; }
+  to   { fill: var(--cinnabar); }
+}
+/* 南海诸岛附图（仅岛礁示意，无九段线） */
+.scs-island { fill: var(--ink-3); }
+.scs-label {
+  fill: var(--ink-2); font-family: var(--font-kai);
+  font-size: 15px; letter-spacing: 0.1em;
+}
+
+/* 未识别城市提示 */
+.city-map-hint {
+  text-align: center; font-size: 13px; color: var(--ink-3);
+  margin-bottom: 16px; letter-spacing: 0.04em;
+}
+
+/* 城市词条列表 */
+.city-map-list {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 14px;
+}
+/* 每个城市词条：逐个点亮，由 --i 控制错峰 */
+.city-chip {
+  position: relative;
+  font-family: var(--font-kai); font-size: 18px; letter-spacing: 0.08em;
+  color: var(--ink-2);
+  padding: 7px 18px 7px 24px;
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  background: var(--paper-2);
+  opacity: 0;
+  transform: translateY(14px) scale(.9);
+  animation: cityGlow .5s ease forwards;
+  animation-delay: calc(var(--i, 0) * 0.08s + 0.15s);
+  transition: box-shadow .3s, border-color .3s, color .3s;
+}
+.city-chip::before {
+  content: "·"; position: absolute; left: 10px; top: 50%;
+  transform: translateY(-50%); color: var(--cinnabar); font-size: 20px;
+}
+.city-chip i {
+  font-style: normal; font-size: 12px; color: var(--ink-3);
+  margin-left: 6px; letter-spacing: 0.06em;
+}
+.city-chip:hover {
+  border-color: var(--cinnabar); color: var(--cinnabar);
+  box-shadow: 0 0 0 1px rgba(168, 58, 50, 0.25), 0 6px 16px rgba(168, 58, 50, 0.12);
+}
+@keyframes cityGlow {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (max-width: 560px) {
+  .city-map-paper { padding: 36px 20px 32px; }
+  .city-chip { font-size: 15px; padding: 6px 14px 6px 20px; }
 }
 
 /* ─────────── 渐显动画 ─────────── */

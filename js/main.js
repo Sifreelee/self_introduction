@@ -55,11 +55,19 @@ function renderSite() {
 
 function renderProfile() {
   const p = SITE_DATA.profile;
-  const stats = (p.stats || []).map((t) => `
-    <div class="stat reveal reveal-d2">
-      <div class="stat-num">${esc(t.num)}</div>
+  const cityCount = (SITE_DATA.cities || []).length;
+  const stats = (p.stats || []).map((t) => {
+    // 抵达城市：数字自动跟随 cities 数量；快门次数：可点击跳转到行迹
+    let num = t.num;
+    let extra = "";
+    if (t.label === "抵达城市") { num = cityCount + "+"; extra = ' data-city'; }
+    if (t.label === "快门次数") { extra = ' data-goto="works"'; }
+    return `
+    <div class="stat reveal reveal-d2"${extra}>
+      <div class="stat-num">${esc(num)}</div>
       <div class="stat-label">${esc(t.label)}</div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
   const tags = (p.tags || []).map((t) => `<span>${esc(t)}</span>`).join("");
   const bio = (p.bio || []).map((t) => `<p>${esc(t)}</p>`).join("");
 
@@ -79,6 +87,25 @@ function renderProfile() {
     </div>`;
 
   bindImgFallback($("#profile-content img"), "assets/images/placeholder-portrait.svg");
+
+  // 「抵达城市」→ 打开点亮中国地图；「快门次数」→ 跳转到行迹
+  $("#profile-content").querySelectorAll(".stat").forEach((el) => {
+    if (el.hasAttribute("data-city")) {
+      el.style.cursor = "pointer";
+      el.setAttribute("role", "button");
+      el.setAttribute("tabindex", "0");
+      el.addEventListener("click", openCityMap);
+      el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCityMap(); } });
+    } else if (el.getAttribute("data-goto") === "works") {
+      el.style.cursor = "pointer";
+      el.setAttribute("role", "button");
+      el.setAttribute("tabindex", "0");
+      el.addEventListener("click", () => {
+        const target = document.getElementById("works");
+        if (target) target.scrollIntoView({ behavior: "smooth" });
+      });
+    }
+  });
 }
 
 function renderTravel() {
@@ -329,7 +356,7 @@ $("#modal-close").addEventListener("click", closeModal);
 modal.querySelector(".modal-backdrop").addEventListener("click", closeModal);
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { closeLightbox(); closeModal(); }
+  if (e.key === "Escape") { closeLightbox(); closeModal(); closeCityMap(); }
   if (lightbox.classList.contains("open")) {
     if (e.key === "ArrowLeft") lightboxStep(-1);
     if (e.key === "ArrowRight") lightboxStep(1);
@@ -396,6 +423,188 @@ function onScroll() {
   });
 }
 window.addEventListener("scroll", onScroll, { passive: true });
+
+/* ═══════════ 点亮中国 · 按省点亮 ═══════════
+   点击「其人」区的「抵达城市」弹出；城市由 data.js 的 cities 数组驱动，
+   数量完全独立于行迹（photos/travel），只认这里输入的 cities。
+   规则：按省点亮 —— 一个省有任意一座去过的城市即整块点亮。
+   地图轮廓来自 js/china-map.js（含台湾省、香港、澳门，南海诸岛/九段线以附图补充）。 */
+const cityMapModal = $("#city-map-modal");
+
+// 省份中文名 → 省份 id（与 china-map.js 的 CHINA_PROVINCES 键对应）
+const PROVINCE_ID = {
+  "北京": "CNBJ", "天津": "CNTJ", "上海": "CNSH", "重庆": "CNCQ",
+  "河北": "CNHE", "山西": "CNSX", "内蒙古": "CNNM", "辽宁": "CNLN",
+  "吉林": "CNJL", "黑龙江": "CNHL", "江苏": "CNJS", "浙江": "CNZJ",
+  "安徽": "CNAH", "福建": "CNFJ", "江西": "CNJX", "山东": "CNSD",
+  "河南": "CNHA", "湖北": "CNHB", "湖南": "CNHN", "广东": "CNGD",
+  "广西": "CNGX", "海南": "CNHI", "四川": "CNSC", "贵州": "CNGZ",
+  "云南": "CNYN", "西藏": "CNXZ", "陕西": "CNSN", "甘肃": "CNGS",
+  "青海": "CNQH", "宁夏": "CNNX", "新疆": "CNXJ",
+  "台湾": "CNTW", "香港": "CNHK", "澳门": "CNMO"
+};
+
+// 省份 id → 中文名（反向）
+const PID_NAME = {};
+Object.keys(PROVINCE_ID).forEach((n) => { PID_NAME[PROVINCE_ID[n]] = n; });
+
+/* ─────────── 城市 → 省份 自动识别表 ───────────
+   覆盖全国主要地级市/直辖市/自治区首府/特别行政区。
+   用户只需填城市名，这里自动匹配所属省份并点亮。
+   找不到的城市会归入「未识别」，可在弹窗里手动点击省份点亮。 */
+const CITY_PROVINCE = {
+  "北京": "北京", "天津": "天津", "上海": "上海", "重庆": "重庆",
+  "石家庄": "河北", "唐山": "河北", "秦皇岛": "河北", "邯郸": "河北", "保定": "河北", "张家口": "河北", "承德": "河北", "廊坊": "河北",
+  "太原": "山西", "大同": "山西", "平遥": "山西", "忻州": "山西", "临汾": "山西", "运城": "山西",
+  "呼和浩特": "内蒙古", "包头": "内蒙古", "鄂尔多斯": "内蒙古", "呼伦贝尔": "内蒙古", "赤峰": "内蒙古",
+  "沈阳": "辽宁", "大连": "辽宁", "鞍山": "辽宁", "丹东": "辽宁", "锦州": "辽宁", "营口": "辽宁",
+  "长春": "吉林", "吉林": "吉林", "延吉": "吉林", "四平": "吉林", "通化": "吉林",
+  "哈尔滨": "黑龙江", "齐齐哈尔": "黑龙江", "大庆": "黑龙江", "牡丹江": "黑龙江", "佳木斯": "黑龙江", "漠河": "黑龙江",
+  "南京": "江苏", "苏州": "江苏", "无锡": "江苏", "徐州": "江苏", "常州": "江苏", "扬州": "江苏", "南通": "江苏", "连云港": "江苏", "镇江": "江苏", "盐城": "江苏", "淮安": "江苏",
+  "杭州": "浙江", "宁波": "浙江", "温州": "浙江", "绍兴": "浙江", "嘉兴": "浙江", "金华": "浙江", "舟山": "浙江", "台州": "浙江", "湖州": "浙江", "丽水": "浙江", "衢州": "浙江",
+  "合肥": "安徽", "黄山": "安徽", "芜湖": "安徽", "安庆": "安徽", "蚌埠": "安徽", "马鞍山": "安徽",
+  "福州": "福建", "厦门": "福建", "泉州": "福建", "漳州": "福建", "莆田": "福建", "三明": "福建", "龙岩": "福建", "南平": "福建",
+  "南昌": "江西", "景德镇": "江西", "九江": "江西", "上饶": "江西", "赣州": "江西", "婺源": "江西",
+  "济南": "山东", "青岛": "山东", "淄博": "山东", "泰安": "山东", "青州": "山东", "烟台": "山东", "潍坊": "山东", "威海": "山东", "临沂": "山东", "济宁": "山东", "日照": "山东", "聊城": "山东", "德州": "山东", "滨州": "山东", "菏泽": "山东", "东营": "山东", "枣庄": "山东",
+  "郑州": "河南", "洛阳": "河南", "开封": "河南", "安阳": "河南", "南阳": "河南", "信阳": "河南", "焦作": "河南", "登封": "河南",
+  "武汉": "湖北", "宜昌": "湖北", "襄阳": "湖北", "荆州": "湖北", "十堰": "湖北", "黄冈": "湖北", "恩施": "湖北",
+  "长沙": "湖南", "张家界": "湖南", "岳阳": "湖南", "衡阳": "湖南", "株洲": "湖南", "湘潭": "湖南", "凤凰": "湖南",
+  "广州": "广东", "深圳": "广东", "珠海": "广东", "汕头": "广东", "佛山": "广东", "东莞": "广东", "中山": "广东", "惠州": "广东", "湛江": "广东", "潮州": "广东", "江门": "广东", "韶关": "广东",
+  "南宁": "广西", "桂林": "广西", "柳州": "广西", "北海": "广西", "阳朔": "广西",
+  "海口": "海南", "三亚": "海南", "儋州": "海南", "文昌": "海南",
+  "成都": "四川", "绵阳": "四川", "乐山": "四川", "峨眉山": "四川", "宜宾": "四川", "泸州": "四川", "自贡": "四川", "都江堰": "四川", "康定": "四川", "稻城": "四川",
+  "贵阳": "贵州", "遵义": "贵州", "安顺": "贵州", "黔东南": "贵州", "荔波": "贵州",
+  "昆明": "云南", "大理": "云南", "丽江": "云南", "香格里拉": "云南", "西双版纳": "云南", "腾冲": "云南", "瑞丽": "云南", "建水": "云南",
+  "拉萨": "西藏", "日喀则": "西藏", "林芝": "西藏", "那曲": "西藏",
+  "西安": "陕西", "咸阳": "陕西", "延安": "陕西", "宝鸡": "陕西", "汉中": "陕西", "华山": "陕西",
+  "兰州": "甘肃", "敦煌": "甘肃", "嘉峪关": "甘肃", "张掖": "甘肃", "天水": "甘肃", "酒泉": "甘肃",
+  "西宁": "青海", "格尔木": "青海", "玉树": "青海",
+  "银川": "宁夏", "中卫": "宁夏", "吴忠": "宁夏",
+  "乌鲁木齐": "新疆", "喀什": "新疆", "伊犁": "新疆", "吐鲁番": "新疆", "库尔勒": "新疆", "阿勒泰": "新疆",
+  "台北": "台湾", "高雄": "台湾", "台中": "台湾", "花莲": "台湾", "台南": "台湾",
+  "香港": "香港", "澳门": "澳门"
+};
+
+// 直辖市 / 特别行政区：城市名本身即省级，小字显示「中国」
+const DIRECT_MUNICIPALITIES = new Set(["北京", "天津", "上海", "重庆", "香港", "澳门"]);
+
+/* 解析一条城市记录 → { name, prov }
+   支持两种写法：
+   ① "城市名"          —— 自动识别省份
+   ② "城市名@省份"      —— 显式指定省份（小众地名推荐） */
+function parseCity(entry) {
+  const raw = (entry || "").trim();
+  if (!raw) return { name: "", prov: "" };
+  // 含 @ 则显式指定省份
+  if (raw.indexOf("@") >= 0) {
+    const parts = raw.split("@");
+    const name = (parts[0] || "").trim();
+    let prov = (parts[1] || "").trim();
+    // 去掉省份后缀，统一为 PROVINCE_ID 的键
+    prov = prov.replace(/省|市|自治区|特别行政区|壮族|回族|维吾尔/g, "");
+    return { name, prov };
+  }
+  // 纯城市名：自动识别
+  return { name: raw, prov: detectProvince(raw) };
+}
+
+// 根据城市名识别所属省份（未识别返回 ""）
+function detectProvince(cityName) {
+  const name = (cityName || "").trim();
+  if (!name) return "";
+  // 先精确匹配
+  if (CITY_PROVINCE[name]) return CITY_PROVINCE[name];
+  // 再尝试去尾「市」等后缀
+  const bare = name.replace(/[市县区州]$/, "");
+  if (CITY_PROVINCE[bare]) return CITY_PROVINCE[bare];
+  return "";
+}
+
+// 城市词条的小字：直辖市/特别行政区显示「中国」，其余显示省份名
+function citySubLabel(name, prov) {
+  if (DIRECT_MUNICIPALITIES.has(name)) return "中国";
+  return prov || "待补录";
+}
+
+// 南海诸岛附图（右下角小图）：仅南海诸岛岛礁示意（东沙、西沙、中沙、南沙、曾母暗沙等）
+function southChinaSeaInset() {
+  return `
+    <g class="scs-inset" transform="translate(770,560) scale(0.62)">
+      <circle class="scs-island" cx="118" cy="50" r="2.6"/>
+      <circle class="scs-island" cx="132" cy="44" r="2.2"/>
+      <circle class="scs-island" cx="150" cy="40" r="2.2"/>
+      <circle class="scs-island" cx="166" cy="40" r="2.2"/>
+      <circle class="scs-island" cx="182" cy="46" r="2.2"/>
+      <circle class="scs-island" cx="196" cy="60" r="2.2"/>
+      <circle class="scs-island" cx="200" cy="82" r="2.2"/>
+      <circle class="scs-island" cx="176" cy="105" r="2.2"/>
+      <circle class="scs-island" cx="140" cy="98" r="2.2"/>
+      <circle class="scs-island" cx="108" cy="70" r="2.2"/>
+      <text class="scs-label" x="130" y="140">南海诸岛</text>
+    </g>`;
+}
+
+function renderCityMap() {
+  const cities = SITE_DATA.cities || [];
+  // 解析每条城市记录，去重得到「点亮省份」集合
+  const litProvinces = new Set();
+  const unpaired = [];   // 未匹配到省份的城市
+  const parsed = cities.map((entry) => {
+    const { name, prov } = parseCity(entry);
+    const pid = PROVINCE_ID[prov];
+    if (prov && pid) {
+      litProvinces.add(pid);
+    } else if (!pid) {
+      unpaired.push(name);
+    }
+    return { name, prov };
+  });
+
+  // 渲染 34 个省级行政区 path，点亮的省上色（仅展示，不可点击）
+  const provincePaths = Object.keys(CHINA_PROVINCES).map((pid) => {
+    const p = CHINA_PROVINCES[pid];
+    const lit = litProvinces.has(pid);
+    return `<path class="province${lit ? " lit" : ""}" data-pid="${pid}" d="${p.d}"/>`;
+  }).join("");
+
+  // 城市列表（词条 + 逐个点亮动画，附小字：直辖市/特别行政区显示「中国」）
+  const chips = parsed.map((c, i) => {
+    const sub = citySubLabel(c.name, c.prov);
+    return `<span class="city-chip" style="--i:${i}">${esc(c.name)}<i>${esc(sub)}</i></span>`;
+  }).join("");
+
+  const hint = unpaired.length
+    ? `<div class="city-map-hint">以下城市暂未匹配到省份，可在 data.js 里写成「城市名@省份」：${unpaired.map(u => esc(u)).join("、")}</div>`
+    : "";
+
+  $("#city-map-body").innerHTML = `
+    <div class="city-map-head">
+      <h3 class="city-map-title">点亮中国</h3>
+      <div class="city-map-count">已走过 <em>${cities.length}</em> 座城市 · 点亮 <em>${litProvinces.size}</em> 个省级行政区</div>
+    </div>
+    <div class="city-map-stage">
+      <svg class="city-map-svg" viewBox="0 0 1000 810" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <g class="province-layer">${provincePaths}</g>
+        ${southChinaSeaInset()}
+      </svg>
+    </div>
+    ${hint}
+    <div class="city-map-list">${chips}</div>`;
+}
+
+function openCityMap() {
+  renderCityMap();
+  cityMapModal.classList.add("open");
+  cityMapModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+function closeCityMap() {
+  cityMapModal.classList.remove("open");
+  cityMapModal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+$("#city-map-close").addEventListener("click", closeCityMap);
+cityMapModal.querySelector(".modal-backdrop").addEventListener("click", closeCityMap);
 
 /* ═══════════ 各板块柔和浮云 ═══════════
    每板块注入云层，多形态，缓慢柔和漂移 */
