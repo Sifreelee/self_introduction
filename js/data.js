@@ -112,6 +112,7 @@ const SITE_DATA = {
      {
       city: "镇馆之宝",
       seal: "珍",
+      star: true, 
       photos: [
         { src: "assets/images/bowu1.jpg", title: "国家博物馆" },
         { src: "assets/images/bowu2.jpg", title: "首都博物馆" },
@@ -147,6 +148,7 @@ const SITE_DATA = {
     {
       city: "中国 重庆",
       seal: "渝",          // 本图集专属印章字（不想要就删掉这一行，会统一用 site.photoSeal）
+      star: true,          // ← 星标：封面左上角会出现一枚圆形铜钱标记（不想要就删掉这行）
       photos: [
         { src: "assets/images/travel-16.jpg", title: "嘉陵江意" },
         { src: "assets/images/travel-17.jpg", title: "长江国际" },
@@ -240,6 +242,7 @@ const SITE_DATA = {
     {
       city: "黑龙江 哈尔滨",
       seal: "哈",
+      
       photos: [
         { src: "assets/images/travel-22.jpg", title: "中央大街" }
       ]
@@ -269,9 +272,9 @@ const SITE_DATA = {
      【填写规则】每行一个城市，有两种写法：
 
      ① 只写城市名（自动识别省份）：
-         "西安"   → 系统自动识别为「陕西」并点亮陕西省
-         "济南"   → 自动识别为「山东」
-         —— 系统内置「城市→省份」对照表（约 150 个主要城市）。
+         "西安"    系统自动识别为「陕西」并点亮陕西省
+         "济南"    自动识别为「山东」
+         系统内置「城市→省份」对照表（约 150 个主要城市）。
 
      ② 显式指定省份（推荐，尤其小众地名）：
          写成 "城市名@省份"，用 @ 隔开。例如：
