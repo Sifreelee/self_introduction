@@ -118,7 +118,8 @@ const SITE_DATA = {
         { src: "assets/images/bowu2.jpg", title: "首都博物馆" },
         { src: "assets/images/bowu3.jpg", title: "辽宁省博物馆" },
         { src: "assets/images/bowu4.jpg", title: "湖北省博物馆" },
-        { src: "assets/images/bowu5.jpg", title: "吉林省博物馆" }
+        { src: "assets/images/bowu5.jpg", title: "吉林省博物馆" },
+        { src: "assets/images/bowu6.jpg", title: "四川省博物馆" }
       ]
     },
      {
@@ -163,10 +164,10 @@ const SITE_DATA = {
       seal: "长",
       star: true, 
       photos: [
+        { src: "assets/images/changchun20260916018.jpg", title: "漫画轻轨" },
+        { src: "assets/images/changchun20260916004.jpg", title: "长春大学之春" },
         { src: "assets/images/changchun20260916001.jpg", title: "卫星广场午后" },
         { src: "assets/images/changchun20260916002.jpg", title: "友谊公园" },
-        { src: "assets/images/changchun20260916003.jpg", title: "同志街十字路口" },
-        { src: "assets/images/changchun20260916004.jpg", title: "长春大学之春" },
         { src: "assets/images/changchun20260916005.jpg", title: "文化广场" },
         { src: "assets/images/changchun20260916006.jpg", title: "净月潭" },
         { src: "assets/images/changchun20260916007.jpg", title: "净月潭其二" },
@@ -174,6 +175,7 @@ const SITE_DATA = {
         { src: "assets/images/changchun20260916009.jpg", title: "净月潭其四" },
         { src: "assets/images/changchun20260916012.jpg", title: "净月潭其五" },
         { src: "assets/images/travel-8.jpg", title: "净月潭其六" },
+        { src: "assets/images/changchun20260916003.jpg", title: "同志街十字路口" },
         { src: "assets/images/changchun20260916010.jpg", title: "同志街其二" },
         { src: "assets/images/changchun20260916011.jpg", title: "长大之夜" },
         { src: "assets/images/changchun20260916013.jpg", title: "红旗街电车" },
@@ -181,7 +183,6 @@ const SITE_DATA = {
         { src: "assets/images/changchun20260916014.jpg", title: "夜中三号线" },
         { src: "assets/images/changchun20260916015.jpg", title: "雪中长春站北站" },
         { src: "assets/images/changchun20260916016.jpg", title: "长春文庙" },
-        { src: "assets/images/changchun20260916018.jpg", title: "漫画轻轨" },
         { src: "assets/images/changchun20260916019.jpg", title: "54路电车" }
       ]
     },
