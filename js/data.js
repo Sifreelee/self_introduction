@@ -101,8 +101,8 @@ const SITE_DATA = {
      每个城市是一个图集 { city, cover, photos: [...] }：
        · city：城市名
        · photos：该城市的照片数组，每张 { src, title }
-       · seal：（可选）这个城市专属的悬浮印章文字，不写就用上面 site.photoSeal 的统一文字
-       · star：（可选）星标。设为 true 时，这本图集封面左上角会出现一枚
+       · seal：这个城市专属的悬浮印章文字，不写就用上面 site.photoSeal 的统一文字
+       · star：星标。设为 true 时，这本图集封面左上角会出现一枚
               「圆形铜钱」样式的中式标记（深朱色，低透明度，低调不抢眼）。
               想给某个图集加星标，就在那段里写一行  star: true,
               想取消就删掉这行（或改成 star: false）。
@@ -158,8 +158,35 @@ const SITE_DATA = {
         { src: "assets/images/travel-21.jpg", title: "金佛山云海" }
       ]
     },
-        {
-      city: "长春市伪满和建国初期建筑",
+      {
+      city: "吉林 长春",
+      seal: "长",
+      star: true, 
+      photos: [
+        { src: "assets/images/changchun20260916001.jpg", title: "卫星广场午后" },
+        { src: "assets/images/changchun20260916002.jpg", title: "友谊公园" },
+        { src: "assets/images/changchun20260916003.jpg", title: "同志街十字路口" },
+        { src: "assets/images/changchun20260916004.jpg", title: "长春大学之春" },
+        { src: "assets/images/changchun20260916005.jpg", title: "文化广场" },
+        { src: "assets/images/changchun20260916006.jpg", title: "净月潭" },
+        { src: "assets/images/changchun20260916007.jpg", title: "净月潭其二" },
+        { src: "assets/images/changchun20260916008.jpg", title: "净月潭其三" },
+        { src: "assets/images/changchun20260916009.jpg", title: "净月潭其四" },
+        { src: "assets/images/changchun20260916012.jpg", title: "净月潭其五" },
+        { src: "assets/images/travel-8.jpg", title: "净月潭其六" },
+        { src: "assets/images/changchun20260916010.jpg", title: "同志街其二" },
+        { src: "assets/images/changchun20260916011.jpg", title: "长大之夜" },
+        { src: "assets/images/changchun20260916013.jpg", title: "红旗街电车" },
+        { src: "assets/images/changchun20260916017.jpg", title: "红旗街电车其二" },
+        { src: "assets/images/changchun20260916014.jpg", title: "夜中三号线" },
+        { src: "assets/images/changchun20260916015.jpg", title: "雪中长春站北站" },
+        { src: "assets/images/changchun20260916016.jpg", title: "长春文庙" },
+        { src: "assets/images/changchun20260916018.jpg", title: "漫画轻轨" },
+        { src: "assets/images/changchun20260916019.jpg", title: "54路电车" }
+      ]
+    },
+     {
+      city: "长春伪满和建国初期建筑",
       seal: "伪满",
       star: true,  
       photos: [
@@ -231,13 +258,6 @@ const SITE_DATA = {
       seal: "青",
       photos: [
         { src: "assets/images/travel-7.jpg", title: "青州古城落日" }
-      ]
-    },
-    {
-      city: "吉林 长春",
-      seal: "长",
-      photos: [
-        { src: "assets/images/travel-8.jpg", title: "净月潭" }
       ]
     },
     {
