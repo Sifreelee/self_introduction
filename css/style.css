@@ -854,8 +854,18 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 
 /* 地图舞台 */
 .city-map-stage {
+  position: relative;
   margin-bottom: 24px;
   display: flex; justify-content: center;
+}
+/* 地图左下角免责小字：低透明度，不抢眼 */
+.map-disclaimer {
+  position: absolute; left: 0; bottom: 0;
+  font-size: 12px; letter-spacing: 0.08em;
+  color: var(--ink-3);
+  opacity: .6;
+  pointer-events: none;
+  user-select: none;
 }
 .city-map-svg {
   width: 100%; max-width: 760px; height: auto; display: block;

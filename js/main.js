@@ -587,6 +587,7 @@ function renderCityMap() {
         <g class="province-layer">${provincePaths}</g>
         ${southChinaSeaInset()}
       </svg>
+      <span class="map-disclaimer">地图仅示意，非标准地图</span>
     </div>
     ${hint}
     <div class="city-map-list">${chips}</div>`;
