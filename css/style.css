@@ -523,6 +523,8 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 22px;
 }
+/* 卡片外层容器：让星标可以挂到卡片外侧而不被 overflow:hidden 裁掉 */
+.photo-wrap { position: relative; }
 .photo-card {
   position: relative; overflow: hidden;
   border: 1px solid var(--line); background: var(--card);
@@ -561,6 +563,38 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   background: rgba(43, 43, 38, 0.72); color: #EDE6D3;
   font-family: var(--font-kai); font-size: 13px; letter-spacing: 0.08em;
   padding: 4px 10px; border-radius: 2px; backdrop-filter: blur(3px);
+}
+
+/* 星标 · 圆形铜钱：骑在卡片左上角（可压卡面，约三分之一探出卡外）
+   深朱实心，方孔有底衬，带缓慢呼吸缩放 */
+.album-star {
+  position: absolute; top: -9px; left: -9px;
+  width: 29px; height: 29px;
+  z-index: 3;
+  opacity: .8;
+  pointer-events: none;
+  transform-origin: center;
+  animation: coinBreathe 4.6s ease-in-out infinite;
+  transition: opacity .35s, top .4s;
+}
+/* 悬停时卡片上浮 4px，铜钱用 top 同步位移（不动 transform，免得盖掉呼吸动画） */
+.photo-wrap:hover .album-star { opacity: .95; top: -13px; }
+/* 呼吸：极轻微的缩放起伏（只动 transform，透明度仍由上面控制） */
+@keyframes coinBreathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.14); }
+}
+/* 方孔底衬：填卡片纸色，镂空处露出的仍是卡面白边，不会露出照片或卡片边框 */
+.album-star .coin-hole { fill: var(--card); }
+/* 铜钱：实心深朱 + 内方孔镂空，描边略深一圈让边缘更利 */
+.album-star .coin-body {
+  fill: var(--cinnabar-2); fill-opacity: 1;
+  stroke: #6E241E; stroke-width: 1.4;
+  stroke-linejoin: miter;
+}
+/* 尊重系统「减少动效」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .album-star { animation: none; }
 }
 
 /* — 影像集（社交平台入口） — */

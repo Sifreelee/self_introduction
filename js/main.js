@@ -157,6 +157,17 @@ function sealHTML(group) {
   return `<span class="photo-seal" style="font-size:${size}px;${box}">${esc(text)}</span>`;
 }
 
+/* 图集星标：圆形铜钱样式的中式标记（仅封面左上角，深朱半透明）
+   在 data.js 的图集里写一行 star: true 即可开启
+   造型：外圆外郭 + 内方孔（方孔钱），深红色，低透明度，尽量不打扰画面 */
+function starHTML(group) {
+  if (!group.star) return "";
+  return `<svg class="album-star" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect class="coin-hole" x="13" y="13" width="14" height="14" rx="3.8"/>
+    <path class="coin-body" fill-rule="evenodd" d="M20,3 A17,17 0 0,1 20,37 A17,17 0 0,1 20,3 Z M16.6,13.3 L23.4,13.3 A3.3,3.3 0 0 1 26.7,16.6 L26.7,23.4 A3.3,3.3 0 0 1 23.4,26.7 L16.6,26.7 A3.3,3.3 0 0 1 13.3,23.4 L13.3,16.6 A3.3,3.3 0 0 1 16.6,13.3 Z"/>
+  </svg>`;
+}
+
 function renderPhotos() {
   const groups = SITE_DATA.photos || [];
   const box = $("#photo-grid");
@@ -176,15 +187,18 @@ function renderPhotos() {
     const cover = g.photos[0];
     if (!cover) return "";
     return `
-      <figure class="photo-card photo-album reveal" data-gi="${gi}" tabindex="0" role="button" aria-label="查看 ${esc(g.city)} 图集">
-        <img src="${esc(cover.src)}" alt="${esc(g.city)}" loading="lazy">
-        ${sealHTML(g)}
-        <span class="album-count">${g.photos.length} 张</span>
-        <figcaption class="photo-meta">
-          <span class="photo-title">${esc(g.city)}</span>
-          <span class="photo-place">共 ${g.photos.length} 张</span>
-        </figcaption>
-      </figure>`;
+      <div class="photo-wrap reveal">
+        ${starHTML(g)}
+        <figure class="photo-card photo-album" data-gi="${gi}" tabindex="0" role="button" aria-label="查看 ${esc(g.city)} 图集">
+          <img src="${esc(cover.src)}" alt="${esc(g.city)}" loading="lazy">
+          ${sealHTML(g)}
+          <span class="album-count">${g.photos.length} 张</span>
+          <figcaption class="photo-meta">
+            <span class="photo-title">${esc(g.city)}</span>
+            <span class="photo-place">共 ${g.photos.length} 张</span>
+          </figcaption>
+        </figure>
+      </div>`;
   }).join("") + paginationHTML("photos", total);
 
   box.querySelectorAll("img").forEach((img, i) =>

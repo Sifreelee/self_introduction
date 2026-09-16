@@ -102,6 +102,10 @@ const SITE_DATA = {
        · city：城市名
        · photos：该城市的照片数组，每张 { src, title }
        · seal：（可选）这个城市专属的悬浮印章文字，不写就用上面 site.photoSeal 的统一文字
+       · star：（可选）星标。设为 true 时，这本图集封面左上角会出现一枚
+              「圆形铜钱」样式的中式标记（深朱色，低透明度，低调不抢眼）。
+              想给某个图集加星标，就在那段里写一行  star: true,
+              想取消就删掉这行（或改成 star: false）。
      想加新城市/新照片，复制一段照着改即可。
      照片放进 assets/images 文件夹。 */
   photos: [
@@ -119,6 +123,7 @@ const SITE_DATA = {
      {
       city: "中国 北京",
       seal: "京",
+      star: true,          // ← 星标：封面左上角会出现一枚圆形铜钱标记（不想要就删掉这行）
       photos: [
         { src: "assets/images/travel-28.jpg", title: "古今同框：中国尊故宫" },
         { src: "assets/images/travel-29.jpg", title: "雍和宫" },
