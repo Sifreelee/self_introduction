@@ -2,9 +2,15 @@
 """一键压缩 + 统一转 JPG + 自动更新 data.js（全自动版）
 
 用法（超简单）：
-  1. 把新照片丢进 assets/images 文件夹（什么格式都行）
-  2. 双击 compress.bat
+  1. 把新照片丢进某个文件夹（什么格式都行）
+  2. 双击 compress.bat，输入文件夹路径（直接回车 = assets/images）
+     也可以把文件夹直接拖到 compress.bat 上
   3. 完事，不用再做任何操作
+
+命令行用法：
+  python compress.py                            # 交互式输入文件夹，直接回车用 assets/images
+  python compress.py --dir "F:\\照片\\敦煌"       # 指定文件夹
+  python compress.py --dir "F:\\照片\\敦煌" -r    # 连子文件夹一起处理
 
 脚本会自动完成：
   · 把 png / webp / bmp 等统一转成 .jpg（透明的地方补白底）
@@ -24,14 +30,18 @@
   · .svg 矢量图（网站的山水背景、占位图等）—— 原样保留
   · .gif 动图 —— 原样保留（转成 jpg 会丢动画）
 """
+import argparse
 import os
 import re
 from PIL import Image, ImageOps
 
 # ─────────── 配置 ───────────
 BASE = r"F:\WorkBuddy\personal-website"
-IMG_DIR = os.path.join(BASE, "assets", "images")
+DEFAULT_IMG_DIR = os.path.join(BASE, "assets", "images")
 DATA_JS = os.path.join(BASE, "js", "data.js")
+
+IMG_DIR = DEFAULT_IMG_DIR   # 实际处理的文件夹，入口处会按参数/输入改写
+RECURSIVE = False           # 是否连子文件夹一起处理
 
 MAX_SIDE = 1600
 QUALITY = 82
@@ -107,11 +117,63 @@ def check_missing_refs():
     return missing
 
 
-def main():
+def resolve_dir():
+    """决定要处理哪个文件夹：命令行 --dir 优先，否则交互式询问（直接回车用默认）。"""
+    ap = argparse.ArgumentParser(description="图片压缩 + 统一转 JPG（原地覆盖，不保留原图）")
+    ap.add_argument("--dir", default="", help="要处理的文件夹，默认 assets/images")
+    ap.add_argument("-r", "--recursive", action="store_true", help="连子文件夹一起处理")
+    args = ap.parse_args()
+
+    global IMG_DIR, RECURSIVE
+    RECURSIVE = args.recursive
+
+    folder = (args.dir or "").strip().strip('"')
+    if not folder:
+        try:
+            folder = input("要压缩哪个文件夹？直接回车 = %s\n> " % DEFAULT_IMG_DIR).strip().strip('"')
+        except EOFError:
+            folder = ""
+    if not folder:
+        folder = DEFAULT_IMG_DIR
+
+    folder = os.path.abspath(os.path.expanduser(folder))
+    if not os.path.isdir(folder):
+        raise SystemExit("这个文件夹不存在：%s" % folder)
+    IMG_DIR = folder
+    return folder
+
+
+def list_files():
+    """列出待处理的文件，返回 (相对路径或文件名, 完整路径) 列表。"""
     # 扫描范围包含 svg / gif，好让下面的「已保护」提示能如实列出它们
     exts = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".svg", ".gif")
-    files = sorted(f for f in os.listdir(IMG_DIR)
-                   if f.lower().endswith(exts) and not f.startswith("_"))
+    out = []
+    if RECURSIVE:
+        for root, _dirs, names in os.walk(IMG_DIR):
+            for n in names:
+                if n.lower().endswith(exts) and not n.startswith("_"):
+                    out.append((os.path.relpath(os.path.join(root, n), IMG_DIR),
+                                os.path.join(root, n)))
+    else:
+        for n in sorted(os.listdir(IMG_DIR)):
+            p = os.path.join(IMG_DIR, n)
+            if n.lower().endswith(exts) and not n.startswith("_") and os.path.isfile(p):
+                out.append((n, p))
+    return sorted(out)
+
+
+def main():
+    folder = resolve_dir()
+    # 只有处理网站自己的图片目录时，才有意义去同步 data.js
+    sync_js = (os.path.normcase(os.path.abspath(folder))
+               == os.path.normcase(os.path.abspath(DEFAULT_IMG_DIR)))
+
+    print("处理文件夹：%s%s" % (folder, "（含子文件夹）" if RECURSIVE else ""))
+    if not sync_js:
+        print("（这不是网站的 assets/images，不会改动 data.js）")
+    print("")
+
+    files = list_files()
 
     report = []
     rename_map = {}   # 旧文件名 -> 新文件名
@@ -119,8 +181,7 @@ def main():
     skipped = 0
     protected = []    # svg / gif，原样保留
 
-    for name in files:
-        path = os.path.join(IMG_DIR, name)
+    for name, path in files:
         ext = os.path.splitext(name)[1].lower()
 
         if ext in NEVER_TOUCH:
@@ -145,7 +206,7 @@ def main():
 
         # 目标文件名若已被别的图占用，跳过（不覆盖、也不删除，因为没有原图备份了）
         base, _e = os.path.splitext(name)
-        target_path = os.path.join(IMG_DIR, base + ".jpg")
+        target_path = os.path.splitext(path)[0] + ".jpg"
         same_file = (os.path.normcase(os.path.abspath(target_path))
                      == os.path.normcase(os.path.abspath(path)))
         if os.path.exists(target_path) and not same_file:
@@ -154,7 +215,7 @@ def main():
             continue
 
         # 先写临时文件，成功后再替换原图：压缩失败时原图不受影响
-        tmp_path = os.path.join(IMG_DIR, "__tmp_%d.jpg" % os.getpid())
+        tmp_path = os.path.join(os.path.dirname(path), "__tmp_%d.jpg" % os.getpid())
         try:
             save_jpg(path, tmp_path)
             new_size = os.path.getsize(tmp_path)
@@ -172,11 +233,11 @@ def main():
             name, base + ".jpg", size / 1048576.0, new_size / 1048576.0))
         changed += 1
 
-    # 自动更新 data.js
-    sync_count = update_data_js(rename_map)
+    # 自动更新 data.js（只在处理网站图片目录时才做）
+    sync_count = update_data_js(rename_map) if sync_js else 0
 
-    # 检查缺失引用
-    missing = check_missing_refs()
+    # 检查缺失引用（同上，只对网站图片目录有意义）
+    missing = check_missing_refs() if sync_js else []
 
     if not report:
         report.append("没有需要处理的图片（已全部是 jpg，且都在 800KB / 1600px 以内）")
@@ -187,20 +248,21 @@ def main():
         more = " 等 %d 个" % len(protected) if len(protected) > 8 else ""
         report.append("已保护 %d 个文件，原样不动：%s%s" % (len(protected), shown, more))
         report.append("（svg 矢量图与 gif 动图不会被压缩或转换）")
-    if rename_map:
-        report.append("已自动更新 data.js 中 %d 处文件名引用（如 png→jpg）。" % sync_count)
-    if missing:
-        report.append("")
-        report.append("注意：data.js 引用了但 images 里没有的文件：")
-        report.extend("  · " + m for m in missing)
-    else:
-        report.append("data.js 引用检查：全部正常。")
+    if sync_js:
+        if rename_map:
+            report.append("已自动更新 data.js 中 %d 处文件名引用（如 png→jpg）。" % sync_count)
+        if missing:
+            report.append("")
+            report.append("注意：data.js 引用了但 images 里没有的文件：")
+            report.extend("  · " + m for m in missing)
+        else:
+            report.append("data.js 引用检查：全部正常。")
 
     msg = "\n".join(report)
     print(msg)
     try:
         import ctypes
-        ctypes.windll.user32.MessageBoxW(0, msg, "处理完成（已统一为 jpg 并同步 data.js）", 0)
+        ctypes.windll.user32.MessageBoxW(0, msg, "处理完成（已统一为 jpg）", 0)
     except Exception:
         pass
 

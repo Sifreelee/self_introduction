@@ -40,6 +40,11 @@
      想连中文名的文件一起改，加 --allow-chinese
   2. 已经叫 <前缀><数字> 的文件自动跳过，重复运行不会把编号搞乱（除非加 --force）
 
+被上面两条挡下的文件不会从清单里消失：它们保持原名，但照样写进
+照片清单 / 对照表 / data.js 片段，排在改名条目之后，整段复制即可。
+（只想要改名部分的话，加 --exclude-kept）
+注意「最近 N 张」现在按全部图片计数（含中文名的），不是只数要改名的。
+
 说明：
   · 不删图、不压缩，只改文件名；编号默认按「文件修改时间」= 导入顺序
   · 改名分两步走（先临时名再正式名），中途出错也不会把两张图撞成同一个名字
@@ -103,40 +108,56 @@ def parse_time(text):
 
 
 def select_files(items, mode, arg, sort_by, prefix, force, allow_chinese=False):
-    """按模式挑出要处理的文件并排序，返回 (files, 跳过已编号数, 跳过中文名数)。"""
-    # 规则一：文件名含中文的一律跳过（多为已整理好的图，避免误改）
-    if not allow_chinese:
-        kept = [(m, n) for m, n in items if not has_cjk(n)]
-        skipped_cjk = len(items) - len(kept)
-        items = kept
-    else:
-        skipped_cjk = 0
+    """先按模式圈定「这一批」，再套两条保护规则。
 
-    # 规则二：已经编过号的（同前缀）默认跳过，避免重复运行时二次编号
-    if not force and prefix:
-        pat = re.compile(r"^%s\d+\.[A-Za-z0-9]+$" % re.escape(prefix), re.I)
-        picked = [(m, n) for m, n in items if not pat.match(n)]
-        skipped_existing = len(items) - len(picked)
-        items = picked
-    else:
-        skipped_existing = 0
+    顺序很重要：先圈范围、后套规则，这样被保护规则挡下的文件仍属于这一批，
+    能一并写进清单；反过来的话，别的图集里的中文名文件也会被误带进来。
 
+    返回 (files, keeps, 跳过已编号数, 跳过中文名数)
+      files —— 要改名的 [(mtime, 文件名)]，已按 sort_by 排好序
+      keeps —— 在范围内但不改名的 [(文件名, 原因)]，同样排好序
+    """
+    # 1) 先圈定本次处理的范围（中文名、已编号的都先算进来）
     if mode == "newest":
-        items = sorted(items, key=lambda x: (-x[0], x[1]))[:int(arg)]
+        scoped = sorted(items, key=lambda x: (-x[0], x[1]))[:int(arg)]
     elif mode == "since":
         cut = parse_time(arg)
-        items = [x for x in items if x[0] >= cut]
+        scoped = [x for x in items if x[0] >= cut]
     elif mode == "match":
         key = arg.lower()
-        items = [x for x in items if key in x[1].lower()]
-    elif mode == "all":
-        pass
+        scoped = [x for x in items if key in x[1].lower()]
+    else:                       # all
+        scoped = list(items)
+
+    # 2) 规则一：文件名含中文的不改名（多为已整理好的图，避免误改）
+    keeps = []                  # [(mtime, 文件名, 原因)]
+    if not allow_chinese:
+        rest, cjk = [], []
+        for x in scoped:
+            (cjk if has_cjk(x[1]) else rest).append(x)
+        keeps += [(m, n, "中文文件名，保持原样") for m, n in cjk]
+        skipped_cjk = len(cjk)
+    else:
+        rest, skipped_cjk = scoped, 0
+
+    # 3) 规则二：已经编过号的（同前缀）不改名，避免重复运行时二次编号
+    if not force and prefix:
+        pat = re.compile(r"^%s\d+\.[A-Za-z0-9]+$" % re.escape(prefix), re.I)
+        picked, numbered = [], []
+        for x in rest:
+            (numbered if pat.match(x[1]) else picked).append(x)
+        keeps += [(m, n, "已经是 %s+数字，不重复编号" % prefix) for m, n in numbered]
+        skipped_existing = len(numbered)
+    else:
+        picked, skipped_existing = rest, 0
 
     if sort_by == "time":
-        items = sorted(items, key=lambda x: (x[0], x[1]))
+        files = sorted(picked, key=lambda x: (x[0], x[1]))
+        keeps_sorted = sorted(keeps, key=lambda x: (x[0], x[1]))
     else:
-        items = sorted(items, key=lambda x: x[1])
-    return items, skipped_existing, skipped_cjk
+        files = sorted(picked, key=lambda x: x[1])
+        keeps_sorted = sorted(keeps, key=lambda x: x[1])
+    return files, [(n, why) for _m, n, why in keeps_sorted], skipped_existing, skipped_cjk
 
 
 def build_plan(files, prefix, start, pad):
@@ -149,11 +170,16 @@ def build_plan(files, prefix, start, pad):
     return plan
 
 
-def print_plan(plan, folder):
+def print_plan(plan, folder, keeps=()):
     print("\n将要这样改（共 %d 张）：" % len(plan))
     print("-" * 62)
     for old, new, title in plan:
         print("  %-42s -> %s" % (old, new))
+    if keeps:
+        print("-" * 62)
+        print("以下 %d 张不改文件名，但会原样写进清单：" % len(keeps))
+        for name, why in keeps:
+            print("  %-42s （%s）" % (name, why))
     print("-" * 62)
     print("所在文件夹：%s\n" % folder)
 
@@ -178,16 +204,24 @@ def do_rename(folder, plan):
 
 
 # ───────────────────────── 输出文件 ─────────────────────────
-def write_outputs(out_dir, prefix, plan, city, seal):
-    """输出照片清单 / 对照表 / data.js 片段。"""
+def write_outputs(out_dir, prefix, plan, city, seal, keeps=()):
+    """输出照片清单 / 对照表 / data.js 片段。
+
+    keeps 是「不改名但要列入清单」的文件 [(文件名, 原因)]，
+    中文名文件就走这条路：文件名不动，照样出现在清单里方便整段复制。
+    """
     os.makedirs(out_dir, exist_ok=True)
     made = []
+
+    # 保持原名的条目：文件名即最终名，标题 = 去掉扩展名
+    kept_items = [(name, name, os.path.splitext(name)[0]) for name, _why in keeps]
+    everything = list(plan) + kept_items
 
     # 1) 照片清单：add-tool.html 的「照片清单」框，格式 = 文件名 空格 标题
     #    注意：必须带扩展名，否则 add-tool 会给 png/webp 自动补成 .jpg，引用就断了
     list_path = os.path.join(out_dir, "%s_照片清单.txt" % prefix)
     with open(list_path, "w", encoding="utf-8") as f:
-        for _old, new, title in plan:
+        for _old, new, title in everything:
             f.write("%s %s\n" % (new, title))
     made.append(list_path)
 
@@ -198,9 +232,13 @@ def write_outputs(out_dir, prefix, plan, city, seal):
         w.writerow(["编号", "新文件名", "照片标题", "原文件名"])
         for old, new, title in plan:
             w.writerow([os.path.splitext(new)[0], new, title, old])
+        for name, _why in keeps:
+            w.writerow(["原名保留", name, os.path.splitext(name)[0], name])
         w.writerow([])
-        w.writerow(["说明：标题取自原文件名（去掉扩展名）；"
-                    "需要回滚时执行 python rename_album.py --rollback \"%s\"" % os.path.basename(csv_path)])
+        w.writerow(["说明：标题取自文件名（去掉扩展名）；「原名保留」行的文件名未被改动，"
+                    "回滚时会自动跳过。"])
+        w.writerow(["回滚命令：python rename_album.py --rollback \"%s\""
+                    % os.path.basename(csv_path)])
     made.append(csv_path)
 
     # 3) data.js 片段（给了城市名才生成）
@@ -211,7 +249,7 @@ def write_outputs(out_dir, prefix, plan, city, seal):
             lines.append('      seal: "%s",' % seal)
         lines.append("      photos: [")
         body = []
-        for _old, new, title in plan:
+        for _old, new, title in everything:
             body.append('        { src: "assets/images/%s", title: "%s" }' % (new, title))
         lines.append(",\n".join(body))
         lines.append("      ]")
@@ -227,9 +265,11 @@ def rollback(csv_path, folder):
     """用对照表把文件名改回原来的样子。"""
     with open(csv_path, "r", encoding="utf-8-sig") as f:
         rows = list(csv.DictReader(f))
-    plan = [(r["新文件名"], r["原文件名"]) for r in rows if r.get("新文件名") and r.get("原文件名")]
+    # 「原名保留」行（中文名文件）新旧同名，直接跳过，不做无谓的改名
+    plan = [(r["新文件名"], r["原文件名"]) for r in rows
+            if r.get("新文件名") and r.get("原文件名") and r["新文件名"] != r["原文件名"]]
     if not plan:
-        raise SystemExit("对照表里没读到有效内容：%s" % csv_path)
+        raise SystemExit("对照表里没读到有效内容（或全部是「原名保留」行，无需回滚）：%s" % csv_path)
     print("准备把 %d 个文件改回原名：" % len(plan))
     for new, old in plan[:10]:
         print("  %s -> %s" % (new, old))
@@ -286,17 +326,18 @@ def interactive():
     pad = int(pad_raw or 0)
     allow_cjk = ask("\n7) 连中文文件名的文件一起改？[y/N]", "n").lower() == "y"
 
-    files, skipped, skipped_cjk = select_files(items, mode, arg, sort_by, prefix,
-                                               force=False, allow_chinese=allow_cjk)
+    files, keeps, skipped, skipped_cjk = select_files(items, mode, arg, sort_by, prefix,
+                                                      force=False, allow_chinese=allow_cjk)
     if skipped_cjk:
-        print("\n（已跳过 %d 个中文文件名的文件，编号会在剩下的图里接着排）" % skipped_cjk)
+        print("\n（%d 个中文文件名的文件不改名，编号在剩下的图里接着排，"
+              "但它们会原样写进清单）" % skipped_cjk)
     if skipped:
-        print("（已跳过 %d 个早就叫 %s+数字 的文件，避免重复编号）" % (skipped, prefix))
-    if not files:
+        print("（%d 个早就叫 %s+数字 的文件不重复编号，同样写进清单）" % (skipped, prefix))
+    if not files and not keeps:
         raise SystemExit("按这个条件没选到任何图片。")
 
     plan = build_plan(files, prefix, start, pad)
-    print_plan(plan, folder)
+    print_plan(plan, folder, keeps)
 
     conflicts = find_conflicts(folder, plan)
     if conflicts:
@@ -315,7 +356,7 @@ def interactive():
     city = ask("\n要不要顺带生成 data.js 片段？需要就填城市名（如 中国 长春），不需要直接回车")
     city = city if city else ""
     seal = ask("印章字（1 个字，可留空）") if city else ""
-    made = write_outputs(ask("\n清单输出到哪个文件夹", DEFAULT_OUT), prefix, plan, city, seal)
+    made = write_outputs(ask("\n清单输出到哪个文件夹", DEFAULT_OUT), prefix, plan, city, seal, keeps)
     print("\n已生成：")
     for p in made:
         print("  " + p)
@@ -343,6 +384,8 @@ def main():
     ap.add_argument("--force", action="store_true", help="连已经编过号的同前缀文件也一起重编")
     ap.add_argument("--allow-chinese", action="store_true",
                     help="默认跳过中文文件名的文件；加这个参数才连它们一起改")
+    ap.add_argument("--exclude-kept", action="store_true",
+                    help="清单里只列本次改名的文件，不列入「保持原名」的中文名文件")
     ap.add_argument("--dry-run", action="store_true", help="只预览不改文件")
     ap.add_argument("--yes", action="store_true", help="跳过确认直接执行")
     ap.add_argument("--rollback", help="传入对照表 csv，把文件名改回原名")
@@ -366,17 +409,19 @@ def main():
     else:
         mode, arg = "all", None
 
-    files, skipped, skipped_cjk = select_files(items, mode, arg, args.sort, args.prefix,
-                                               args.force, args.allow_chinese)
+    files, keeps, skipped, skipped_cjk = select_files(items, mode, arg, args.sort, args.prefix,
+                                                      args.force, args.allow_chinese)
     if skipped_cjk:
-        print("（跳过 %d 个中文文件名的文件，编号在剩余图片上继续）" % skipped_cjk)
+        print("（%d 个中文文件名的文件不改名，编号在剩余图片上继续，但会原样写进清单）" % skipped_cjk)
     if skipped:
-        print("（跳过 %d 个已编号为 %s+数字 的文件）" % (skipped, args.prefix))
-    if not files:
+        print("（%d 个已编号为 %s+数字 的文件不重复编号，同样写进清单）" % (skipped, args.prefix))
+    if args.exclude_kept:
+        keeps = []
+    if not files and not keeps:
         raise SystemExit("没有符合条件的图片。")
 
     plan = build_plan(files, args.prefix, args.start, args.pad)
-    print_plan(plan, args.dir)
+    print_plan(plan, args.dir, keeps)
 
     if args.dry_run:
         print("预览模式，未改动任何文件。去掉 --dry-run 才会真的执行。")
@@ -395,7 +440,7 @@ def main():
 
     do_rename(args.dir, plan)
     print("改名完成，共 %d 张。" % len(plan))
-    made = write_outputs(args.out, args.prefix, plan, args.city, args.seal)
+    made = write_outputs(args.out, args.prefix, plan, args.city, args.seal, keeps)
     print("已生成：")
     for p in made:
         print("  " + p)

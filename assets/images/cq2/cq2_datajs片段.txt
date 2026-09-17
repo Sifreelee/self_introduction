@@ -1,0 +1,25 @@
+    {
+      city: "重庆",
+      seal: "1",
+      photos: [
+        { src: "assets/images/cq201.jpg", title: "202601重庆元旦扫街27" },
+        { src: "assets/images/cq202.png", title: "202601重庆元旦扫街33" },
+        { src: "assets/images/cq203.jpg", title: "202601重庆元旦扫街47" },
+        { src: "assets/images/cq204.jpg", title: "202601重庆元旦扫街48" },
+        { src: "assets/images/cq205.jpg", title: "202601重庆元旦扫街50" },
+        { src: "assets/images/cq206.jpg", title: "202601重庆元旦扫街51" },
+        { src: "assets/images/cq207.jpg", title: "202604重庆金佛山沙坪坝22" },
+        { src: "assets/images/cq208.jpg", title: "202604重庆金佛山沙坪坝26" },
+        { src: "assets/images/cq209.jpg", title: "202604重庆金佛山沙坪坝42" },
+        { src: "assets/images/cq210.jpg", title: "202605重庆华岩寺彩云湖01" },
+        { src: "assets/images/cq211.jpg", title: "202605重庆华岩寺彩云湖10" },
+        { src: "assets/images/cq212.jpg", title: "202606重庆南岸23" },
+        { src: "assets/images/cq213.jpg", title: "202606重庆南岸36" },
+        { src: "assets/images/cq214.jpg", title: "202606重庆南岸53" },
+        { src: "assets/images/cq215.jpg", title: "202606重庆南岸56" },
+        { src: "assets/images/cq216.png", title: "202601重庆元旦扫街57" },
+        { src: "assets/images/cq217.png", title: "202604重庆金佛山沙坪坝44" },
+        { src: "assets/images/cq218.png", title: "202606重庆南岸39" },
+        { src: "assets/images/cq219.png", title: "202606重庆南岸55" }
+      ]
+    },
