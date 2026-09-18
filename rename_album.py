@@ -204,14 +204,23 @@ def do_rename(folder, plan):
 
 
 # ───────────────────────── 输出文件 ─────────────────────────
-def write_outputs(out_dir, prefix, plan, city, seal, keeps=()):
+def write_outputs(out_dir, prefix, plan, city, seal, keeps=(), img_dir=None):
     """输出照片清单 / 对照表 / data.js 片段。
 
     keeps 是「不改名但要列入清单」的文件 [(文件名, 原因)]，
     中文名文件就走这条路：文件名不动，照样出现在清单里方便整段复制。
+    img_dir 是照片所在文件夹：如果它在 assets/images 的子目录里，
+    生成的网页路径会自动带上子目录，一律用正斜杠。
     """
     os.makedirs(out_dir, exist_ok=True)
     made = []
+
+    # 网页路径前缀：assets/images，或在它下面的子目录（统一正斜杠）
+    web_prefix = "assets/images"
+    if img_dir:
+        rel = os.path.relpath(os.path.abspath(img_dir), DEFAULT_IMG_DIR).replace("\\", "/")
+        if rel and rel != "." and not rel.startswith(".."):
+            web_prefix = "%s/%s" % (web_prefix, rel)
 
     # 保持原名的条目：文件名即最终名，标题 = 去掉扩展名
     kept_items = [(name, name, os.path.splitext(name)[0]) for name, _why in keeps]
@@ -250,13 +259,14 @@ def write_outputs(out_dir, prefix, plan, city, seal, keeps=()):
         lines.append("      photos: [")
         body = []
         for _old, new, title in everything:
-            body.append('        { src: "assets/images/%s", title: "%s" }' % (new, title))
+            body.append('        { src: "%s/%s", title: "%s" }' % (web_prefix, new, title))
         lines.append(",\n".join(body))
         lines.append("      ]")
         lines.append("    },")
         with open(snippet_path, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
         made.append(snippet_path)
+        print("网页路径前缀：%s（填到 add-tool 的「图片所在文件夹」就是它）" % web_prefix)
 
     return made
 
@@ -356,7 +366,7 @@ def interactive():
     city = ask("\n要不要顺带生成 data.js 片段？需要就填城市名（如 中国 长春），不需要直接回车")
     city = city if city else ""
     seal = ask("印章字（1 个字，可留空）") if city else ""
-    made = write_outputs(ask("\n清单输出到哪个文件夹", DEFAULT_OUT), prefix, plan, city, seal, keeps)
+    made = write_outputs(ask("\n清单输出到哪个文件夹", DEFAULT_OUT), prefix, plan, city, seal, keeps, folder)
     print("\n已生成：")
     for p in made:
         print("  " + p)
@@ -440,7 +450,7 @@ def main():
 
     do_rename(args.dir, plan)
     print("改名完成，共 %d 张。" % len(plan))
-    made = write_outputs(args.out, args.prefix, plan, args.city, args.seal, keeps)
+    made = write_outputs(args.out, args.prefix, plan, args.city, args.seal, keeps, args.dir)
     print("已生成：")
     for p in made:
         print("  " + p)

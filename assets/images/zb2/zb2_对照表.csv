@@ -1,0 +1,25 @@
+﻿编号,新文件名,照片标题,原文件名
+zb201,zb201.jpg,DSC_1484,DSC_1484.jpg
+zb202,zb202.jpg,DSC_3160,DSC_3160.jpg
+zb203,zb203.jpg,DSC_3509,DSC_3509.jpg
+zb204,zb204.jpg,DSC_4447,DSC_4447.jpg
+zb205,zb205.jpg,retouch_2023081415022367,retouch_2023081415022367.jpg
+zb206,zb206.jpg,retouch_2023082120570550,retouch_2023082120570550.jpg
+zb207,zb207.jpg,retouch_2024011315560220,retouch_2024011315560220.jpg
+zb208,zb208.jpg,retouch_2024012113143749,retouch_2024012113143749.jpg
+zb209,zb209.jpg,retouch_2024012519452743,retouch_2024012519452743.jpg
+zb210,zb210.jpg,retouch_2024012520180953,retouch_2024012520180953.jpg
+zb211,zb211.jpg,retouch_2024081613422183,retouch_2024081613422183.jpg
+zb212,zb212.jpg,retouch_2024081613493452,retouch_2024081613493452.jpg
+zb213,zb213.jpg,retouch_2024081614063563,retouch_2024081614063563.jpg
+zb214,zb214.jpg,retouch_2024081614164079,retouch_2024081614164079.jpg
+zb215,zb215.jpg,retouch_2024081614285586,retouch_2024081614285586.jpg
+zb216,zb216.jpg,retouch_2025021217263502,retouch_2025021217263502.jpg
+zb217,zb217.jpg,retouch_2025021217592952,retouch_2025021217592952.jpg
+zb218,zb218.jpg,retouch_2025021218191681,retouch_2025021218191681.jpg
+zb219,zb219.jpg,retouch_2026021700295534,retouch_2026021700295534.jpg
+原名保留,八大局.jpg,八大局,八大局.jpg
+原名保留,唐库.jpg,唐库,唐库.jpg
+
+说明：标题取自文件名（去掉扩展名）；「原名保留」行的文件名未被改动，回滚时会自动跳过。
+"回滚命令：python rename_album.py --rollback ""zb2_对照表.csv"""

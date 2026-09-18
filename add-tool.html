@@ -205,6 +205,16 @@
     function val(id) { return $(id).value.trim(); }
     function esc(s) { return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"'); }
 
+    // 路径统一成正斜杠：从资源管理器复制来的路径是反斜杠，
+    // 直接拼进网页链接会变成 assets\images\zb2/zb201.jpg 这种混写（Linux 服务器上是 404）
+    function normPath(p) {
+      return String(p == null ? "" : p)
+        .replace(/\\/g, "/")        // 反斜杠 → 正斜杠
+        .replace(/\/{2,}/g, "/")    // 重复斜杠合并
+        .replace(/^\.\//, "")       // 去掉开头的 ./
+        .replace(/^\/+|\/+$/g, ""); // 去掉首尾斜杠
+    }
+
     // 文件名没写扩展名时自动补 .jpg；已带图片扩展名的保持原样
     var IMG_EXT = ["jpg", "jpeg", "png", "webp", "gif", "svg", "avif", "bmp"];
     function fixExt(name) {
@@ -349,12 +359,12 @@
         if (!city) return { err: "请填写城市名" };
         var lines = $("p-list").value.split("\n").map(function (s) { return s.trim(); }).filter(function (s) { return s; });
         if (!lines.length) return { err: "请至少填写一张照片" };
-        var base = (val("p-base") || "assets/images").replace(/\/+$/, "");
+        var base = normPath(val("p-base") || "assets/images");
         var items = lines.map(function (ln) {
           var sp = ln.indexOf(" ");
           var src = sp > -1 ? ln.slice(0, sp) : ln;
           var title = sp > -1 ? ln.slice(sp + 1).trim() : "";
-          src = fixExt(src);
+          src = normPath(fixExt(src));
           return '        { src: "' + esc(base) + '/' + src + '", title: "' + esc(title) + '" }';
         }).join(",\n");
         var sealLine = seal ? '      seal: "' + esc(seal) + '",\n' : "";
@@ -371,7 +381,7 @@
         if (!t) return { err: "请填写游记标题" };
         var paras = val("t-content").split("\n").map(function (s) { return s.trim(); }).filter(function (s) { return s; });
         var contentLines = paras.map(function (p) { return '        "' + esc(p) + '"'; }).join(",\n");
-        var coverLine = cover ? ('assets/images/' + cover) : "assets/images/travel-1.svg";
+        var coverLine = cover ? ('assets/images/' + normPath(cover)) : "assets/images/travel-1.svg";
         return { text: '    {\n      title: "' + esc(t) + '",\n      place: "' + esc(place2) + '",\n      date: "' + esc(date) + '",\n      cover: "' + coverLine + '",\n      excerpt: "' + esc(excerpt) + '",\n      content: [\n' + (contentLines || '        ""') + '\n      ]\n    }' + comma };
       }
       return { err: "未知类型" };
