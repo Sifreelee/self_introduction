@@ -148,7 +148,7 @@ const SITE_DATA = {
         { src: "assets/images/bj2/bj202.jpg", title: "雍和宫其三" },
         { src: "assets/images/bj2/bj203.jpg", title: "雍和宫其四" },  
         { src: "assets/images/bj2/bj204.jpg", title: "国子监小胡同" },
-        { src: "assets/images/bj2/bj205.jpg", title: "天坛公园" },
+        { src: "assets/images/bj2/bj205.jpg", title: "地坛公园" },
         { src: "assets/images/bj2/bj206.jpg", title: "北京智化寺" },
         { src: "assets/images/bj2/bj207.jpg", title: "北京站" },
         { src: "assets/images/bj2/bj208.jpg", title: "中山公园 西雁翅楼" },
