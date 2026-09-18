@@ -358,29 +358,144 @@ function emptyTip(text) {
   return `<div class="empty-tip reveal">${esc(text)}</div>`;
 }
 
+/* ═══════════ 图集缩略图选择器（点击相册封面先弹出，一行三张、可下滑） ═══════════ */
+const albumBrowser = $("#album-browser");
+let browserPhotos = [];   // 当前选择器里的照片数组
+let browserGroup = null;  // 当前图集对象（含 city / seal）
+
+/* 右侧极细下滑进度条：按滚动比例定位滑块；内容不足一屏时整条隐藏 */
+function updateBrowserRail() {
+  const grid = $("#album-browser-grid");
+  const rail = $("#album-browser-rail");
+  const thumb = $("#album-browser-rail-thumb");
+  if (!grid || !rail || !thumb) return;
+  const total = grid.scrollHeight;
+  const view = grid.clientHeight;
+  if (!view || total <= view + 2) { rail.classList.remove("is-on"); return; }
+  rail.classList.add("is-on");
+  const railH = rail.clientHeight;
+  const thumbH = Math.max(24, railH * view / total);
+  const ratio = Math.min(1, Math.max(0, grid.scrollTop / (total - view)));
+  thumb.style.height = thumbH + "px";
+  thumb.style.transform = `translateY(${ratio * (railH - thumbH)}px)`;
+}
+
+$("#album-browser-grid").addEventListener("scroll", updateBrowserRail, { passive: true });
+window.addEventListener("resize", updateBrowserRail);
+
+/* 瀑布流占位：网格行高 8px、间距 14px，按单元格实际高度换算成占几行，
+   这样高矮不一的照片能各自贴着上一张排，空位被压到最小 */
+const ROW = 8, GAP = 14;
+const thumbMasonry = window.ResizeObserver ? new ResizeObserver((entries) => {
+  for (const en of entries) {
+    const cell = en.target;
+    const h = cell.getBoundingClientRect().height;
+    if (!h) continue;
+    cell.style.gridRowEnd = `span ${Math.max(1, Math.ceil((h + GAP) / (ROW + GAP)))}`;
+  }
+  updateBrowserRail();
+}) : null;
+
+function openAlbum(gi) {
+  const group = SITE_DATA.photos[gi];
+  if (!group || !group.photos.length) return;
+  browserGroup = group;
+  browserPhotos = group.photos;
+
+  // 标题 / 印章 / 数量
+  const title = $("#album-browser-title");
+  title.textContent = group.city;
+  const seal = $("#album-browser-seal");
+  seal.textContent = group.seal || (SITE_DATA.site && SITE_DATA.site.photoSeal) || "影";
+  seal.style.display = seal.textContent ? "flex" : "none";
+  $("#album-browser-count").textContent = `共 ${group.photos.length} 张`;
+
+  // 渲染缩略图（一行三张）
+  const grid = $("#album-browser-grid");
+  // 直接摆照片：一行三张，各自保留原始比例，不再塞进统一的小方框
+  grid.innerHTML = group.photos.map((p, i) => `
+    <button class="thumb-cell reveal" data-i="${i}" type="button" aria-label="查看 ${esc(p.title)}">
+      <img src="${esc(p.src)}" alt="${esc(p.title)}">
+      <span class="thumb-title">${esc(p.title)}</span>
+    </button>`).join("");
+  // 瀑布流占位：按每张实际高度占掉对应的细行数，尽量补平高低差带来的空位
+  if (thumbMasonry) {
+    thumbMasonry.disconnect();
+    grid.querySelectorAll(".thumb-cell").forEach((c) => thumbMasonry.observe(c));
+  }
+  grid.querySelectorAll("img").forEach((img, i) =>
+    bindImgFallback(img, `assets/images/travel-${(i % 6) + 1}.svg`));
+
+  // 点击缩略图 → 进灯箱（此时才把图集交给灯箱，保证灯箱拿到照片列表）
+  grid.querySelectorAll(".thumb-cell").forEach((el) => {
+    el.addEventListener("click", () => {
+      albumPhotos = browserPhotos;
+      albumCity = browserGroup ? browserGroup.city : "";
+      openLightbox(+el.dataset.i);
+    });
+  });
+
+  albumBrowser.classList.add("open");
+  albumBrowser.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  // 渐入：滚动容器先滚回顶部，再让缩略图依次浮现
+  grid.scrollTop = 0;
+  const cells = grid.querySelectorAll(".thumb-cell");
+  cells.forEach((el, i) => { el.style.animationDelay = `${Math.min(i, 24) * 0.04}s`; });
+
+  // 进度条：图片陆续加载会改变总高度，得多刷几次
+  updateBrowserRail();
+  requestAnimationFrame(updateBrowserRail);
+  grid.querySelectorAll("img").forEach((img) => {
+    if (!img.complete) img.addEventListener("load", updateBrowserRail, { once: true });
+  });
+  setTimeout(updateBrowserRail, 400);
+}
+
+function closeAlbumBrowser() {
+  albumBrowser.classList.remove("open");
+  albumBrowser.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+$("#album-browser-close").addEventListener("click", closeAlbumBrowser);
+albumBrowser.querySelector(".album-browser-backdrop").addEventListener("click", closeAlbumBrowser);
+
 /* ═══════════ 灯箱（支持图集内多张切换） ═══════════ */
 const lightbox = $("#lightbox");
 let albumPhotos = [];   // 当前图集的照片数组
 let albumCity = "";     // 当前图集城市名
 let albumIndex = 0;     // 当前照片索引
 
+/* 玻璃壳要严丝合缝贴着照片：照片被 max-height 压窄后，外层 span 不会自动跟着缩，
+   所以按照片的实际渲染尺寸把壳子对齐一次（切换照片 / 改窗口都会触发） */
+const lightboxShell = document.querySelector(".lightbox-shot");
+const lightboxImg = $("#lightbox-img");
+if (lightboxShell && lightboxImg && window.ResizeObserver) {
+  new ResizeObserver(() => {
+    const w = lightboxImg.offsetWidth, h = lightboxImg.offsetHeight;
+    if (!w || !h) return;
+    if (Math.abs(lightboxShell.offsetWidth - w) < 1 && Math.abs(lightboxShell.offsetHeight - h) < 1) return;
+    lightboxShell.style.width = w + "px";
+    lightboxShell.style.height = h + "px";
+  }).observe(lightboxImg);
+}
+
 function showLightboxPhoto() {
   const ph = albumPhotos[albumIndex];
   if (!ph) return;
-  $("#lightbox-img").src = ph.src;
-  $("#lightbox-img").alt = ph.title;
-  $("#lightbox-caption").textContent = `${ph.title} · ${albumCity}`;
+  const img = $("#lightbox-img");
+  img.src = ph.src;
+  img.alt = ph.title;
+  // 没写标题时只显示城市名，避免出现「 · 北京」这种空标题
+  $("#lightbox-caption").textContent = ph.title ? `${ph.title} · ${albumCity}` : albumCity;
   // 只有一张照片时隐藏切换按钮
   $("#lightbox-prev").style.display = albumPhotos.length > 1 ? "flex" : "none";
   $("#lightbox-next").style.display = albumPhotos.length > 1 ? "flex" : "none";
 }
 
-function openAlbum(gi) {
-  const group = SITE_DATA.photos[gi];
-  if (!group || !group.photos.length) return;
-  albumPhotos = group.photos;
-  albumCity = group.city;
-  albumIndex = 0;
+function openLightbox(index) {
+  if (!albumPhotos.length) return;
+  albumIndex = (index + albumPhotos.length) % albumPhotos.length;
   showLightboxPhoto();
   lightbox.classList.add("open");
   lightbox.setAttribute("aria-hidden", "false");
@@ -397,6 +512,10 @@ function closeLightbox() {
   lightbox.classList.remove("open");
   lightbox.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+  // 关闭灯箱后回到缩略图选择器（它仍开着），而不是直接回到照片墙
+  if (albumBrowser.classList.contains("open")) {
+    document.body.style.overflow = "hidden";
+  }
 }
 $("#lightbox-close").addEventListener("click", closeLightbox);
 lightbox.querySelector(".lightbox-backdrop").addEventListener("click", closeLightbox);
@@ -432,7 +551,11 @@ $("#modal-close").addEventListener("click", closeModal);
 modal.querySelector(".modal-backdrop").addEventListener("click", closeModal);
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { closeLightbox(); closeModal(); closeCityMap(); }
+  if (e.key === "Escape") {
+    if (lightbox.classList.contains("open")) { closeLightbox(); return; }
+    if (albumBrowser.classList.contains("open")) { closeAlbumBrowser(); return; }
+    closeModal(); closeCityMap();
+  }
   if (lightbox.classList.contains("open")) {
     if (e.key === "ArrowLeft") lightboxStep(-1);
     if (e.key === "ArrowRight") lightboxStep(1);

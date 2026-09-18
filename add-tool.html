@@ -86,6 +86,19 @@
 
     .file-box { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .file-status { font-size: 13px; color: var(--ink-3); }
+
+    /* 选择图片文件夹 */
+    .pick-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+    .btn-sm { padding: 9px 16px; font-size: 14px; letter-spacing: 0.12em; flex: none; min-width: 0; }
+    .drop-zone {
+      flex: 1; min-width: 220px; border: 1px dashed var(--line-2); background: #FFFDF6;
+      padding: 10px 14px; text-align: center; font-size: 13px; color: var(--ink-3);
+      border-radius: 4px; transition: all .3s;
+    }
+    .drop-zone.over { border-color: var(--cinnabar); background: #FBEFE9; color: var(--cinnabar); }
+    .chk-row { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); margin: 8px 0 2px; }
+    .chk-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; letter-spacing: 0; }
+    .chk-row input { width: auto; }
     .steps { font-size: 14px; color: var(--ink-2); margin: 14px 0 4px; }
     .steps li { margin-bottom: 6px; list-style: none; padding-left: 22px; position: relative; }
     .steps li::before { content: attr(data-n); position: absolute; left: 0; top: 0; color: var(--cinnabar); font-family: var(--font-kai); }
@@ -107,7 +120,23 @@
     <form class="form active" id="form-photo" onsubmit="return false">
       <div class="field"><label>城市名</label><input id="p-city" placeholder="例如：中国 重庆"><div class="hint">同一个城市的多张照片会归为一个图集</div></div>
       <div class="field"><label>印章文字（可留空）</label><input id="p-seal" placeholder="留空则用统一印章字，例如：渝"><div class="hint">鼠标悬浮在这个图集上时浮现的朱红印章，建议 1 个字</div></div>
-      <div class="field"><label>照片清单（每行一张）</label><textarea id="p-list" placeholder="travel-28 落日渡口&#10;travel-29 江边夜色&#10;travel-30"></textarea><div class="hint">格式：文件名 + 空格 + 标题，标题可省略。<b>不用打 .jpg，会自动补上</b>（其它格式请写全，如 a.png）。照片先放进 assets/images 文件夹</div></div>
+      <div class="field"><label>图片所在文件夹（网页里的路径）</label><input id="p-base" value="assets/images" placeholder="assets/images"><div class="hint">生成的链接前缀。照片直接放在 assets/images 里就保持默认；放在子目录里就写成 <b>assets/images/北京</b> 这种。选完文件夹会自动帮你填</div></div>
+      <div class="field">
+        <label>照片清单（每行一张）</label>
+        <div class="pick-row">
+          <button type="button" class="btn btn-ghost btn-sm" id="p-pick">选择图片文件夹…</button>
+          <div class="drop-zone" id="p-drop">也可以把文件夹直接拖到这里</div>
+          <input type="file" id="p-folder" webkitdirectory directory multiple hidden>
+        </div>
+        <div class="chk-row">
+          <label><input type="checkbox" id="p-append" checked> 追加到现有清单</label>
+          <label><input type="checkbox" id="p-sub"> 包含子文件夹</label>
+          <label><input type="checkbox" id="p-title"> 用文件名当标题</label>
+        </div>
+        <textarea id="p-list" placeholder="travel-28 落日渡口&#10;travel-29 江边夜色&#10;travel-30"></textarea>
+        <div class="hint">格式：文件名 + 空格 + 标题，标题可省略。<b>不用打 .jpg，会自动补上</b>（其它格式请写全，如 a.png）。选文件夹只负责把文件名填进清单，<b>图片本身记得拷进 assets/images</b>；文件名会按数字自然排序（cq2、cq10 不会排成 cq10、cq2）</div>
+        <p class="msg" id="p-pick-msg"></p>
+      </div>
     </form>
 
     <!-- 社交平台表单 -->
@@ -187,6 +216,130 @@
       return name + ".jpg";
     }
 
+    // ───── 从文件夹读图片，自动填进照片清单 ─────
+    var IMG_RE = /\.(jpe?g|png|webp|gif|svg|avif|bmp)$/i;
+    function isImg(name) { return IMG_RE.test(name); }
+    function baseTitle(name) {
+      var dot = name.lastIndexOf(".");
+      var b = dot > -1 ? name.slice(0, dot) : name;
+      return b.replace(/[_-]+/g, " ").trim();
+    }
+    // 把 FileList 转成 [{name, path}]：path 是「相对所选文件夹」的路径，含子目录
+    function toItems(files) {
+      var items = [];
+      for (var i = 0; i < files.length; i++) {
+        var f = files[i];
+        if (!f || !isImg(f.name)) continue;
+        var path = f.name;
+        if (f.webkitRelativePath) {
+          var parts = f.webkitRelativePath.split("/");
+          path = parts.slice(1).join("/") || f.name;   // 去掉最外层（所选文件夹名）
+        }
+        items.push({ name: f.name, path: path });
+      }
+      return items;
+    }
+
+    function fillList(items, folderName) {
+      var arr = [];
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (!it || !isImg(it.name)) continue;
+        // 不勾「包含子文件夹」时，只取这一层的图片
+        if (!$("p-sub").checked && it.path.indexOf("/") > -1) continue;
+        arr.push(it);
+      }
+      if (!arr.length) {
+        showMsg($("p-pick-msg"), "这个文件夹里没找到图片（支持 jpg / png / webp / gif / svg / bmp）", false);
+        return;
+      }
+      // 自然排序：cq2 排在 cq10 前面
+      arr.sort(function (a, b) { return a.path.localeCompare(b.path, "zh-Hans-CN", { numeric: true, sensitivity: "base" }); });
+      var useTitle = $("p-title").checked;
+      var lines = arr.map(function (it) {
+        var t = baseTitle(it.name);
+        return useTitle ? (it.path + " " + t) : it.path;
+      });
+      var ta = $("p-list");
+      var old = ta.value.replace(/\s+$/, "");
+      ta.value = ($("p-append").checked && old) ? old + "\n" + lines.join("\n") : lines.join("\n");
+
+      // 路径前缀自动跟着文件夹走：选了「北京」就默认 assets/images/北京
+      var baseEl = $("p-base");
+      var auto = "";
+      if (folderName && folderName !== "images" && (baseEl.value.trim() === "" || baseEl.value.trim() === "assets/images")) {
+        auto = "assets/images/" + folderName;
+        baseEl.value = auto;
+      }
+      var where = folderName ? "「" + folderName + "」" : "所选文件夹";
+      var tip = "已从 " + where + " 读取 " + lines.length + " 张图片并填入清单";
+      if (auto) tip += "；路径已自动设为 " + auto + "，不对就手动改上面那栏";
+      else tip += "；图片记得拷进 " + (baseEl.value.trim() || "assets/images");
+      showMsg($("p-pick-msg"), tip, true);
+    }
+
+    // 点击选择文件夹
+    $("p-pick").addEventListener("click", function () { $("p-folder").click(); });
+    $("p-folder").addEventListener("change", function () {
+      var files = this.files;
+      if (!files || !files.length) return;
+      var folder = files[0].webkitRelativePath ? files[0].webkitRelativePath.split("/")[0] : "";
+      fillList(toItems(files), folder);
+      this.value = "";   // 清空，允许再次选同一个文件夹
+    });
+
+    // 递归读取拖进来的目录（prefix 用来拼出相对路径，保留子目录结构）
+    function collectEntries(entries, out, done, prefix) {
+      prefix = prefix || "";
+      var pending = entries.length;
+      if (!pending) { done(); return; }
+      entries.forEach(function (en) {
+        var finish = function () { pending--; if (pending === 0) done(); };
+        if (en.isFile) {
+          en.file(function (f) {
+            if (isImg(f.name)) out.push({ name: f.name, path: prefix + f.name });
+            finish();
+          }, finish);
+        } else if (en.isDirectory) {
+          if (!$("p-sub").checked) { finish(); return; }   // 只要当前层的图片
+          var reader = en.createReader();
+          var batch = function () {
+            reader.readEntries(function (res) {
+              if (!res.length) { finish(); return; }
+              collectEntries(res, out, batch, prefix + en.name + "/");
+            }, finish);
+          };
+          batch();
+        } else { finish(); }
+      });
+    }
+
+    // 拖拽文件夹
+    var dz = $("p-drop");
+    ["dragenter", "dragover"].forEach(function (ev) {
+      dz.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); dz.classList.add("over"); });
+    });
+    ["dragleave", "dragend"].forEach(function (ev) {
+      dz.addEventListener(ev, function () { dz.classList.remove("over"); });
+    });
+    dz.addEventListener("drop", function (e) {
+      e.preventDefault(); e.stopPropagation(); dz.classList.remove("over");
+      var items = e.dataTransfer && e.dataTransfer.items;
+      var entries = [];
+      if (items) {
+        for (var i = 0; i < items.length; i++) {
+          var en = items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : null;
+          if (en) entries.push(en);
+        }
+      }
+      if (entries.length) {
+        var collected = [];
+        collectEntries(entries, collected, function () { fillList(collected, entries[0].name); });
+      } else if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+        fillList(toItems(e.dataTransfer.files), "");
+      }
+    });
+
     // 生成单条代码片段
     function buildSnippet(type, withComma) {
       var comma = withComma ? "," : "";
@@ -196,12 +349,13 @@
         if (!city) return { err: "请填写城市名" };
         var lines = $("p-list").value.split("\n").map(function (s) { return s.trim(); }).filter(function (s) { return s; });
         if (!lines.length) return { err: "请至少填写一张照片" };
+        var base = (val("p-base") || "assets/images").replace(/\/+$/, "");
         var items = lines.map(function (ln) {
           var sp = ln.indexOf(" ");
           var src = sp > -1 ? ln.slice(0, sp) : ln;
           var title = sp > -1 ? ln.slice(sp + 1).trim() : "";
           src = fixExt(src);
-          return '        { src: "assets/images/' + src + '", title: "' + esc(title) + '" }';
+          return '        { src: "' + esc(base) + '/' + src + '", title: "' + esc(title) + '" }';
         }).join(",\n");
         var sealLine = seal ? '      seal: "' + esc(seal) + '",\n' : "";
         return { text: '    {\n      city: "' + esc(city) + '",\n' + sealLine + '      photos: [\n' + items + '\n      ]\n    }' + comma };

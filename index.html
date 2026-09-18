@@ -7,7 +7,7 @@
   <title>洛晴跃飞</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23A83A32'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-size='36' font-family='KaiTi,serif' fill='%23F7EFE2'%3E清%3C/text%3E%3C/svg%3E">
   <!-- ?v= 是版本号：改了 style.css 却没生效时，把数字加一即可绕过浏览器缓存 -->
-  <link rel="stylesheet" href="css/style.css?v=20260916c">
+  <link rel="stylesheet" href="css/style.css?v=20260918k">
 </head>
 <body>
 
@@ -158,6 +158,26 @@
     </div>
   </footer>
 
+  <!-- ══════════ 图集缩略图选择器（点击相册封面先弹出，选一张再进灯箱） ══════════ -->
+  <div class="album-browser" id="album-browser" aria-hidden="true">
+    <div class="album-browser-backdrop"></div>
+    <div class="album-browser-sheet" role="dialog" aria-modal="true">
+      <button class="album-browser-close" id="album-browser-close" aria-label="关闭">&times;</button>
+      <header class="album-browser-head">
+        <span class="album-browser-seal" id="album-browser-seal"></span>
+        <h3 class="album-browser-title" id="album-browser-title"></h3>
+        <span class="album-browser-count" id="album-browser-count"></span>
+      </header>
+      <div class="album-browser-body">
+        <div class="album-browser-grid" id="album-browser-grid"><!-- JS 渲染 --></div>
+        <!-- 右侧极细下滑进度条 -->
+        <div class="album-browser-rail" id="album-browser-rail" aria-hidden="true">
+          <span class="album-browser-rail-thumb" id="album-browser-rail-thumb"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ══════════ 照片灯箱 ══════════ -->
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <div class="lightbox-backdrop"></div>
@@ -165,7 +185,9 @@
     <button class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="上一张">&#8249;</button>
     <button class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="下一张">&#8250;</button>
     <figure class="lightbox-figure">
-      <img id="lightbox-img" src="" alt="">
+      <span class="lightbox-shot">
+        <img id="lightbox-img" src="" alt="">
+      </span>
       <figcaption id="lightbox-caption"></figcaption>
     </figure>
   </div>
@@ -184,8 +206,8 @@
     <article class="city-map-paper" id="city-map-body"><!-- JS 渲染 --></article>
   </div>
 
-  <script src="js/data.js?v=20260916c"></script>
-  <script src="js/china-map.js?v=20260916c"></script>
-  <script src="js/main.js?v=20260916c"></script>
+  <script src="js/data.js?v=20260918k"></script>
+  <script src="js/china-map.js?v=20260918k"></script>
+  <script src="js/main.js?v=20260918k"></script>
 </body>
 </html>
