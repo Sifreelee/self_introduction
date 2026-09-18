@@ -792,7 +792,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 /* 玻璃壳：紧贴照片尺寸，投影挂在这层上（不随照片的渐隐被裁掉）
    注意：圆角必须明显大于渐隐宽度，否则圆角正好落在渐隐带里被「淡掉」，看着就没圆角了 */
 .lightbox-shot {
-  --edge: 16px;               /* 边缘渐隐的宽度 */
+  --edge: 8px;                /* 边缘渐隐的宽度 */
   --radius: 30px;             /* 圆角半径，要大于 --edge 才看得出来 */
   position: relative; display: block;
   border-radius: var(--radius);
