@@ -152,7 +152,7 @@ const SITE_DATA = {
         { src: "assets/images/bj2/bj206.jpg", title: "北京智化寺" },
         { src: "assets/images/bj2/bj207.jpg", title: "北京站" },
         { src: "assets/images/bj2/bj208.jpg", title: "中山公园 西雁翅楼" },
-        { src: "assets/images/bj2/bj209.jpg", title: "中山公园 西雁翅楼 其二" },
+        { src: "assets/images/bj2/bj209.jpg", title: "中山城景" },
         { src: "assets/images/bj2/bj210.jpg", title: "圣弥厄尔天主堂 东交民巷" },
         { src: "assets/images/bj2/bj211.jpg", title: "颐和园 万寿山" },
         { src: "assets/images/bj2/bj212.jpg", title: "颐和园 万寿山其二" },
