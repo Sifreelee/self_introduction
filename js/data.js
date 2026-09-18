@@ -298,6 +298,30 @@ const SITE_DATA = {
         { src: "assets/images/travel-4.jpg", title: "北陵公园" }
       ]
     },
+     {
+      city: "辽宁 大连",
+      seal: "连",
+      star: true,  
+      photos: [
+        { src: "assets/images/travel-9.jpg", title: "星海广场" },
+        { src: "assets/images/dl2/dl12.jpg", title: "星海广场大桥其二" },
+        { src: "assets/images/dl2/dl13.jpg", title: "星海广场大桥其三" },
+        { src: "assets/images/dl2/dl10.jpg", title: "大连中山广场" },
+        { src: "assets/images/travel-26.jpg", title: "莲花山顶" },
+        { src: "assets/images/dl2/dl03.jpg", title: "莲花山俯瞰大桥" },
+        { src: "assets/images/大连美术馆.jpg", title: "大连美术馆" },
+        { src: "assets/images/travel-27.jpg", title: "渔人码头" },
+        { src: "assets/images/dl2/dl01.jpg", title: "渔人码头其二" },
+        { src: "assets/images/dl2/dl02.jpg", title: "渔人码头其三" },
+        { src: "assets/images/dl2/dl04.jpg", title: "东港" },
+        { src: "assets/images/dl2/dl05.jpg", title: "东港其二" },
+        { src: "assets/images/dl2/dl06.jpg", title: "东港其三" },
+        { src: "assets/images/dl2/dl07.jpg", title: "仿威尼斯水城" },
+        { src: "assets/images/dl2/dl11.jpg", title: "仿威尼斯水城其二" }, 
+        { src: "assets/images/dl2/dl09.jpg", title: "联兴巷" },
+        { src: "assets/images/dl2/dl14.jpg", title: "黑石礁" }
+      ]
+    },
     {
       city: "江苏 徐州",
       seal: "彭",
@@ -319,29 +343,7 @@ const SITE_DATA = {
         { src: "assets/images/travel-7.jpg", title: "青州古城落日" }
       ]
     },
-    {
-      city: "辽宁 大连",
-      seal: "连",
-      photos: [
-        { src: "assets/images/travel-9.jpg", title: "星海广场" },
-        { src: "assets/images/dl2/dl12.jpg", title: "星海广场大桥其二" },
-        { src: "assets/images/dl2/dl13.jpg", title: "星海广场大桥其三" },
-        { src: "assets/images/dl2/dl10.jpg", title: "大连中山广场" },
-        { src: "assets/images/travel-26.jpg", title: "莲花山顶" },
-        { src: "assets/images/dl2/dl03.jpg", title: "莲花山俯瞰大桥" },
-        { src: "assets/images/大连美术馆.jpg", title: "大连美术馆" },
-        { src: "assets/images/travel-27.jpg", title: "渔人码头" },
-        { src: "assets/images/dl2/dl01.jpg", title: "渔人码头其二" },
-        { src: "assets/images/dl2/dl02.jpg", title: "渔人码头其三" },
-        { src: "assets/images/dl2/dl04.jpg", title: "东港" },
-        { src: "assets/images/dl2/dl05.jpg", title: "东港其二" },
-        { src: "assets/images/dl2/dl06.jpg", title: "东港其三" },
-        { src: "assets/images/dl2/dl07.jpg", title: "仿威尼斯水城" },
-        { src: "assets/images/dl2/dl11.jpg", title: "仿威尼斯水城其二" }, 
-        { src: "assets/images/dl2/dl09.jpg", title: "联兴巷" },
-        { src: "assets/images/dl2/dl14.jpg", title: "黑石礁" }
-      ]
-    },
+  
     {
       city: "湖北 武汉",
       seal: "汉",
