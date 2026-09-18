@@ -315,8 +315,50 @@ const SITE_DATA = {
     {
       city: "辽宁 沈阳",
       seal: "沈",
+      star: true,  
       photos: [
-        { src: "assets/images/travel-4.jpg", title: "北陵公园" }
+        { src: "assets/images/travel-4.jpg", title: "北陵公园" },
+        { src: "assets/images/sy2/sy201.jpg", title: "沈阳小南教堂" },
+        { src: "assets/images/sy2/sy202.jpg", title: "东北大学" },
+        { src: "assets/images/sy2/sy203.jpg", title: "北陵公园" },
+        { src: "assets/images/sy2/sy204.jpg", title: "沈阳之夜" },
+        { src: "assets/images/sy2/sy205.jpg", title: "清故宫藻井" },
+        { src: "assets/images/sy2/sy206.jpg", title: "沈阳站" },
+        { src: "assets/images/sy2/sy207.jpg", title: "西塔" },
+        { src: "assets/images/sy2/sy208.jpg", title: "中山广场一" },
+        { src: "assets/images/sy2/sy209.jpg", title: "中山广场二" },
+        { src: "assets/images/sy2/sy210.jpg", title: "中山广场三" },
+        { src: "assets/images/sy2/sy211.jpg", title: "西塔二扫街" },
+        { src: "assets/images/sy2/sy212.jpg", title: "清故宫皇座" },
+        { src: "assets/images/sy2/sy213.jpg", title: "大政殿" },
+        { src: "assets/images/sy2/sy214.jpg", title: "清故宫二" },
+        { src: "assets/images/sy2/sy215.jpg", title: "清故宫三" },
+        { src: "assets/images/sy2/sy216.jpg", title: "东三省总督府" },
+        { src: "assets/images/sy2/sy217.jpg", title: "清故宫四" },
+        { src: "assets/images/sy2/sy218.jpg", title: "九一八纪念馆" },
+        { src: "assets/images/sy2/sy219.jpg", title: "大帅府一" },
+        { src: "assets/images/sy2/sy220.jpg", title: "小青楼" },
+        { src: "assets/images/sy2/sy221.jpg", title: "沈阳中街" },
+        { src: "assets/images/sy2/sy222.jpg", title: "清故宫五" },
+        { src: "assets/images/sy2/sy223.jpg", title: "张学良雕像" },
+        { src: "assets/images/sy2/sy224.jpg", title: "沈阳中街二" },
+        { src: "assets/images/sy2/sy225.jpg", title: "沈阳故宫文化博物馆" },
+        { src: "assets/images/sy2/sy226.jpg", title: "沈阳扫街" },
+        { src: "assets/images/sy2/sy227.jpg", title: "清故宫六" },
+        { src: "assets/images/sy2/sy228.jpg", title: "北陵公园二" },
+        { src: "assets/images/sy2/sy229.jpg", title: "沈阳扫街二" },
+        { src: "assets/images/sy2/sy230.jpg", title: "工业母城" },
+        { src: "assets/images/sy2/sy231.jpg", title: "中国工业博物馆" },
+        { src: "assets/images/sy2/sy232.jpg", title: "中国工业博物馆二" },
+        { src: "assets/images/sy2/sy233.jpg", title: "中国工业博物馆三" },
+        { src: "assets/images/sy2/sy234.jpg", title: "北陵公园三" },
+        { src: "assets/images/sy2/sy235.jpg", title: "北陵公园四" },
+        { src: "assets/images/sy2/sy236.jpg", title: "华表" },
+        { src: "assets/images/sy2/sy237.jpg", title: "北陵公园五" },
+        { src: "assets/images/sy2/sy238.jpg", title: "沈阳故宫文德坊" },
+        { src: "assets/images/sy2/sy239.jpg", title: "清故宫七" },
+        { src: "assets/images/sy2/sy240.jpg", title: "清故宫八" },
+        { src: "assets/images/sy2/sy241.jpg", title: "北陵公园三" }
       ]
     },
      {
@@ -453,7 +495,7 @@ const SITE_DATA = {
 
   /* ─────────── 叁 · 所好（个人爱好） ───────────
      icon 可选值：brush(毛笔) camera(相机) tea(茶) mountain(登山)
-                 book(书) guqin(琴) chess(棋) flower(花) music(乐) run(跑) */
+     book(书) guqin(琴) chess(棋) lower(花) music(乐) run(跑) */
   hobbies: [
     {
       name: "写作",
