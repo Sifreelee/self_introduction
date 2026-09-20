@@ -133,8 +133,8 @@
           <label><input type="checkbox" id="p-sub"> 包含子文件夹</label>
           <label><input type="checkbox" id="p-title"> 用文件名当标题</label>
         </div>
-        <textarea id="p-list" placeholder="travel-28 落日渡口&#10;travel-29 江边夜色&#10;travel-30"></textarea>
-        <div class="hint">格式：文件名 + 空格 + 标题，标题可省略。<b>不用打 .jpg，会自动补上</b>（其它格式请写全，如 a.png）。选文件夹只负责把文件名填进清单，<b>图片本身记得拷进 assets/images</b>；文件名会按数字自然排序（cq2、cq10 不会排成 cq10、cq2）</div>
+        <textarea id="p-list" placeholder="travel-28 落日渡口&#10;travel-29 江边夜色&#10;travel-30&#10;圆明园 长春园.jpg 圆明园 长春园"></textarea>
+        <div class="hint">格式：文件名 + 空格 + 标题，标题可省略。<b>文件名里带空格也没关系</b>——写了扩展名（如 .jpg）就从扩展名那里分开，没写就按第一个空格分（这种请保证文件名不含空格）。<b>不用打 .jpg，会自动补上</b>（其它格式请写全，如 a.png）。选文件夹只负责把文件名填进清单，<b>图片本身记得拷进 assets/images</b>；文件名会按数字自然排序（cq2、cq10 不会排成 cq10、cq2）</div>
         <p class="msg" id="p-pick-msg"></p>
       </div>
     </form>
@@ -213,6 +213,27 @@
         .replace(/\/{2,}/g, "/")    // 重复斜杠合并
         .replace(/^\.\//, "")       // 去掉开头的 ./
         .replace(/^\/+|\/+$/g, ""); // 去掉首尾斜杠
+    }
+
+    // 去掉首尾空白（含全角空格与不间断空格，从表格里粘过来常带着）
+    function tidy(s) { return String(s == null ? "" : s).replace(/^[\s\u3000\u00a0]+|[\s\u3000\u00a0]+$/g, ""); }
+
+    // 一行拆成「文件名 + 标题」。
+    // 文件名自己就可能带空格（如「圆明园 长春园.jpg 圆明园 长春园」），
+    // 所以不能按第一个空格切 —— 先找最后一个「图片扩展名 + 行尾/空白」的位置，在那儿下刀。
+    var EXT_SPLIT_RE = /\.(jpe?g|png|webp|gif|svg|avif|bmp)(?=\s|$)/gi;
+    function splitLine(ln) {
+      var s = tidy(ln), cut = -1, m;
+      EXT_SPLIT_RE.lastIndex = 0;
+      while ((m = EXT_SPLIT_RE.exec(s))) cut = m.index + m[0].length;
+      if (cut > -1) return { src: tidy(s.slice(0, cut)), title: tidy(s.slice(cut)) };
+      // 没写扩展名：有制表符按制表符切，否则退回「第一个空格」的老规则
+      var t = s.indexOf("\t");
+      if (t > -1) return { src: tidy(s.slice(0, t)), title: tidy(s.slice(t + 1)) };
+      var sp = s.indexOf(" ");
+      return sp > -1
+        ? { src: tidy(s.slice(0, sp)), title: tidy(s.slice(sp + 1)) }
+        : { src: s, title: "" };
     }
 
     // 文件名没写扩展名时自动补 .jpg；已带图片扩展名的保持原样
@@ -357,15 +378,13 @@
         // 图集：城市名 + 照片清单（每行：文件名 标题）
         var city = val("p-city"), seal = val("p-seal");
         if (!city) return { err: "请填写城市名" };
-        var lines = $("p-list").value.split("\n").map(function (s) { return s.trim(); }).filter(function (s) { return s; });
+        var lines = $("p-list").value.split(/\r?\n/).map(tidy).filter(Boolean);
         if (!lines.length) return { err: "请至少填写一张照片" };
         var base = normPath(val("p-base") || "assets/images");
         var items = lines.map(function (ln) {
-          var sp = ln.indexOf(" ");
-          var src = sp > -1 ? ln.slice(0, sp) : ln;
-          var title = sp > -1 ? ln.slice(sp + 1).trim() : "";
-          src = normPath(fixExt(src));
-          return '        { src: "' + esc(base) + '/' + src + '", title: "' + esc(title) + '" }';
+          var p = splitLine(ln);
+          var src = normPath(fixExt(p.src));
+          return '        { src: "' + esc(base) + '/' + src + '", title: "' + esc(p.title) + '" }';
         }).join(",\n");
         var sealLine = seal ? '      seal: "' + esc(seal) + '",\n' : "";
         return { text: '    {\n      city: "' + esc(city) + '",\n' + sealLine + '      photos: [\n' + items + '\n      ]\n    }' + comma };
