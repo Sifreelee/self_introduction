@@ -230,22 +230,97 @@ function starHTML(group) {
   </svg>`;
 }
 
+/* 相册搜索：既按相册名（城市）过滤，也按相册内的图片名（标题 / 文件名）过滤；
+   命中时跳过分页、一次列全，清空即回到原界面 */
+let photoQuery = "";
+
+/* 文件名的「裸名」：assets/images/zb2/zb201.jpg → zb201（便于按文件名搜） */
+function shotBaseName(src) {
+  return (src || "").split("/").pop().replace(/\.[A-Za-z0-9]+$/, "");
+}
+/* 命中片段标红：先按原始下标切开再各自转义，避免转义后的实体被误伤 */
+function hitHTML(text, q) {
+  const raw = text || "";
+  if (!q) return esc(raw);
+  const i = raw.toLowerCase().indexOf(String(q).toLowerCase());
+  if (i < 0) return esc(raw);
+  return esc(raw.slice(0, i)) + '<b class="hit">' + esc(raw.slice(i, i + q.length)) + "</b>" + esc(raw.slice(i + q.length));
+}
+
+function setSearchHint(nAlbum, nShot, q) {
+  const hint = $("#album-search-hint");
+  const btn = $("#album-search-clear");
+  if (btn) btn.hidden = !q;
+  if (!hint) return;
+  if (!q) { hint.hidden = true; hint.innerHTML = ""; return; }
+  hint.hidden = false;
+  const n = nAlbum + nShot;
+  if (!n) {
+    hint.innerHTML = `没有名字含「${esc(photoQuery.trim())}」的相册或照片`;
+    return;
+  }
+  const parts = [];
+  if (nAlbum) parts.push(`<b>${nAlbum}</b> 个相册`);
+  if (nShot) parts.push(`<b>${nShot}</b> 张照片`);
+  hint.innerHTML = `找到 ${parts.join("、")}`;
+}
+
+function initAlbumSearch() {
+  const form = $("#album-search"), input = $("#album-search-input"), btn = $("#album-search-clear");
+  if (!input) return;
+  const apply = () => {
+    photoQuery = input.value || "";
+    renderPhotos();
+    initReveal();
+  };
+  input.addEventListener("input", apply);                 // 边打边筛，相册数量少不必节流
+  if (form) form.addEventListener("submit", (e) => e.preventDefault());
+  if (btn) btn.addEventListener("click", () => {
+    input.value = "";
+    apply();
+    input.focus();
+  });
+}
+
 function renderPhotos() {
   const groups = SITE_DATA.photos || [];
   const box = $("#photo-grid");
+  const q = photoQuery.trim().toLowerCase();
   if (!groups.length) {
     box.innerHTML = emptyTip("还没有照片 · 把照片放进 assets/images，并在 js/data.js 登记");
+    setSearchHint(0, 0, q);
     return;
   }
-  // 按图集（城市）数量分页，每页显示 PAGE_SIZE.photos 本图集
-  const size = PAGE_SIZE.photos;
-  const total = Math.ceil(groups.length / size);
-  pageState.photos = Math.min(Math.max(1, pageState.photos), total);
-  const start = (pageState.photos - 1) * size;
-  const slice = groups.map((g, gi) => ({ g, gi })).slice(start, start + size);
+
+  let slice, pager = "", shots = [];
+  if (q) {
+    // 搜索：相册名命中 → 相册卡片；照片标题或文件名命中 → 照片卡片。两者都一次列全
+    slice = [];
+    groups.forEach((g, gi) => {
+      if ((g.city || "").toLowerCase().includes(q)) slice.push({ g, gi });
+      (g.photos || []).forEach((p, pi) => {
+        const name = (p.title || "") + " " + shotBaseName(p.src);
+        if (name.toLowerCase().includes(q)) shots.push({ g, gi, p, pi });
+      });
+    });
+    setSearchHint(slice.length, shots.length, q);
+    if (!slice.length && !shots.length) {
+      box.innerHTML = emptyTip("换个关键词试试 · 目前共有 " + groups.length + " 个相册");
+      return;
+    }
+  } else {
+    const pool = groups.map((g, gi) => ({ g, gi }));
+    setSearchHint(0, 0, q);
+    const size = PAGE_SIZE.photos;
+    const total = Math.ceil(pool.length / size);
+    pageState.photos = Math.min(Math.max(1, pageState.photos), total);
+    const start = (pageState.photos - 1) * size;
+    slice = pool.slice(start, start + size);
+    pager = paginationHTML("photos", total);
+  }
 
   // 每个城市一张封面卡片（用第一张照片做封面）
-  box.innerHTML = slice.map(({ g, gi }) => {
+  const albumHTML = slice.map(({ g, gi }) => {
     const cover = g.photos[0];
     if (!cover) return "";
     return `
@@ -256,12 +331,31 @@ function renderPhotos() {
           ${sealHTML(g)}
           <span class="album-count">${g.photos.length} 张</span>
           <figcaption class="photo-meta">
-            <span class="photo-title">${esc(g.city)}</span>
+            <span class="photo-title">${hitHTML(g.city, q)}</span>
             <span class="photo-place">共 ${g.photos.length} 张</span>
           </figcaption>
         </figure>
       </div>`;
-  }).join("") + paginationHTML("photos", total);
+  }).join("");
+
+  // 命中的单张照片：左上角标城市，右下角标照片名，点开直接放大（可在该图集内前后翻）
+  const shotHTML = shots.map(({ g, gi, p, pi }) => {
+    const label = p.title || shotBaseName(p.src);
+    return `
+      <div class="photo-wrap reveal">
+        <figure class="photo-card photo-shot" data-gi="${gi}" data-pi="${pi}" tabindex="0" role="button" aria-label="查看 ${esc(label)}（${esc(g.city)}）">
+          <img src="${esc(p.src)}" alt="${esc(label)}" loading="lazy">
+          ${sealHTML(g)}
+          <span class="album-count">${hitHTML(g.city, q)}</span>
+          <figcaption class="photo-meta">
+            <span class="photo-title">${hitHTML(label, q)}</span>
+            <span class="photo-place">${esc(g.city)}</span>
+          </figcaption>
+        </figure>
+      </div>`;
+  }).join("");
+
+  box.innerHTML = albumHTML + shotHTML + pager;
 
   box.querySelectorAll("img").forEach((img, i) =>
     bindImgFallback(img, `assets/images/travel-${(i % 6) + 1}.svg`));
@@ -270,6 +364,20 @@ function renderPhotos() {
     el.addEventListener("click", () => openAlbum(+el.dataset.gi));
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAlbum(+el.dataset.gi); }
+    });
+  });
+  // 搜索结果的单张照片：点开直接进灯箱，且前后翻的是它所在图集的全部照片
+  box.querySelectorAll(".photo-shot").forEach((el) => {
+    const jump = () => {
+      const g = SITE_DATA.photos[+el.dataset.gi];
+      if (!g) return;
+      albumPhotos = g.photos || [];
+      albumCity = g.city || "";
+      openLightbox(+el.dataset.pi);
+    };
+    el.addEventListener("click", jump);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); jump(); }
     });
   });
   bindPagination(box, "photos");
@@ -926,6 +1034,7 @@ renderPhotos();
 renderSocial();
 renderHobbies();
 renderContact();
+initAlbumSearch();
 initReveal();
 addSectionClouds();
 onScroll();

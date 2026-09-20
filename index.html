@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="个人网站 · 新中式风格 · 简介与行迹">
   <title>洛晴跃飞</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260918a">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260920c">
   <!-- ?v= 是版本号：改了 style.css 却没生效时，把数字加一即可绕过浏览器缓存 -->
-  <link rel="stylesheet" href="css/style.css?v=20260918m">
+  <link rel="stylesheet" href="css/style.css?v=20260920c">
 </head>
 <body>
 
@@ -103,6 +103,17 @@
 
         <!-- 照片集 -->
         <div class="tab-panel active" id="panel-photos">
+          <form class="album-search" id="album-search" role="search">
+            <svg class="album-search-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5"></circle>
+              <line x1="15.5" y1="15.5" x2="21" y2="21"></line>
+            </svg>
+            <input class="album-search-input" id="album-search-input" type="text"
+                   placeholder="搜索相册名或照片名，如 北京" aria-label="搜索相册或照片" autocomplete="off">
+            <button class="album-search-clear" id="album-search-clear" type="button"
+                    aria-label="清空搜索" hidden>&times;</button>
+          </form>
+          <p class="album-search-hint" id="album-search-hint" hidden></p>
           <div class="photo-grid" id="photo-grid"><!-- JS 渲染 --></div>
         </div>
 
@@ -206,8 +217,8 @@
     <article class="city-map-paper" id="city-map-body"><!-- JS 渲染 --></article>
   </div>
 
-  <script src="js/data.js?v=20260918n"></script>
-  <script src="js/china-map.js?v=20260918m"></script>
-  <script src="js/main.js?v=20260918m"></script>
+  <script src="js/data.js?v=20260920c"></script>
+  <script src="js/china-map.js?v=20260920c"></script>
+  <script src="js/main.js?v=20260920c"></script>
 </body>
 </html>

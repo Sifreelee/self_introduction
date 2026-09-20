@@ -547,6 +547,55 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 .travel-more::after { content: " →"; transition: margin .3s; }
 .travel-item:hover .travel-more::after { margin-left: 6px; }
 
+/* — 相册搜索（纸色输入框，不用纯白） — */
+.album-search {
+  position: relative; display: flex; align-items: center;
+  /* 上移一点：拉远与相册卡的距离，让搜索框归到标签栏那一层 */
+  max-width: 420px; margin: -16px auto 32px;
+  padding: 0 12px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  transition: border-color .3s, box-shadow .3s, background .3s;
+}
+.album-search:focus-within {
+  background: var(--card);
+  border-color: var(--cinnabar);
+  box-shadow: 0 6px 18px rgba(70, 58, 32, 0.12);
+}
+.album-search-icon {
+  flex: none; width: 16px; height: 16px; margin-right: 9px;
+  fill: none; stroke: var(--ink-3); stroke-width: 1.8; stroke-linecap: round;
+  transition: stroke .3s;
+}
+.album-search:focus-within .album-search-icon { stroke: var(--cinnabar); }
+.album-search-input {
+  flex: 1; min-width: 0; padding: 11px 0;
+  border: none; outline: none; background: transparent;
+  font-family: var(--font-kai); font-size: 16px; letter-spacing: 0.12em;
+  color: var(--ink);
+}
+.album-search-input::placeholder { color: var(--ink-3); letter-spacing: 0.08em; }
+.album-search-clear {
+  flex: none; width: 22px; height: 22px; margin-left: 6px;
+  border: none; border-radius: 50%; cursor: pointer;
+  background: var(--paper-3); color: var(--ink-2);
+  font-size: 15px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .25s, color .25s;
+}
+.album-search-clear:hover { background: var(--cinnabar); color: var(--paper); }
+.album-search-hint {
+  /* 紧贴搜索框下方（抵消搜索框那 32px 下边距），再留出到相册的距离 */
+  max-width: 420px; margin: -18px auto 26px;
+  text-align: center;
+  font-family: var(--font-kai); font-size: 14px; letter-spacing: 0.14em;
+  color: var(--ink-3);
+}
+.album-search-hint b { color: var(--cinnabar); font-weight: normal; }
+/* 搜索命中的片段（相册名 / 照片名里命中的那几个字） */
+.hit { color: var(--cinnabar); font-weight: normal; }
+
 /* — 照片集 — */
 .photo-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);

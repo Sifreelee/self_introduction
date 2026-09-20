@@ -182,7 +182,10 @@ const SITE_DATA = {
         { src: "assets/images/bj2/bj237.jpg", title: "北海之夏 其六" },
         { src: "assets/images/bj2/bj238.jpg", title: "北海之夏 其七" },
         { src: "assets/images/bj2/bj239.jpg", title: "北海之夏 其八" },
-        { src: "assets/images/bj2/bj236.jpg", title: "太庙一隅" }
+        { src: "assets/images/bj2/bj236.jpg", title: "太庙一隅" },
+        { src: "assets/images/bj2/tiananmen/天安门.jpg", title: "天安门" },
+        { src: "assets/images/bj2/tiananmen/天安门 其二.jpg", title: "天安门 其二" },
+        { src: "assets/images/bj2/tiananmen/天安门 其三.jpg", title: "天安门 其三" }
       ]
     },
     {
