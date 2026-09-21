@@ -818,6 +818,21 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   padding-left: 16px;
 }
 .footer-text { font-size: 13px; letter-spacing: 0.22em; color: #97917E; }
+/* 页脚访问量（不蒜子）：拿到真实数字才淡入；脚本被拦截或服务挂了就整块不显示 */
+.footer-count {
+  display: none; align-items: center; gap: 16px; margin: 0;
+  font-family: var(--font-kai); font-size: 13px; letter-spacing: 0.18em;
+  color: #97917E;
+}
+.footer-count.is-on { display: flex; animation: fadeUp .6s ease both; }
+.footer-count b {
+  color: #E8E0C8; font-weight: normal; font-size: 15px; margin: 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+.footer-count-dot {
+  flex: none; width: 3px; height: 3px; border-radius: 50%;
+  background: rgba(207, 200, 180, 0.35);
+}
 
 /* ─────────── 灯箱 ─────────── */
 .lightbox {

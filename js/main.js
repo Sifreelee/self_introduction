@@ -265,6 +265,21 @@ function setSearchHint(nAlbum, nShot, q) {
   hint.innerHTML = `找到 ${parts.join("、")}`;
 }
 
+/* 页脚访问量（不蒜子）默认不显示：等它把数字填进来再淡入。
+   脚本被广告拦截、服务 502、或本地 file:// 打开时，数字一直是占位符，
+   这时整块保持隐藏，不会露出「访客 — 人」这种尴尬的半成品。 */
+function initBusuanzi() {
+  const box = $("#footer-count");
+  if (!box) return;
+  const uv = $("#busuanzi_value_site_uv"), pv = $("#busuanzi_value_site_pv");
+  const hasNum = (el) => el && el.textContent.trim() && el.textContent.trim() !== "—";
+  let tries = 0;
+  const timer = setInterval(() => {
+    if (hasNum(uv) || hasNum(pv)) { box.classList.add("is-on"); clearInterval(timer); }
+    else if (++tries > 20) clearInterval(timer);      // 约 6 秒还没数字，就当没这回事
+  }, 300);
+}
+
 function initAlbumSearch() {
   const form = $("#album-search"), input = $("#album-search-input"), btn = $("#album-search-clear");
   if (!input) return;
@@ -1035,6 +1050,7 @@ renderSocial();
 renderHobbies();
 renderContact();
 initAlbumSearch();
+initBusuanzi();
 initReveal();
 addSectionClouds();
 onScroll();
