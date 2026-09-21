@@ -203,7 +203,7 @@ const SITE_DATA = {
         { src: "assets/images/bj2/ymy/五竹亭遗址.jpg", title: "五竹亭遗址" },
         { src: "assets/images/bj2/ymy/观水法遗址1.jpg", title: "观水法遗址" },
         { src: "assets/images/bj2/ymy/谐奇趣遗迹.jpg", title: "谐奇趣遗址" },
-         { src: "assets/images/bj2/ymy/黄花阵2.jpg", title: "黄花阵" },
+        { src: "assets/images/bj2/ymy/黄花阵2.jpg", title: "黄花阵" },
         { src: "assets/images/bj2/ymy/黄花阵3.jpg", title: "黄花阵 其二" },
         { src: "assets/images/bj2/ymy/圆明园 正觉寺后门.jpg", title: "正觉寺后门" },
         { src: "assets/images/bj2/ymy/圆明园 绮春园2.jpg", title: "绮春园" },
@@ -238,6 +238,24 @@ const SITE_DATA = {
         { src: "assets/images/bj2/ymy/鸿慈永秙4.jpg", title: "鸿慈永秙 其六" },
         { src: "assets/images/bj2/ymy/鸿慈永秙7.jpg", title: "鸿慈永秙 其七" },
         { src: "assets/images/bj2/ymy/鸿慈永秙9.jpg", title: "鸿慈永秙 其八" },
+      ]
+    },
+        {
+      city: "古建筑构建盘点",
+      seal: "构件",
+      star: true,
+      photos: [
+        { src: "assets/images/bj3/骑凤仙人.jpg", title: "脊兽第一 骑凤仙人" },
+        { src: "assets/images/bj3/龙.jpg", title: "脊兽第二 龙" },
+        { src: "assets/images/bj3/凤.jpg", title: "脊兽第三 凤" },
+        { src: "assets/images/bj3/狮子.jpg", title: "脊兽第四 狮子" },
+        { src: "assets/images/bj3/海马.jpg", title: "脊兽第五 海马" },
+        { src: "assets/images/bj3/天马.jpg", title: "脊兽第六 天马" },
+        { src: "assets/images/bj3/狎鱼.jpg", title: "脊兽第七 狎鱼" },
+        { src: "assets/images/bj3/狻猊.jpg", title: "脊兽第八 狻猊" },
+        { src: "assets/images/bj3/獬豸.jpg", title: "脊兽第九 獬豸" },
+        { src: "assets/images/bj3/斗牛.jpg", title: "脊兽第十 斗牛" },
+        { src: "assets/images/bj3/行什.jpg", title: "脊兽十一 行什" }
       ]
     },
     {
