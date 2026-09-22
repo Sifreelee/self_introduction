@@ -258,6 +258,26 @@ const SITE_DATA = {
         { src: "assets/images/bj3/行什.jpg", title: "脊兽十一 行什" }
       ]
     },
+        {
+      city: "北京 九坛八庙",
+      seal: "坛庙",
+      star: true, 
+      photos: [ 
+        { src: "assets/images/bj3/jtbm/天坛 祈年殿.jpg", title: "天坛 祈年殿" },
+        { src: "assets/images/bj3/jtbm/天坛 回音壁.jpg", title: "天坛 回音壁" },
+        { src: "assets/images/bj3/jtbm/天坛 圜丘坛.jpg", title: "天坛 圜丘坛" },
+        { src: "assets/images/bj3/jtbm/先蚕坛.jpg", title: "先蚕坛" },
+        { src: "assets/images/bj3/jtbm/地坛.jpg", title: "地坛" },
+        { src: "assets/images/bj3/jtbm/太岁殿大殿.jpg", title: "太岁殿大殿" },
+        { src: "assets/images/bj3/jtbm/拜殿.jpg", title: "拜殿" },
+        { src: "assets/images/bj3/jtbm/神仓.jpg", title: "神仓" },
+        { src: "assets/images/bj3/jtbm/太庙.jpg", title: "太庙" },
+        { src: "assets/images/bj3/jtbm/太庙  其二.jpg", title: "太庙  其二" },
+        { src: "assets/images/bj3/jtbm/景山 寿皇殿.jpg", title: "景山 寿皇殿" },
+        { src: "assets/images/bj3/jtbm/社稷坛.jpg", title: "社稷坛" },
+        { src: "assets/images/bj3/jtbm/社稷坛 其二.jpg", title: "社稷坛 其二" }
+      ]
+    },
     {
       city: "中国 重庆",
       seal: "渝",          // 本图集专属印章字（不想要就删掉这一行，会统一用 site.photoSeal）
