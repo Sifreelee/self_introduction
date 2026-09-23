@@ -1,0 +1,16 @@
+    {
+      city: "华东四市",
+      seal: "沪苏杭",
+      photos: [
+        { src: "assets/images/hdws/上海人民广场 地铁站.jpg", title: "上海人民广场 地铁站" },
+        { src: "assets/images/hdws/上海外滩 夜.jpg", title: "上海外滩 夜" },
+        { src: "assets/images/hdws/上海外滩 日.jpg", title: "上海外滩 日" },
+        { src: "assets/images/hdws/杭州 西湖 .jpg", title: "杭州 西湖 " },
+        { src: "assets/images/hdws/杭州 西湖 其二.jpg", title: "杭州 西湖 其二" },
+        { src: "assets/images/hdws/浙江嘉兴桐乡 乌镇东栅.jpg", title: "浙江嘉兴桐乡 乌镇东栅" },
+        { src: "assets/images/hdws/浙江嘉兴桐乡 乌镇西栅.jpg", title: "浙江嘉兴桐乡 乌镇西栅" },
+        { src: "assets/images/hdws/苏州 山塘街.jpg", title: "苏州 山塘街" },
+        { src: "assets/images/hdws/苏州 耦园.jpg", title: "苏州 耦园" },
+        { src: "assets/images/hdws/苏州山塘街 其二.jpg", title: "苏州山塘街 其二" }
+      ]
+    },

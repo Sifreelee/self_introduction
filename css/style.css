@@ -938,23 +938,32 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 .album-browser.open .album-browser-sheet { transform: translateY(0) scale(1); }
 .album-browser-head {
   display: flex; align-items: center; gap: 12px;
-  padding: 16px 52px 12px 22px;
+  padding: 16px 68px 12px 22px;      /* 右侧留位：简介按钮 + 关闭按钮 */
   border-bottom: 1px solid var(--line);
 }
+/* 印章是固定 30×30 的方块：字号由 JS 按字数自动缩，文字永远不出框 */
 .album-browser-seal {
   width: 30px; height: 30px; flex: none;
+  box-sizing: border-box; padding: 2px;
   border-radius: 3px;
   background: var(--cinnabar); color: #F7EFE2;
-  font-family: var(--font-kai); font-size: 15px;
+  font-family: var(--font-kai); font-size: 15px; line-height: 1.1;
   display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; align-content: center;
+  text-align: center; overflow: hidden;
   box-shadow: 0 3px 8px rgba(168, 58, 50, 0.3);
+}
+/* 文字本体：JS 量这一层的实际尺寸来决定字号 */
+.album-browser-seal .seal-text {
+  max-width: 100%; line-height: 1.1; letter-spacing: 0;
 }
 .album-browser-title {
   font-family: var(--font-kai); font-size: 19px; letter-spacing: 0.12em;
   color: var(--ink); font-weight: normal;
 }
+/* 紧跟着相册名，不再被顶到最右边（右侧留给「简介」和关闭） */
 .album-browser-count {
-  margin-left: auto; font-size: 12.5px; color: var(--ink-3); letter-spacing: 0.12em;
+  margin-left: 10px; font-size: 12.5px; color: var(--ink-3); letter-spacing: 0.12em;
 }
 .album-browser-close {
   position: absolute; z-index: 3; top: 12px; right: 14px;
@@ -966,6 +975,79 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   transition: all .3s;
 }
 .album-browser-close:hover { background: var(--cinnabar); border-color: var(--cinnabar); color: #F7EFE2; }
+
+/* 相册简介入口：深朱色大字 + 虚线下划线 + 一枚会转的小箭头，一眼看得出能点 */
+.album-browser-note-btn {
+  flex: none; margin-left: auto; padding: 2px 3px 3px;
+  background: none; border: none; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--font-kai); font-size: 16px; letter-spacing: 0.22em;
+  color: var(--cinnabar-2);
+  border-bottom: 1px solid rgba(140, 47, 40, 0.45);
+  transition: color .3s ease, border-color .3s ease, opacity .3s ease;
+}
+.album-browser-note-btn[hidden] { display: none; }
+/* 箭头：收起时朝下，展开后翻上去 */
+.album-browser-note-btn::after {
+  content: ""; width: 5px; height: 5px; margin-left: 3px;
+  border-right: 1.4px solid currentColor; border-bottom: 1.4px solid currentColor;
+  transform: translateY(-1px) rotate(45deg);
+  transition: transform .34s cubic-bezier(.22, .85, .26, 1);
+}
+.album-browser-note-btn.is-on::after { transform: translateY(1px) rotate(-135deg); }
+.album-browser-note-btn:hover {
+  color: var(--cinnabar);
+  border-bottom-style: solid; border-color: rgba(168, 58, 50, 0.75);
+}
+.album-browser-note-btn.is-on { color: var(--cinnabar); border-color: rgba(168, 58, 50, 0.58); }
+/* 打开相册时轻轻跳一下，提示这里可以点 */
+.album-browser.open .album-browser-note-btn { animation: noteNudge 1.1s ease .55s 1 both; }
+@keyframes noteNudge {
+  0%, 100% { opacity: 1; }
+  18% { opacity: .45; }
+  40% { opacity: 1; }
+  62% { opacity: .6; }
+}
+
+/* 简介正文：默认收起（高度 0），点「简介」后按内容实际高度展开 */
+.album-browser-note {
+  flex: none;
+  max-height: 0; opacity: 0; overflow: hidden;
+  transition: max-height .42s cubic-bezier(.22, .85, .26, 1), opacity .28s ease;
+}
+.album-browser-note.is-on { opacity: 1; }
+/* 写得太长时：正文区封顶并自己滚动，不把下面的缩略图挤没 */
+.album-browser-note.can-scroll { overflow-y: auto; overflow-x: hidden; }
+.album-browser-note.can-scroll::-webkit-scrollbar { width: 6px; }
+.album-browser-note.can-scroll::-webkit-scrollbar-track { background: transparent; }
+.album-browser-note.can-scroll::-webkit-scrollbar-thumb {
+  background: rgba(168, 58, 50, 0.28); border-radius: 3px;
+}
+.album-browser-note.can-scroll::-webkit-scrollbar-thumb:hover { background: rgba(168, 58, 50, 0.45); }
+
+.album-browser-note-inner {
+  position: relative;
+  padding: 14px 26px 16px 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper-2);
+}
+
+.album-browser-note-inner p {
+  position: relative;
+  padding-left: 15px;
+  font-family: var(--font-kai); font-size: 14.5px; line-height: 2.05;
+  letter-spacing: 0.06em; color: var(--ink-2);
+}
+.album-browser-note-inner p + p { margin-top: 9px; }
+/* 首段右上角要让给「编辑」两个字 */
+.album-browser-note-inner .note-view > p:first-child { padding-right: 48px; }
+/* 每段左侧一道细朱线，像书页上的引首 */
+.album-browser-note-inner p::before {
+  content: ""; position: absolute; left: 0; top: .62em; bottom: .62em;
+  width: 2px; border-radius: 1px;
+  background: linear-gradient(180deg, var(--cinnabar), var(--cinnabar-2));
+  opacity: .5;
+}
 /* 滚动区外层：承载右侧进度条（进度条不能随内容滚动，故单独定位） */
 .album-browser-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
 /* 滚动区：可上下滑动，一行三张；原生滚动条隐藏，改用右侧极细进度条 */
@@ -1320,8 +1402,11 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   .lightbox-close, .modal-close { top: 14px; right: 16px; }
   .album-browser-sheet { width: 94vw; max-height: 86vh; }
   .album-browser-grid { grid-template-columns: repeat(2, 1fr); padding: 12px 18px 18px 14px; }
-  .album-browser-head { padding: 14px 46px 10px 16px; }
+  .album-browser-head { padding: 14px 64px 10px 16px; }
   .album-browser-title { font-size: 17px; }
+  .album-browser-note-btn { font-size: 14px; letter-spacing: 0.16em; }
+  .album-browser-note-inner { padding: 12px 18px 14px 16px; }
+  .album-browser-note-inner p { font-size: 13.5px; line-height: 1.95; }
 }
 
 /* ─────────── 打印友好 ─────────── */

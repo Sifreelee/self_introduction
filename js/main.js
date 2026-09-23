@@ -219,6 +219,54 @@ function sealHTML(group) {
   return `<span class="photo-seal" style="font-size:${size}px;${box}">${esc(text)}</span>`;
 }
 
+/* 相册面板左上角的印章是固定 30×30 的方块，字数一多就会顶出框外。
+   这里按字数自动缩字号：先尽量排成一行，实在放不下（字数很多）再换行逐字排。 */
+function fitSealText(el) {
+  if (!el || !el.textContent || !el.textContent.trim()) return;
+  const text = el.textContent.trim();
+  const PAD = 2, MIN = 7, LH = 1.1;            // 内边距 / 最小字号 / 行高
+  const maxW = Math.max(6, el.clientWidth - PAD * 2);
+  const maxH = Math.max(6, el.clientHeight - PAD * 2);
+  const n = text.length;
+
+  /* 文字必须包一层再量：外层是 flex 居中容器，直接读 scrollWidth 恒等于方块宽度，
+     永远检测不到溢出，字号会被一路压到最小值。*/
+  let span = el.querySelector(".seal-text");
+  if (!span) {
+    el.textContent = "";
+    span = document.createElement("span");
+    span.className = "seal-text";
+    el.appendChild(span);
+  }
+  span.textContent = text;
+
+  const setSize = (px) => { el.style.fontSize = px.toFixed(1) + "px"; };
+  const overflow = () => {
+    const r = span.getBoundingClientRect();
+    return r.width > maxW + 0.5 || r.height > maxH + 0.5;
+  };
+
+  /* 字数越多字越小，一档一档往下走：
+       1 字 19px → 2 字 12.5px → 3 字 8.8px，都排一行
+       4 字及以上再折成两行，不然会小到看不清 */
+  const byLen = { 1: 19, 2: 12.5, 3: 8.8 };
+  if (byLen[n]) {
+    span.style.whiteSpace = "nowrap";
+    span.style.wordBreak = "normal";
+    setSize(Math.min(byLen[n], maxW / n, maxH / LH));
+  } else {
+    span.style.whiteSpace = "normal";
+    span.style.wordBreak = "break-all";
+    setSize(Math.min(11, maxW / Math.ceil(n / 2), maxH / (2 * LH)));
+  }
+
+  // 楷体的字宽未必正好 1em，最后实测收一点，确保一个字都飞不出去
+  for (let s = parseFloat(el.style.fontSize) || 12; s > MIN; s -= 0.5) {
+    setSize(s);
+    if (!overflow()) break;
+  }
+}
+
 /* 图集星标：圆形铜钱样式的中式标记（仅封面左上角，深朱半透明）
    在 data.js 的图集里写一行 star: true 即可开启
    造型：外圆外郭 + 内方孔（方孔钱），深红色，低透明度，尽量不打扰画面 */
@@ -519,6 +567,105 @@ const thumbMasonry = window.ResizeObserver ? new ResizeObserver((entries) => {
   updateBrowserRail();
 }) : null;
 
+/* ── 相册简介 ──
+   内容只能改文件，网页上只能看、不能改。两个来源，优先级从高到低：
+     ① js/album-desc.js 的纯文本块（正式内容，推上线后所有人都看得到）
+     ② data.js 每个图集的 desc 字段（早期写法，仅作兜底）
+   两者都没有 → 不显示「简介」入口，界面保持干净。 */
+
+/* 把纯文本块切成「相册名 → 正文」：一行 ### 相册名 开头一段，之后直到下一个 ### 都是它的正文 */
+function parseDescText(text) {
+  const map = new Map();
+  let cur = null, buf = [];
+  String(text || "").split(/\r?\n/).forEach((line) => {
+    const h = /^#{1,3}\s*(.+?)\s*$/.exec(line.trim());
+    if (h) {
+      if (cur !== null) map.set(cur, buf.join("\n").replace(/\n+$/, ""));
+      cur = h[1].trim(); buf = [];
+      return;
+    }
+    if (cur !== null) buf.push(line);
+  });
+  if (cur !== null) map.set(cur, buf.join("\n").replace(/\n+$/, ""));
+  return map;
+}
+
+/* js/album-desc.js 里的正式简介：同时存一份去空格的键，"中国 北京" 和 "中国北京" 都能命中 */
+const DESC_FROM_FILE = (() => {
+  const map = new Map();
+  parseDescText(window.ALBUM_DESC_TEXT).forEach((v, k) => {
+    if (!v) return;
+    map.set(k, v);
+    map.set(k.replace(/\s+/g, ""), v);
+  });
+  return map;
+})();
+
+function noteKey(city) { return String(city || "").trim(); }
+function noteFold(city) { return noteKey(city).replace(/\s+/g, ""); }
+
+/* 站点自带文本（① + ②），网页上没有任何写入口 */
+function noteSource(city) {
+  const k = noteKey(city);
+  if (!k) return "";
+  const fromFile = DESC_FROM_FILE.get(k) || DESC_FROM_FILE.get(noteFold(city)) || "";
+  if (fromFile) return fromFile;
+  const g = (SITE_DATA.photos || []).find((x) => noteKey(x.city) === k);
+  const d = g && g.desc;
+  if (!d) return "";
+  return Array.isArray(d) ? d.join("\n") : String(d);
+}
+
+function albumNoteParas(group) {
+  const raw = noteSource(group && group.city);
+  // 写多少字都行：空行分段，超长时正文区自己滚动
+  return String(raw || "").split(/\n+/).map((t) => t.trim()).filter(Boolean);
+}
+
+function renderAlbumNote(group) {
+  const btn = $("#album-browser-note-btn");
+  const inner = $("#album-browser-note-inner");
+  if (!btn || !inner) return;
+  const paras = albumNoteParas(group);
+  btn.hidden = !paras.length;     // 没写简介就不显示入口
+  inner.innerHTML = paras.map((t) => `<p>${esc(t)}</p>`).join("");
+  setAlbumNote(false);            // 每次打开新图集都从收起状态开始
+}
+
+/* 正文最多占面板高度的比例；超了就转成可滚动，不让缩略图被挤没 */
+function noteCap() {
+  const sheet = document.querySelector(".album-browser-sheet");
+  const h = sheet ? sheet.getBoundingClientRect().height : window.innerHeight * 0.8;
+  return Math.max(120, Math.round(h * 0.5));
+}
+
+/* 按内容实际高度放开上限；内容超过上限就封顶并允许内部滚动 */
+function applyNoteHeight() {
+  const box = $("#album-browser-note");
+  if (!box) return;
+  const open = box.classList.contains("is-on");
+  const full = box.scrollHeight;
+  const cap = noteCap();
+  const scroll = open && full > cap + 2;
+  box.style.maxHeight = open ? (scroll ? cap : full) + "px" : "0px";
+  box.classList.toggle("can-scroll", scroll);
+  if (open) box.scrollTop = 0;
+  // 简介占掉高度后缩略图区变矮，右侧进度条要跟着重算
+  setTimeout(updateBrowserRail, 60);
+  setTimeout(updateBrowserRail, 460);
+}
+
+function setAlbumNote(open) {
+  const btn = $("#album-browser-note-btn");
+  const box = $("#album-browser-note");
+  if (!btn || !box) return;
+  btn.classList.toggle("is-on", open);
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+  box.classList.toggle("is-on", open);
+  box.setAttribute("aria-hidden", open ? "false" : "true");
+  applyNoteHeight();
+}
+
 function openAlbum(gi) {
   const group = SITE_DATA.photos[gi];
   if (!group || !group.photos.length) return;
@@ -531,7 +678,11 @@ function openAlbum(gi) {
   const seal = $("#album-browser-seal");
   seal.textContent = group.seal || (SITE_DATA.site && SITE_DATA.site.photoSeal) || "影";
   seal.style.display = seal.textContent ? "flex" : "none";
+  fitSealText(seal);
   $("#album-browser-count").textContent = `共 ${group.photos.length} 张`;
+
+  // 相册简介：内容来自 js/album-desc.js，网页上只能看
+  renderAlbumNote(group);
 
   // 渲染缩略图（一行三张）
   const grid = $("#album-browser-grid");
@@ -582,6 +733,15 @@ function closeAlbumBrowser() {
 }
 $("#album-browser-close").addEventListener("click", closeAlbumBrowser);
 albumBrowser.querySelector(".album-browser-backdrop").addEventListener("click", closeAlbumBrowser);
+
+// 点「简介」：在展开 / 收起之间切换
+$("#album-browser-note-btn").addEventListener("click", () => {
+  const box = $("#album-browser-note");
+  if (box) setAlbumNote(!box.classList.contains("is-on"));
+});
+
+// 窗口变宽变窄会让简介文字重排，展开着的话就重算一次高度
+window.addEventListener("resize", applyNoteHeight);
 
 /* ═══════════ 灯箱（支持图集内多张切换） ═══════════ */
 const lightbox = $("#lightbox");

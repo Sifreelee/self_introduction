@@ -1,0 +1,22 @@
+    {
+      city: "陕西 西安",
+      seal: "秦",
+      photos: [
+        { src: "assets/images/xian/华山盛景 其九.png", title: "华山盛景 其九" },
+        { src: "assets/images/xian/2021年 大唐不夜城.jpg", title: "2021年 大唐不夜城" },
+        { src: "assets/images/xian/华山盛景 其七.jpg", title: "华山盛景 其七" },
+        { src: "assets/images/xian/华山盛景 其三.jpg", title: "华山盛景 其三" },
+        { src: "assets/images/xian/华山盛景 其九.jpg", title: "华山盛景 其九" },
+        { src: "assets/images/xian/华山盛景 其二.jpg", title: "华山盛景 其二" },
+        { src: "assets/images/xian/华山盛景 其五.jpg", title: "华山盛景 其五" },
+        { src: "assets/images/xian/华山盛景 其八.jpg", title: "华山盛景 其八" },
+        { src: "assets/images/xian/华山盛景 其六.jpg", title: "华山盛景 其六" },
+        { src: "assets/images/xian/华山盛景 其四.jpg", title: "华山盛景 其四" },
+        { src: "assets/images/xian/华山盛景.jpg", title: "华山盛景" },
+        { src: "assets/images/xian/华清池景区 老蒋谏兵亭.jpg", title: "华清池景区 老蒋谏兵亭" },
+        { src: "assets/images/xian/秦始皇陵兵马俑 其三.jpg", title: "秦始皇陵兵马俑 其三" },
+        { src: "assets/images/xian/秦始皇陵兵马俑 其二.jpg", title: "秦始皇陵兵马俑 其二" },
+        { src: "assets/images/xian/秦始皇陵兵马俑.jpg", title: "秦始皇陵兵马俑" },
+        { src: "assets/images/xian/骊山索道.jpg", title: "骊山索道" }
+      ]
+    },

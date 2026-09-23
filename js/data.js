@@ -100,6 +100,10 @@ const SITE_DATA = {
   /* ─────────── 贰 · 行迹 之 照片集（图集，按城市分组） ───────────
      每个城市是一个图集 { city, cover, photos: [...] }：
        · city：城市名
+       · desc：相册简介（早期写法，仅作兜底）。
+               正式内容统一写在 js/album-desc.js —— 那里不用管 JS 语法，
+               在「### 相册名」下面直接填字就行，不限字数、空行分段，网页上不可修改。
+               两边都写了的话，以 js/album-desc.js 为准。
        · photos：该城市的照片数组，每张 { src, title }
        · seal：这个城市专属的悬浮印章文字，不写就用上面 site.photoSeal 的统一文字
        · star：星标。设为 true 时，这本图集封面左上角会出现一枚
@@ -111,6 +115,7 @@ const SITE_DATA = {
   photos: [ 
      {
       city: "镇馆之宝",
+      desc: "",
       seal: "珍",
       star: true, 
       photos: [
@@ -124,6 +129,7 @@ const SITE_DATA = {
     },
      {
       city: "中国 北京",
+      desc: "",
       seal: "京",
       star: true,          // ← 星标：封面左上角会出现一枚圆形铜钱标记（不想要就删掉这行）
       photos: [
@@ -190,6 +196,7 @@ const SITE_DATA = {
     },
         {
       city: "北京 圆明园遗址公园",
+      desc: "",
       seal: "圆明园",
       star: true, 
       photos: [
@@ -242,6 +249,7 @@ const SITE_DATA = {
     },
         {
       city: "古建筑构建盘点",
+      desc: "",
       seal: "构件",
       star: true,
       photos: [
@@ -260,6 +268,7 @@ const SITE_DATA = {
     },
         {
       city: "北京 九坛八庙",
+      desc: "",
       seal: "坛庙",
       star: true, 
       photos: [ 
@@ -280,6 +289,7 @@ const SITE_DATA = {
     },
     {
       city: "中国 重庆",
+      desc: "",
       seal: "渝",          // 本图集专属印章字（不想要就删掉这一行，会统一用 site.photoSeal）
       star: true,          // ← 星标：封面左上角会出现一枚圆形铜钱标记（不想要就删掉这行）
       photos: [
@@ -312,6 +322,7 @@ const SITE_DATA = {
     },
       {
       city: "吉林 长春",
+      desc: "",
       seal: "长",
       star: true, 
       photos: [
@@ -339,6 +350,7 @@ const SITE_DATA = {
     },
      {
       city: "长春伪满和建国初期建筑",
+      desc: "",
       seal: "伪满",
       star: true,  
       photos: [
@@ -378,6 +390,7 @@ const SITE_DATA = {
     },
     {
       city: "山东 淄博",
+      desc: "",
       seal: "淄", 
       photos: [
         { src: "assets/images/travel-13.jpg", title: "四宝山俯拍" },
@@ -407,6 +420,7 @@ const SITE_DATA = {
     },
     {
       city: "辽宁 沈阳",
+      desc: "",
       seal: "沈",
       star: true,  
       photos: [
@@ -456,6 +470,7 @@ const SITE_DATA = {
     },
      {
       city: "辽宁 大连",
+      desc: "",
       seal: "连",
       star: true,  
       photos: [
@@ -478,15 +493,56 @@ const SITE_DATA = {
         { src: "assets/images/dl2/dl14.jpg", title: "黑石礁" }
       ]
     },
+       {
+      city: "华东四市",
+      seal: "沪苏杭",
+      desc: "2019初至",
+      photos: [    
+        { src: "assets/images/hdws/上海外滩 夜.jpg", title: "上海外滩 夜" },
+        { src: "assets/images/hdws/上海外滩 日.jpg", title: "上海外滩 日" },
+        { src: "assets/images/hdws/上海人民广场 地铁站.jpg", title: "上海人民广场 地铁站" },
+        { src: "assets/images/hdws/杭州 西湖 .jpg", title: "杭州 西湖 " },
+        { src: "assets/images/hdws/杭州 西湖 其二.jpg", title: "杭州 西湖 其二" },
+        { src: "assets/images/hdws/浙江嘉兴桐乡 乌镇东栅.jpg", title: "浙江嘉兴桐乡 乌镇东栅" },
+        { src: "assets/images/hdws/浙江嘉兴桐乡 乌镇西栅.jpg", title: "浙江嘉兴桐乡 乌镇西栅" },
+        { src: "assets/images/hdws/苏州 耦园.jpg", title: "苏州 耦园" },
+        { src: "assets/images/hdws/苏州 山塘街.jpg", title: "苏州 山塘街" },
+        { src: "assets/images/hdws/苏州山塘街 其二.jpg", title: "苏州 山塘街 其二" }
+      ]
+    },
     {
       city: "江苏 徐州",
+      desc: "",
       seal: "彭",
       photos: [
         { src: "assets/images/travel-5.jpg", title: "户部山" }
       ]
     },
+        {
+      city: "陕西 西安",
+      desc: "2021年高考结束 至渭南、西安游玩。",
+      seal: "秦",
+      photos: [
+        { src: "assets/images/xian/2021年 大唐不夜城.jpg", title: "2021年 大唐不夜城" },
+        { src: "assets/images/xian/华山盛景.jpg", title: "华山盛景" },
+        { src: "assets/images/xian/华山盛景 其二.jpg", title: "华山盛景 其二" },
+        { src: "assets/images/xian/华山盛景 其三.jpg", title: "华山盛景 其三" },
+        { src: "assets/images/xian/华山盛景 其四.jpg", title: "华山盛景 其四" },
+        { src: "assets/images/xian/华山盛景 其五.jpg", title: "华山盛景 其五" },
+        { src: "assets/images/xian/华山盛景 其六.jpg", title: "华山盛景 其六" },
+        { src: "assets/images/xian/华山盛景 其七.jpg", title: "华山盛景 其七" },    
+        { src: "assets/images/xian/华山盛景 其八.jpg", title: "华山盛景 其八" },
+        { src: "assets/images/xian/华山盛景 其九.jpg", title: "华山盛景 其九" },
+        { src: "assets/images/xian/秦始皇陵兵马俑.jpg", title: "秦始皇陵兵马俑" },
+        { src: "assets/images/xian/秦始皇陵兵马俑 其二.jpg", title: "秦始皇陵兵马俑 其二" },
+        { src: "assets/images/xian/秦始皇陵兵马俑 其三.jpg", title: "秦始皇陵兵马俑 其三" },
+        { src: "assets/images/xian/骊山索道.jpg", title: "骊山索道" },
+        { src: "assets/images/xian/华清池景区 老蒋谏兵亭.jpg", title: "华清池景区 老蒋谏兵亭" },
+      ]
+    },
     {
       city: "山东 泰安",
+      desc: "",
       seal: "泰",
       photos: [
         { src: "assets/images/travel-6.jpg", title: "泰山 南天门" }
@@ -494,6 +550,7 @@ const SITE_DATA = {
     },
     {
       city: "山东 青州",
+      desc: "",
       seal: "青",
       photos: [
         { src: "assets/images/travel-7.jpg", title: "青州古城落日" }
@@ -502,6 +559,7 @@ const SITE_DATA = {
   
     {
       city: "湖北 武汉",
+      desc: "",
       seal: "汉",
       photos: [
         { src: "assets/images/travel-10.jpg", title: "黄鹤楼之夜" }
@@ -509,6 +567,7 @@ const SITE_DATA = {
     },
     {
       city: "中国 天津",
+      desc: "",
       seal: "津",
       photos: [
         { src: "assets/images/travel-11.jpg", title: "津湾广场" }
@@ -516,6 +575,7 @@ const SITE_DATA = {
     },
     {
       city: "江苏 连云港",
+      desc: "",
       seal: "海",
       photos: [
         { src: "assets/images/travel-12.jpg", title: "在海一方公园" }
@@ -523,6 +583,7 @@ const SITE_DATA = {
     },
     {
       city: "四川 成都",
+      desc: "",
       seal: "蓉",
       photos: [
         { src: "assets/images/travel-15.jpg", title: "天府广场" },
@@ -531,6 +592,7 @@ const SITE_DATA = {
     },
     {
       city: "黑龙江 哈尔滨",
+      desc: "",
       seal: "哈",
       
       photos: [
@@ -539,6 +601,7 @@ const SITE_DATA = {
     },
     {
       city: "山东 济南",
+      desc: "",
       seal: "济",
       photos: [
         { src: "assets/images/travel-23.jpg", title: "曲水亭街" },

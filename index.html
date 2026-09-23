@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="个人网站 · 新中式风格 · 简介与行迹">
   <title>洛晴跃飞</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260922a">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260923f">
   <!-- ?v= 是版本号：改了 style.css 却没生效时，把数字加一即可绕过浏览器缓存 -->
-  <link rel="stylesheet" href="css/style.css?v=20260922a">
+  <link rel="stylesheet" href="css/style.css?v=20260923f">
 </head>
 <body>
 
@@ -183,7 +183,12 @@
         <span class="album-browser-seal" id="album-browser-seal"></span>
         <h3 class="album-browser-title" id="album-browser-title"></h3>
         <span class="album-browser-count" id="album-browser-count"></span>
+        <button class="album-browser-note-btn" id="album-browser-note-btn" type="button"
+                aria-expanded="false" aria-controls="album-browser-note" hidden>简介</button>
       </header>
+      <div class="album-browser-note" id="album-browser-note" aria-hidden="true">
+        <div class="album-browser-note-inner" id="album-browser-note-inner"><!-- JS 渲染 --></div>
+      </div>
       <div class="album-browser-body">
         <div class="album-browser-grid" id="album-browser-grid"><!-- JS 渲染 --></div>
         <!-- 右侧极细下滑进度条 -->
@@ -222,9 +227,10 @@
     <article class="city-map-paper" id="city-map-body"><!-- JS 渲染 --></article>
   </div>
 
-  <script src="js/data.js?v=20260922c"></script>
-  <script src="js/china-map.js?v=20260922c"></script>
-  <script src="js/main.js?v=20260922c"></script>
+  <script src="js/album-desc.js?v=20260923f"></script>
+  <script src="js/data.js?v=20260923f"></script>
+  <script src="js/china-map.js?v=20260923f"></script>
+  <script src="js/main.js?v=20260923f"></script>
 
   <!-- 访问量统计：不蒜子（免注册、免账号）。脚本被拦截或服务不可用时，页脚计数会自动隐藏 -->
   <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
