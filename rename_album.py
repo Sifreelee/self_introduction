@@ -25,8 +25,8 @@
   python rename_album.py --prefix dunhuang --dir "F:\\照片\\敦煌" --sort name ^
          --start 10 --city "中国 敦煌" --seal "敦"
 
-  # 中文文件名的图默认会被跳过；确实要连它们一起改，才加 --allow-chinese
-  python rename_album.py --prefix changchun --since "2026-09-16 17:00" --allow-chinese
+  # 只重命名中文文件名的图（英文名的一律不动）
+  python rename_album.py --prefix changchun --rename-mode cn
 
   # 只看会怎么改，不动文件（强烈建议第一次先跑这个）
   python rename_album.py --prefix test --newest 5 --dry-run
@@ -34,10 +34,17 @@
   # 改回原名（用当时生成的对照表）
   python rename_album.py --rollback "weiman_对照表.csv"
 
+==================== 重命名模式 --rename-mode ====================
+  决定「文件名里带中文 / 不带中文」的两类图，哪些要改、哪些留着。
+
+    en   只重命名英文（默认）——含中文的跳过，多是已经整理好的图
+    cn   只重命名中文      ——反过来，只动中文名的，英文名的不动
+    none 都不重命名        ——一张都不改，只出清单 / 对照表（用来先摸清目录）
+    all  都重命名          ——中文英文一起改
+
 默认规则（两条，都是为了避免误伤已有内容）：
-  1. 文件名里含中文的，一律跳过不改名（多是已经整理好的图），
-     编号在剩下的文件上继续，不会跳号；
-     想连中文名的文件一起改，加 --allow-chinese
+  1. 按上面的模式，被挡下的文件一律不改名，
+     编号在剩下的文件上继续，不会跳号
   2. 已经叫 <前缀><数字> 的文件自动跳过，重复运行不会把编号搞乱（除非加 --force）
 
 被上面两条挡下的文件不会从清单里消失：它们保持原名，但照样写进
@@ -64,7 +71,8 @@ try:  # Windows 控制台中文
 except Exception:
     pass
 
-BASE = r"F:\WorkBuddy\personal-website"
+# 取脚本所在目录：站点文件夹改名 / 换盘 / 从备份恢复都不用再改这里的路径
+BASE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_IMG_DIR = os.path.join(BASE, "assets", "images")
 DEFAULT_OUT = BASE
 
@@ -76,6 +84,24 @@ CJK_RE = re.compile(r"[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]")
 
 def has_cjk(name):
     return bool(CJK_RE.search(name))
+
+
+# 重命名模式：决定「文件名里带中文 / 不带中文」两类图，哪些改、哪些留
+# 问答模式和命令行共用这一张表，改这里两边同步生效
+RENAME_MODES = [
+    ("en",   "只重命名英文", "文件名含中文的跳过不动，其余按前缀重新编号"),
+    ("cn",   "只重命名中文", "只改文件名含中文的，纯英文名的跳过不动"),
+    ("none", "都不重命名",   "一张都不改，只生成照片清单 / 对照表"),
+    ("all",  "都重命名",     "中文名、英文名一起改"),
+]
+MODE_KEYS = [k for k, _n, _d in RENAME_MODES]
+
+
+def mode_label(key):
+    for k, name, _d in RENAME_MODES:
+        if k == key:
+            return name
+    return key
 
 
 # ───────────────────────── 基础工具 ─────────────────────────
@@ -107,13 +133,17 @@ def parse_time(text):
     raise SystemExit("时间格式看不懂，请用：2026-09-16 15:00")
 
 
-def select_files(items, mode, arg, sort_by, prefix, force, allow_chinese=False):
+def select_files(items, mode, arg, sort_by, prefix, force, name_mode="en"):
     """先按模式圈定「这一批」，再套两条保护规则。
 
     顺序很重要：先圈范围、后套规则，这样被保护规则挡下的文件仍属于这一批，
     能一并写进清单；反过来的话，别的图集里的中文名文件也会被误带进来。
 
-    返回 (files, keeps, 跳过已编号数, 跳过中文名数)
+    name_mode 决定按「文件名有没有中文」筛谁改、谁留：
+      en   只改英文名的（默认）   cn  只改中文名的
+      none 一个都不改             all 中英文都改
+
+    返回 (files, keeps, 跳过已编号数, 被模式挡下数)
       files —— 要改名的 [(mtime, 文件名)]，已按 sort_by 排好序
       keeps —— 在范围内但不改名的 [(文件名, 原因)]，同样排好序
     """
@@ -129,16 +159,29 @@ def select_files(items, mode, arg, sort_by, prefix, force, allow_chinese=False):
     else:                       # all
         scoped = list(items)
 
-    # 2) 规则一：文件名含中文的不改名（多为已整理好的图，避免误改）
+    # 2) 规则一：按「重命名模式」决定哪些文件改名、哪些保持原样
     keeps = []                  # [(mtime, 文件名, 原因)]
-    if not allow_chinese:
+    if name_mode == "none":
+        # 一个都不改：全部进清单，但文件名原样保留
+        keeps += [(m, n, "当前模式（都不重命名）不改文件名") for m, n in scoped]
+        rest, skipped_by_mode = [], 0
+    elif name_mode == "cn":
+        # 只改中文名的：英文名的文件保持原样
+        rest, other = [], []
+        for x in scoped:
+            (rest if has_cjk(x[1]) else other).append(x)
+        keeps += [(m, n, "英文名文件，当前模式（只重命名中文）不动它") for m, n in other]
+        skipped_by_mode = len(other)
+    elif name_mode == "all":
+        # 中英文一起改
+        rest, skipped_by_mode = scoped, 0
+    else:
+        # en：只改英文名的，中文名（多为已整理好的图）保持原样，避免误改
         rest, cjk = [], []
         for x in scoped:
             (cjk if has_cjk(x[1]) else rest).append(x)
-        keeps += [(m, n, "中文文件名，保持原样") for m, n in cjk]
-        skipped_cjk = len(cjk)
-    else:
-        rest, skipped_cjk = scoped, 0
+        keeps += [(m, n, "中文文件名，当前模式（只重命名英文）不动它") for m, n in cjk]
+        skipped_by_mode = len(cjk)
 
     # 3) 规则二：已经编过号的（同前缀）不改名，避免重复运行时二次编号
     if not force and prefix:
@@ -157,7 +200,7 @@ def select_files(items, mode, arg, sort_by, prefix, force, allow_chinese=False):
     else:
         files = sorted(picked, key=lambda x: x[1])
         keeps_sorted = sorted(keeps, key=lambda x: x[1])
-    return files, [(n, why) for _m, n, why in keeps_sorted], skipped_existing, skipped_cjk
+    return files, [(n, why) for _m, n, why in keeps_sorted], skipped_existing, skipped_by_mode
 
 
 def build_plan(files, prefix, start, pad):
@@ -171,6 +214,14 @@ def build_plan(files, prefix, start, pad):
 
 
 def print_plan(plan, folder, keeps=()):
+    if not plan:
+        print("\n本次不修改任何文件名（共 %d 张原样写进清单）：" % len(keeps))
+        print("-" * 62)
+        for name, why in keeps:
+            print("  %-42s （%s）" % (name, why))
+        print("-" * 62)
+        print("所在文件夹：%s\n" % folder)
+        return
     print("\n将要这样改（共 %d 张）：" % len(plan))
     print("-" * 62)
     for old, new, title in plan:
@@ -218,7 +269,11 @@ def write_outputs(out_dir, prefix, plan, city, seal, keeps=(), img_dir=None):
     # 网页路径前缀：assets/images，或在它下面的子目录（统一正斜杠）
     web_prefix = "assets/images"
     if img_dir:
-        rel = os.path.relpath(os.path.abspath(img_dir), DEFAULT_IMG_DIR).replace("\\", "/")
+        try:
+            rel = os.path.relpath(os.path.abspath(img_dir), DEFAULT_IMG_DIR).replace("\\", "/")
+        except ValueError:
+            # 照片在别的盘符（站点在 F:、照片在 D:）算不出相对路径，按根目录处理
+            rel = ""
         if rel and rel != "." and not rel.startswith(".."):
             web_prefix = "%s/%s" % (web_prefix, rel)
 
@@ -334,13 +389,18 @@ def interactive():
     start = int(ask("\n5) 起始编号", "1") or 1)
     pad_raw = ask("\n6) 编号补零位数（0 = 不补零，如 3 -> weiman001）", "0")
     pad = int(pad_raw or 0)
-    allow_cjk = ask("\n7) 连中文文件名的文件一起改？[y/N]", "n").lower() == "y"
+    print("\n7) 重命名模式（按文件名里有没有中文来分）")
+    for i, (k, name, desc) in enumerate(RENAME_MODES, 1):
+        print("   %d) %-12s %s" % (i, name, desc))
+    pick = ask("   选 1/2/3/4", "1")
+    name_mode = MODE_KEYS[int(pick) - 1] if pick.isdigit() and 1 <= int(pick) <= len(MODE_KEYS) else "en"
+    print("   已选：%s" % mode_label(name_mode))
 
-    files, keeps, skipped, skipped_cjk = select_files(items, mode, arg, sort_by, prefix,
-                                                      force=False, allow_chinese=allow_cjk)
-    if skipped_cjk:
-        print("\n（%d 个中文文件名的文件不改名，编号在剩下的图里接着排，"
-              "但它们会原样写进清单）" % skipped_cjk)
+    files, keeps, skipped, skipped_by_mode = select_files(items, mode, arg, sort_by, prefix,
+                                                          force=False, name_mode=name_mode)
+    if skipped_by_mode:
+        print("\n（%d 个文件按「%s」模式不改名，编号在剩下的图里接着排，"
+              "但它们会原样写进清单）" % (skipped_by_mode, mode_label(name_mode)))
     if skipped:
         print("（%d 个早就叫 %s+数字 的文件不重复编号，同样写进清单）" % (skipped, prefix))
     if not files and not keeps:
@@ -392,8 +452,11 @@ def main():
     ap.add_argument("--seal", help="印章字，配合 --city 使用")
     ap.add_argument("--out", default=DEFAULT_OUT, help="清单输出文件夹，默认项目根目录")
     ap.add_argument("--force", action="store_true", help="连已经编过号的同前缀文件也一起重编")
+    ap.add_argument("--rename-mode", choices=MODE_KEYS, default="en",
+                    help="重命名模式：en=只重命名英文（默认）/ cn=只重命名中文 / "
+                         "none=都不重命名 / all=都重命名")
     ap.add_argument("--allow-chinese", action="store_true",
-                    help="默认跳过中文文件名的文件；加这个参数才连它们一起改")
+                    help="旧参数，等价于 --rename-mode all（保留兼容，建议改用 --rename-mode）")
     ap.add_argument("--exclude-kept", action="store_true",
                     help="清单里只列本次改名的文件，不列入「保持原名」的中文名文件")
     ap.add_argument("--dry-run", action="store_true", help="只预览不改文件")
@@ -409,6 +472,10 @@ def main():
         interactive()
         return
 
+    # 旧开关 --allow-chinese 等价于 all
+    name_mode = "all" if args.allow_chinese else args.rename_mode
+    print("重命名模式：%s" % mode_label(name_mode))
+
     items = list_images(args.dir)
     if args.newest:
         mode, arg = "newest", args.newest
@@ -419,10 +486,11 @@ def main():
     else:
         mode, arg = "all", None
 
-    files, keeps, skipped, skipped_cjk = select_files(items, mode, arg, args.sort, args.prefix,
-                                                      args.force, args.allow_chinese)
-    if skipped_cjk:
-        print("（%d 个中文文件名的文件不改名，编号在剩余图片上继续，但会原样写进清单）" % skipped_cjk)
+    files, keeps, skipped, skipped_by_mode = select_files(items, mode, arg, args.sort, args.prefix,
+                                                          args.force, name_mode)
+    if skipped_by_mode:
+        print("（%d 个文件按「%s」模式不改名，编号在剩余图片上继续，但会原样写进清单）"
+              % (skipped_by_mode, mode_label(name_mode)))
     if skipped:
         print("（%d 个已编号为 %s+数字 的文件不重复编号，同样写进清单）" % (skipped, args.prefix))
     if args.exclude_kept:

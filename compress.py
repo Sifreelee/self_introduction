@@ -11,9 +11,16 @@
   python compress.py                            # 交互式输入文件夹，直接回车用 assets/images
   python compress.py --dir "F:\\照片\\敦煌"       # 指定文件夹
   python compress.py --dir "F:\\照片\\敦煌" -r    # 连子文件夹一起处理
+  python compress.py --dir "F:\\照片\\敦煌" --bg #EFE8D6   # 指定透明区填充色
+  python compress.py --dir "F:\\照片\\敦煌" --bg --paper   # 直接用 css 里的配色变量
 
 脚本会自动完成：
-  · 把 png / webp / bmp 等统一转成 .jpg（透明的地方补白底）
+  · 把 png / webp / bmp 等统一转成 .jpg
+    透明区域（抠图）填充「网站纸色」而不是纯白，默认取 css 里的 --card
+    #F6F0E2（相册卡片底色），转出来的图放进卡片不会有一块死白。
+    注意：只对「真透明」生效（png 带 alpha 通道 / tRNS）。
+    如果抠图是白底不透明的 png，脚本不会去白底 —— 那会误伤照片里
+    正常的白色高光；这种情况请先在抠图软件里把背景存成透明。
   · 压缩过大的图片（超过 800KB 或长边超过 1600px 的，缩到长边1600、质量82）
   · 已经是 jpg 且不大不小的，原样保留，不做无谓的二次压缩
   · 文件名变了（如 png→jpg）会自动把 data.js 里的引用同步改掉
@@ -36,12 +43,21 @@ import re
 from PIL import Image, ImageOps
 
 # ─────────── 配置 ───────────
-BASE = r"F:\WorkBuddy\personal-website"
+# BASE 取脚本所在目录：站点文件夹改名 / 换盘 / 从备份恢复都不用再改这里的路径
+BASE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_IMG_DIR = os.path.join(BASE, "assets", "images")
 DATA_JS = os.path.join(BASE, "js", "data.js")
+CSS_FILE = os.path.join(BASE, "css", "style.css")
+
+# 抠图 png 转 jpg 时，透明区填什么颜色（网站配色，不用纯白）
+#   默认自动读取 css/style.css 里的 --card（相册卡片底色 #F6F0E2）
+#   想用页面底色就把它改成 "--paper"（#EFE8D6 宣纸色）
+BG_VAR = "--card"
+BG_COLOR = (246, 240, 226)      # 读不到 css 时的兜底色，等于 #F6F0E2
 
 IMG_DIR = DEFAULT_IMG_DIR   # 实际处理的文件夹，入口处会按参数/输入改写
 RECURSIVE = False           # 是否连子文件夹一起处理
+ARGS = None                 # 命令行参数（resolve_dir 里赋值）
 
 MAX_SIDE = 1600
 QUALITY = 82
@@ -53,8 +69,35 @@ CONVERT_EXTS = (".png", ".webp", ".bmp")  # 这些格式一律转成 jpg
 NEVER_TOUCH = (".svg", ".gif")
 
 
-def save_jpg(path, out_path):
-    """把任意图片转成 jpg 存到 out_path：统一白底 + 缩到长边 MAX_SIDE。"""
+def read_css_color(var, default):
+    """从 css/style.css 读取配色变量，返回 (R,G,B)；读不到就用兜底色。"""
+    try:
+        with open(CSS_FILE, "r", encoding="utf-8") as f:
+            css = f.read()
+        m = re.search(re.escape(var) + r"\s*:\s*#([0-9A-Fa-f]{6})", css)
+        if m:
+            h = m.group(1)
+            return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+    except Exception:
+        pass
+    return default
+
+
+def parse_bg(text, fallback):
+    """把 --bg 参数转成 (R,G,B)：支持 #RRGGBB / RRGGBB / css 变量名（如 --paper）。"""
+    s = (text or "").strip()
+    if not s:
+        return fallback
+    if s.startswith("-"):                       # css 变量：--card / --paper / --paper-2 …
+        return read_css_color(s, fallback)
+    s = s.lstrip("#")
+    if re.fullmatch(r"[0-9A-Fa-f]{6}", s):
+        return tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))
+    return fallback
+
+
+def save_jpg(path, out_path, bg=BG_COLOR):
+    """把任意图片转成 jpg 存到 out_path：透明区补网站纸色 + 缩到长边 MAX_SIDE。"""
     # 用 with 打开，确保下面替换 / 删除原图时文件句柄已释放（否则 Windows 会报占用）
     with Image.open(path) as src:
         try:
@@ -62,13 +105,13 @@ def save_jpg(path, out_path):
         except Exception:
             pass
 
-        # 有透明通道的先合到白底，避免透明区变黑
+        # 有透明通道的先合到网站纸色底，避免透明区变黑或出现一块死白
         has_alpha = src.mode in ("RGBA", "LA") or (src.mode == "P" and "transparency" in src.info)
         if has_alpha:
             src = src.convert("RGBA")
-            bg = Image.new("RGB", src.size, (255, 255, 255))
-            bg.paste(src, mask=src.split()[-1])
-            img = bg
+            canvas = Image.new("RGB", src.size, bg)
+            canvas.paste(src, mask=src.split()[-1])
+            img = canvas
         else:
             img = src.convert("RGB")
 
@@ -122,10 +165,13 @@ def resolve_dir():
     ap = argparse.ArgumentParser(description="图片压缩 + 统一转 JPG（原地覆盖，不保留原图）")
     ap.add_argument("--dir", default="", help="要处理的文件夹，默认 assets/images")
     ap.add_argument("-r", "--recursive", action="store_true", help="连子文件夹一起处理")
+    ap.add_argument("--bg", default="",
+                    help="透明区填充色：#RRGGBB 或 css 变量名（--card/--paper/--paper-2），默认 --card")
     args = ap.parse_args()
 
-    global IMG_DIR, RECURSIVE
+    global IMG_DIR, RECURSIVE, ARGS
     RECURSIVE = args.recursive
+    ARGS = args
 
     folder = (args.dir or "").strip().strip('"')
     if not folder:
@@ -168,9 +214,18 @@ def main():
     sync_js = (os.path.normcase(os.path.abspath(folder))
                == os.path.normcase(os.path.abspath(DEFAULT_IMG_DIR)))
 
+    # 透明区底色：命令行 --bg 优先，否则读 css 的 BG_VAR
+    raw_bg = (getattr(ARGS, "bg", "") or "").strip()
+    if raw_bg:
+        bg = parse_bg(raw_bg, BG_COLOR)
+        bg_desc = raw_bg
+    else:
+        bg = read_css_color(BG_VAR, BG_COLOR)
+        bg_desc = "css " + BG_VAR
     print("处理文件夹：%s%s" % (folder, "（含子文件夹）" if RECURSIVE else ""))
     if not sync_js:
         print("（这不是网站的 assets/images，不会改动 data.js）")
+    print("透明区底色：#%02X%02X%02X（%s）" % (bg[0], bg[1], bg[2], bg_desc))
     print("")
 
     files = list_files()
@@ -217,7 +272,7 @@ def main():
         # 先写临时文件，成功后再替换原图：压缩失败时原图不受影响
         tmp_path = os.path.join(os.path.dirname(path), "__tmp_%d.jpg" % os.getpid())
         try:
-            save_jpg(path, tmp_path)
+            save_jpg(path, tmp_path, bg)
             new_size = os.path.getsize(tmp_path)
         except Exception as e:
             if os.path.exists(tmp_path):
