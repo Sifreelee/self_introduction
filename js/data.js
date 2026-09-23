@@ -594,7 +594,6 @@ const SITE_DATA = {
       city: "黑龙江 哈尔滨",
       desc: "",
       seal: "哈",
-      
       photos: [
         { src: "assets/images/travel-22.jpg", title: "中央大街" }
       ]
@@ -607,8 +606,20 @@ const SITE_DATA = {
         { src: "assets/images/travel-23.jpg", title: "曲水亭街" },
         { src: "assets/images/travel-24.jpg", title: "胶济铁路博物馆" }
       ]
+    },
+       {
+      city: "名胜古迹 三山五岳",
+      desc: "2021年至西岳华山，2025年至东岳泰山，2026年至北岳恒山。",
+      seal: "五岳",
+      star: true,  
+      photos: [
+        { src: "assets/images/wuyue/东岳 泰山.jpg", title: "东岳 泰山" },
+        { src: "assets/images/wuyue/西岳 华山.jpg", title: "西岳 华山" }
+
+      ]
     }
   ],
+  
 
   /* ─────────── 贰 · 行迹 之 影像集（社交视频平台入口） ───────────
      点击卡片直接跳转到对应平台主页。
