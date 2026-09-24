@@ -53,6 +53,33 @@ function renderSite() {
   $("#footer-text").textContent = s.footerText;
 }
 
+/* ═══════════ 身份标签：点了跳版块 / 直接打开相册 ═══════════
+   行为写在 data.js 的 profile.tagActions 里，没配的就还是普通文字标签。 */
+function renderProfileTag(p, t) {
+  const act = (p.tagActions || {})[t] || {};
+  if (!act.jump && !act.openAlbum) return `<span>${esc(t)}</span>`;
+  const kind = act.openAlbum ? "album" : "jump";
+  const val = act.openAlbum || act.jump;
+  // 鼠标提示：按要去的地方给句人话
+  const TIPS = { works: "去看看行迹", photos: "去看看照片集", travel: "去看看旅行随笔",
+                 videos: "去看看影像集", hobbies: "去看看所好" };
+  const tip = act.openAlbum ? `打开《${act.openAlbum}》相册` : (TIPS[val] || "去看看行迹");
+  return `<span class="is-link" role="button" tabindex="0"
+    data-tag-go="${esc(kind)}" data-tag-value="${esc(val)}"
+    title="${esc(tip)}">${esc(t)}</span>`;
+}
+
+/* 按名字找相册下标：先对全名，再退一步找「名字里含有」的那本。
+   写 data.js 时名字没写全（比如只写「古建筑构」）也能找到。 */
+function findAlbumIndex(name) {
+  const key = String(name || "").trim();
+  if (!key) return -1;
+  const groups = SITE_DATA.photos || [];
+  let i = groups.findIndex((g) => (g.city || "") === key);
+  if (i < 0) i = groups.findIndex((g) => (g.city || "").indexOf(key) > -1);
+  return i;
+}
+
 function renderProfile() {
   const p = SITE_DATA.profile;
   const cityCount = (SITE_DATA.cities || []).length;
@@ -72,7 +99,7 @@ function renderProfile() {
       <div class="stat-label">${esc(t.label)}</div>
     </div>`;
   }).join("");
-  const tags = (p.tags || []).map((t) => `<span>${esc(t)}</span>`).join("");
+  const tags = (p.tags || []).map((t) => renderProfileTag(p, t)).join("");
   const bio = (p.bio || []).map((t) => `<p>${esc(t)}</p>`).join("");
 
   $("#profile-content").innerHTML = `
@@ -114,6 +141,41 @@ function renderProfile() {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); gotoWorksPanel(key, el); }
       });
     }
+  });
+
+  // 点肖像照片 → 跳到 data.js 里 profile.portraitGoto 指定的版块（现在：相邀）
+  const portrait = $("#profile-content .portrait-frame");
+  const pg = String(p.portraitGoto || "").trim();
+  if (portrait && pg) {
+    portrait.classList.add("is-link");
+    portrait.setAttribute("role", "button");
+    portrait.setAttribute("tabindex", "0");
+    portrait.title = "想聊聊的话，来相邀找我";
+    const goPortrait = () => gotoWorksPanel(pg, portrait);
+    portrait.addEventListener("click", goPortrait);
+    portrait.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goPortrait(); }
+    });
+  }
+
+  // 身份标签：跳版块（jump）或直接把相册打开（album）
+  $("#profile-content").querySelectorAll(".profile-tags [data-tag-go]").forEach((el) => {
+    const go = el.getAttribute("data-tag-go");
+    const val = el.getAttribute("data-tag-value") || "";
+    const run = () => {
+      if (go === "jump") { gotoWorksPanel(val, el); return; }
+      // 其余（album）：先切到「照片集」，这样关掉相册后落点还在这儿；再把相册打开
+      const tab = document.querySelector('#works-tabs .tab[data-tab="photos"]');
+      if (tab && !tab.classList.contains("active")) tab.click();
+      const gi = findAlbumIndex(val);
+      // 名字写错、或相册被删了：不静默失败，退回「跳到照片集」，你再自己挑
+      if (gi > -1) openAlbum(gi);
+      else gotoWorksPanel("photos", el);
+    };
+    el.addEventListener("click", run);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); run(); }
+    });
   });
 }
 

@@ -399,6 +399,13 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   pointer-events: none;
 }
 .portrait-frame img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
+/* 配了 profile.portraitGoto 时整块可点 */
+.portrait-frame.is-link { cursor: pointer; }
+.portrait-frame.is-link:focus-visible { outline: 2px solid var(--seal, #9C3A2E); outline-offset: 3px; }
+.portrait-frame.is-link img { transition: transform .45s ease, filter .45s ease; }
+.portrait-frame.is-link:hover img { transform: scale(1.028); filter: brightness(1.04); }
+.portrait-frame.is-link:hover { box-shadow: 0 18px 52px rgba(70, 58, 32, 0.26); }
+.portrait-frame { transition: box-shadow .45s ease; }
 .portrait-frame .portrait-caption {
   position: absolute; left: -18px; bottom: 40px;
   writing-mode: vertical-rl;
@@ -423,6 +430,17 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   transition: background .3s, color .3s;
 }
 .profile-tags span:hover { background: var(--teal); color: #F2EFE3; }
+/* 在 data.js 的 profile.tagActions 里配了动作的标签：能点 */
+.profile-tags span.is-link { cursor: pointer; user-select: none; }
+.profile-tags span.is-link:focus-visible { outline: 2px solid var(--seal, #9C3A2E); outline-offset: 2px; }
+.profile-tags span.is-link::after {
+  content: "›";
+  display: inline-block; margin-left: 5px; margin-right: -4px;
+  font-family: var(--font-song, serif); opacity: .55;
+  transform: translateY(-1px);
+  transition: transform .3s;
+}
+.profile-tags span.is-link:hover::after { transform: translate(2px, -1px); }
 
 .profile-bio p { margin-bottom: 14px; color: var(--ink-2); text-align: justify; }
 .profile-bio p:first-child::first-letter {

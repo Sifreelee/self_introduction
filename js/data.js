@@ -34,8 +34,31 @@ const SITE_DATA = {
     enName: "Sifree",   // 拼音或英文名
     portrait: "assets/images/gerenzhaopian.jpg",  // 肖像照片路径（换成您的照片文件名）
     portraitCaption: "摄影中",   // 肖像上的小签条文字
+
+    // 点这块肖像照片跳到哪儿（删掉这行就不可点）
+    // contact 相邀 / works 行迹 / photos 照片集 / travel 旅行随笔 / videos 影像集 / hobbies 所好
+    portraitGoto: "contact",
     // 身份标签，可增删
     tags: ["旅行爱好者", "摄影初学者", "文博爱好者", "古建研究小白"],
+
+    /* ── 身份标签点一下干什么（可选）─────────────────────────────
+       不写这一项，标签就是普通文字，点了没反应。写了才变成可点的：
+
+         jump      : 滚到某个版块 —— works 行迹 / photos 照片集 / travel 旅行随笔
+                     videos 影像集 / hobbies 所好
+                     （works 是那一整块「行迹」，停在原来那一页不动；
+                       photos 会先把标签页切到「照片集」再滚过去）
+         openAlbum : 直接把这本相册**打开**（不是只滚过去），
+                     写相册的名字即可，首尾一致或「名字里含有」都算命中，
+                     所以写不全也没关系（比如写「古建筑构」照样能找到）。
+
+       想加新的：照抄一行就行，注意每一行末尾的逗号。 */
+    tagActions: {
+      "旅行爱好者":   { jump: "travel" },     // → 旅行随笔（会先把标签页切过去）
+      "摄影初学者":   { jump: "photos" },     // → 照片集（会先把标签页切过去）
+      "文博爱好者":   { openAlbum: "文物介绍" },
+      "古建研究小白": { openAlbum: "古建筑构" }
+    },
     // 简介段落，一段一个 ""，想加段落就按格式续写
     bio: [
       "得闲便背起相机，去人少的山径走一走。相信天地有大美而不言，愿意做那个替山水说话的人。",
@@ -407,6 +430,7 @@ const SITE_DATA = {
         { src: "assets/images/bj2/bj218.jpg", title: "颐和园 文昌阁" },
         { src: "assets/images/bj2/bj219.jpg", title: "颐和园 廊桥" },
         { src: "assets/images/bj2/bj220.jpg", title: "颐和园 排云殿" },
+        { src: "assets/images/bj2/bj238.jpg", title: "颐和园 十七孔桥" },
         { src: "assets/images/bj2/bj221.jpg", title: "颐和园 佛香阁 其二" },
         { src: "assets/images/bj2/bj222.jpg", title: "颐和园 谐趣园 其三" },
         { src: "assets/images/bj2/bj223.jpg", title: "天坛项背" },
@@ -423,7 +447,6 @@ const SITE_DATA = {
         { src: "assets/images/bj2/bj234.jpg", title: "北海之夏 其五" },
         { src: "assets/images/bj2/bj235.jpg", title: "万佛殿秋英丛" },
         { src: "assets/images/bj2/bj237.jpg", title: "北海之夏 其六" },
-        { src: "assets/images/bj2/bj238.jpg", title: "北海之夏 其七" },
         { src: "assets/images/bj2/bj239.jpg", title: "北海之夏 其八" },
         { src: "assets/images/bj2/bj236.jpg", title: "太庙一隅" },
         { src: "assets/images/bj2/tiananmen/天安门.jpg", title: "天安门" },
