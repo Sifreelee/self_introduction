@@ -1009,6 +1009,59 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   62% { opacity: .6; }
 }
 
+/* ─────────── 相册自定义标签栏 ───────────
+   标签写在 js/data.js 的图集里（tags: [...]），没配就不显示这一行。
+   样式：一枚枚圆角小框，横向排列，排不下可左右滑动。
+   选中：朱砂底 + 米白字；未选中：老纸底 + 墨字。 */
+.album-tagbar {
+  flex: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 22px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.album-tagbar[hidden] { display: none; }
+.album-tagbar::-webkit-scrollbar { height: 0; display: none; }
+
+.tag-chip {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 13px 5px;
+  border-radius: 12px;                      /* 圆角框框 */
+  border: 1px solid var(--line-2);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-family: var(--font-kai); font-size: 13.5px; letter-spacing: .08em;
+  line-height: 1.5; cursor: pointer;
+  transition: background .28s ease, border-color .28s ease,
+              color .28s ease, transform .28s ease, box-shadow .28s ease;
+}
+.tag-chip:hover {
+  border-color: rgba(168, 58, 50, .52);
+  color: var(--cinnabar);
+  transform: translateY(-1px);
+}
+.tag-chip.is-on {
+  background: linear-gradient(180deg, var(--cinnabar), var(--cinnabar-2));
+  border-color: var(--cinnabar-2);
+  color: #F7EFE2;
+  box-shadow: 0 4px 12px rgba(168, 58, 50, .28);
+}
+.tag-chip.is-on:hover { color: #F7EFE2; transform: none; }
+/* 该标签在本相册一张都没命中：淡下去，仍能点（点了会提示暂无照片） */
+.tag-chip.is-empty { opacity: .42; }
+.tag-chip.is-empty:hover { opacity: .7; }
+/* 标签后面的张数：小一号，弱化 */
+.tag-chip-num {
+  font-family: var(--font-song); font-size: 10.5px; font-style: normal;
+  letter-spacing: 0; opacity: .72;
+}
+/* 空结果提示：撑满一行，居中 */
+.album-browser-grid .empty-tip { grid-column: 1 / -1; padding: 26px 0; text-align: center; }
+
 /* 简介正文：默认收起（高度 0），点「简介」后按内容实际高度展开 */
 .album-browser-note {
   flex: none;
@@ -1403,6 +1456,8 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   .album-browser-sheet { width: 94vw; max-height: 86vh; }
   .album-browser-grid { grid-template-columns: repeat(2, 1fr); padding: 12px 18px 18px 14px; }
   .album-browser-head { padding: 14px 64px 10px 16px; }
+  .album-tagbar { padding: 10px 16px 11px; gap: 7px; }
+  .tag-chip { font-size: 13px; padding: 4px 11px 5px; border-radius: 11px; }
   .album-browser-title { font-size: 17px; }
   .album-browser-note-btn { font-size: 14px; letter-spacing: 0.16em; }
   .album-browser-note-inner { padding: 12px 18px 14px 16px; }

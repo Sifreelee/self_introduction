@@ -110,21 +110,28 @@ const SITE_DATA = {
               「圆形铜钱」样式的中式标记（深朱色，低透明度，低调不抢眼）。
               想给某个图集加星标，就在那段里写一行  star: true,
               想取消就删掉这行（或改成 star: false）。
-     想加新城市/新照片，复制一段照着改即可。
-     照片放进 assets/images 文件夹。 */
+       · tags：自定义标签（圆角小框），写在 photos 前面，例如
+              tags: ["镇馆之宝", "青铜器", "佛教文物"],
+              点开图集后标题下方会出现一排圆角小框，点哪个就只显示
+              「照片名中含有该标签」的照片，再点一次取消。
+              照片名 = 网页上显示的名字，即每张照片的 title；
+              源文件名不参与匹配（title 没写时才用它兜底）。不区分大小写。
+              不写就没有这一排小框。
+    */
   photos: [ 
      {
       city: "文物介绍及科普",
-      desc: "可搜索 镇馆之宝/青铜器/佛教文物进行类别区分，玉器、金器、琉璃、钱币等尚未更新。古建筑相关的形制与构件见下方相册。",
+      desc: "可搜索下列文物标签进行类别区分，琉璃、钱币等尚未更新。古建筑相关的形制与构件见下方相册。",
       seal: "珍",
       star: true, 
+      tags: ["镇馆之宝", "青铜器", "陶瓷", "金银器", "佛教文物", "玉器"],
       photos: [
-        { src: "assets/images/bowu/1001.jpg", title: "国家博物馆 镇馆之宝" },
-        { src: "assets/images/bowu/1002.jpg", title: "首都博物馆 镇馆之宝" },
-        { src: "assets/images/bowu/1003.jpg", title: "辽宁省博物馆 镇馆之宝" },
-        { src: "assets/images/bowu/1004.jpg", title: "湖北省博物馆 镇馆之宝" },
-        { src: "assets/images/bowu/1005.jpg", title: "吉林省博物馆 镇馆之宝" },
-        { src: "assets/images/bowu/1006.jpg", title: "四川省博物馆 镇馆之宝" },
+        { src: "assets/images/bowu/zgzb/1001.jpg", title: "国家博物馆 镇馆之宝" },
+        { src: "assets/images/bowu/zgzb/1002.jpg", title: "首都博物馆 镇馆之宝" },
+        { src: "assets/images/bowu/zgzb/1003.jpg", title: "辽宁省博物馆 镇馆之宝" },
+        { src: "assets/images/bowu/zgzb/1004.jpg", title: "湖北省博物馆 镇馆之宝" },
+        { src: "assets/images/bowu/zgzb/1005.jpg", title: "吉林省博物馆 镇馆之宝" },
+        { src: "assets/images/bowu/zgzb/1006.jpg", title: "四川省博物馆 镇馆之宝" },
        { src: "assets/images/bowu/qtq/青铜器 北京非遗工艺博 明代 明永乐款铜鎏金观音菩萨立像 供奉像.jpg", title: "青铜器 北京非遗工艺博 明代 明永乐款铜鎏金观音菩萨立像 供奉像" },
         { src: "assets/images/bowu/qtq/青铜器 吉林省博 东汉 错金银丙午神钩铜带钩 青铜礼器.jpg", title: "青铜器 吉林省博 东汉 错金银丙午神钩铜带钩 青铜礼器" },
         { src: "assets/images/bowu/qtq/青铜器 吉林省博 汉代 夫余鎏金铜面具 供奉像.jpg", title: "青铜器 吉林省博 汉代 夫余鎏金铜面具 供奉像" },
@@ -170,6 +177,7 @@ const SITE_DATA = {
         { src: "assets/images/bowu/qtq/青铜器 齐文化 商代 亚醜钺 兵器.jpg", title: "青铜器 齐文化 商代 亚醜钺 兵器" },
         { src: "assets/images/bowu/qtq/青铜器 齐文化 战国 错金银镶嵌铜牺尊 盛酒器.jpg", title: "青铜器 齐文化 战国 错金银镶嵌铜牺尊 盛酒器" },
         { src: "assets/images/bowu/qtq/青铜器 齐文化 战国 龙形提梁青铜盉 调酒注水器.jpg", title: "青铜器 齐文化 战国 龙形提梁青铜盉 调酒注水器" },
+        { src: "assets/images/bowu/jyq/金银器 徐州博 商代 三星堆平顶青铜人头像吉金万里 金银器.jpg", title: "青铜器 徐州博 商代 三星堆平顶青铜人头像吉金万里" },
        { src: "assets/images/bowu/fjww/佛教文物 北京非遗工艺博 明代 明永乐款铜鎏金观音菩萨立像 供奉像.jpg", title: "佛教文物 北京非遗工艺博 明代 明永乐款铜鎏金观音菩萨立像 供奉像" },
         { src: "assets/images/bowu/fjww/佛教文物 四川省博 唐代 菩萨残立像 供奉像.jpg", title: "佛教文物 四川省博 唐代 菩萨残立像 供奉像" },
         { src: "assets/images/bowu/fjww/佛教文物 国博 元代 鎏金铜水月观音像 供奉像.jpg", title: "佛教文物 国博 元代 鎏金铜水月观音像 供奉像" },
@@ -178,8 +186,6 @@ const SITE_DATA = {
         { src: "assets/images/bowu/fjww/佛教文物 国博 唐代 鎏金铜毗沙门天王像 护法像.jpg", title: "佛教文物 国博 唐代 鎏金铜毗沙门天王像 护法像" },
         { src: "assets/images/bowu/fjww/佛教文物 国博 宋代 彩绘木雕菩萨坐像 供奉像.jpg", title: "佛教文物 国博 宋代 彩绘木雕菩萨坐像 供奉像" },
         { src: "assets/images/bowu/fjww/佛教文物 国博 宋代 彩绘木雕观音菩萨坐像 供奉像.jpg", title: "佛教文物 国博 宋代 彩绘木雕观音菩萨坐像 供奉像" },
-        { src: "assets/images/bowu/fjww/佛教文物 国博 宋代 彩绘木雕观音菩萨头像 供奉像.jpg", title: "佛教文物 国博 宋代 彩绘木雕观音菩萨头像 供奉像" },
-        { src: "assets/images/bowu/fjww/佛教文物 国博 宋代 彩绘木雕观音菩萨立像 供奉像.jpg", title: "佛教文物 国博 宋代 彩绘木雕观音菩萨立像 供奉像" },
         { src: "assets/images/bowu/fjww/佛教文物 国博 宋代 紫竹观音 复制品.jpg", title: "佛教文物 国博 宋代 紫竹观音 复制品" },
         { src: "assets/images/bowu/fjww/佛教文物 国博 明代 三彩菩萨坐像 供奉像.jpg", title: "佛教文物 国博 明代 三彩菩萨坐像 供奉像" },
         { src: "assets/images/bowu/fjww/佛教文物 国博 明代 铜鎏金千手千眼观音菩萨像 供奉像.jpg", title: "佛教文物 国博 明代 铜鎏金千手千眼观音菩萨像 供奉像" },
@@ -206,22 +212,16 @@ const SITE_DATA = {
         { src: "assets/images/bowu/fjww/佛教文物 首都博 清代 铜鎏金金刚铃头 法器.jpg", title: "佛教文物 首都博 清代 铜鎏金金刚铃头 法器" },
        { src: "assets/images/bowu/jyq/金银器 吉林省博 东汉 错金银丙午神钩铜带钩 鎏金器.jpg", title: "金银器 吉林省博 东汉 错金银丙午神钩铜带钩 鎏金器" },
         { src: "assets/images/bowu/jyq/金银器 吉林省博 汉代 夫余鎏金铜面具 供奉像.jpg", title: "金银器 吉林省博 汉代 夫余鎏金铜面具 供奉像" },
-        { src: "assets/images/bowu/jyq/金银器 吉林省博 清代 清乾隆粉彩描金勾莲纹冠架 金银器.jpg", title: "金银器 吉林省博 清代 清乾隆粉彩描金勾莲纹冠架 金银器" },
         { src: "assets/images/bowu/jyq/金银器 吉林省博 金代 金花玉饰腰带 金银器.jpg", title: "金银器 吉林省博 金代 金花玉饰腰带 金银器" },
         { src: "assets/images/bowu/jyq/金银器 国博 其他 隋炀帝萧皇后冠饰复原 饰件.jpg", title: "金银器 国博 其他 隋炀帝萧皇后冠饰复原 饰件" },
         { src: "assets/images/bowu/jyq/金银器 国博 唐代 立凤宝相花金饰件 饰件.jpg", title: "金银器 国博 唐代 立凤宝相花金饰件 饰件" },
         { src: "assets/images/bowu/jyq/金银器 国博 战国 错金银马首形青铜軏 鎏金器.jpg", title: "金银器 国博 战国 错金银马首形青铜軏 鎏金器" },
         { src: "assets/images/bowu/jyq/金银器 国博 战国 错银卧牛青铜镇 鎏金器.jpg", title: "金银器 国博 战国 错银卧牛青铜镇 鎏金器" },
         { src: "assets/images/bowu/jyq/金银器 国博 明代 闹蛾金钗 饰件.jpg", title: "金银器 国博 明代 闹蛾金钗 饰件" },
-        { src: "assets/images/bowu/jyq/金银器 国博 清代 银鎏金点翠镶玉嵌玛瑙饰件 饰件.jpg", title: "金银器 国博 清代 银鎏金点翠镶玉嵌玛瑙饰件 饰件" },
         { src: "assets/images/bowu/jyq/金银器 国博 西汉 滇王之印 印玺.jpg", title: "金银器 国博 西汉 滇王之印 印玺" },
-        { src: "assets/images/bowu/jyq/金银器 国博 西汉 金缕玉衣 金银器.jpg", title: "金银器 国博 西汉 金缕玉衣 金银器" },
         { src: "assets/images/bowu/jyq/金银器 国博 西汉 错金银云纹青铜犀尊 鎏金器.jpg", title: "金银器 国博 西汉 错金银云纹青铜犀尊 鎏金器" },
         { src: "assets/images/bowu/jyq/金银器 国博 西汉 错金银鸟篆文青铜壶 鎏金器.jpg", title: "金银器 国博 西汉 错金银鸟篆文青铜壶 鎏金器" },
-        { src: "assets/images/bowu/jyq/金银器 徐州博 商代 三星堆平顶青铜人头像吉金万里 金银器.jpg", title: "金银器 徐州博 商代 三星堆平顶青铜人头像吉金万里 金银器" },
         { src: "assets/images/bowu/jyq/金银器 徐州博 汉代 汉金带饰四件 金银器.jpg", title: "金银器 徐州博 汉代 汉金带饰四件 金银器" },
-        { src: "assets/images/bowu/jyq/金银器 徐州博 西汉 金缕玉衣 金银器.jpg", title: "金银器 徐州博 西汉 金缕玉衣 金银器" },
-        { src: "assets/images/bowu/jyq/金银器 徐州博 西汉 银缕玉衣 金银器.jpg", title: "金银器 徐州博 西汉 银缕玉衣 金银器" },
         { src: "assets/images/bowu/jyq/金银器 成都市博 唐代 花鸟纹金香囊 金银器.jpg", title: "金银器 成都市博 唐代 花鸟纹金香囊 金银器" },
         { src: "assets/images/bowu/jyq/金银器 湖北省博 明代 明金累丝镶宝石帽顶 金银器.jpg", title: "金银器 湖北省博 明代 明金累丝镶宝石帽顶 金银器" },
         { src: "assets/images/bowu/jyq/金银器 湖北省博 明代 明金镶宝石帽顶 金银器.jpg", title: "金银器 湖北省博 明代 明金镶宝石帽顶 金银器" },
@@ -248,6 +248,7 @@ const SITE_DATA = {
        { src: "assets/images/bowu/tc/陶瓷 吉林省博 唐代 渤海三彩女俑 明器.jpg", title: "陶瓷 吉林省博 唐代 渤海三彩女俑 明器" },
         { src: "assets/images/bowu/tc/陶瓷 吉林省博 宋代 北宋官窑青釉贯耳瓶 盛贮器.jpg", title: "陶瓷 吉林省博 宋代 北宋官窑青釉贯耳瓶 盛贮器" },
         { src: "assets/images/bowu/tc/陶瓷 吉林省博 辽代 白釉贴花提梁壶 盛贮器.jpg", title: "陶瓷 吉林省博 辽代 白釉贴花提梁壶 盛贮器" },
+        { src: "assets/images/bowu/tc/陶瓷 吉林省博 清代 清乾隆粉彩描金勾莲纹冠架 金银器.jpg", title: "陶瓷 吉林省博 清代 清乾隆粉彩描金勾莲纹冠架" },
         { src: "assets/images/bowu/tc/陶瓷 四川省博 东汉 乐舞百戏陶俑群 明器.jpg", title: "陶瓷 四川省博 东汉 乐舞百戏陶俑群 明器" },
         { src: "assets/images/bowu/tc/陶瓷 四川省博 东汉 陶说唱俑 明器.jpg", title: "陶瓷 四川省博 东汉 陶说唱俑 明器" },
         { src: "assets/images/bowu/tc/陶瓷 国博 东汉 击鼓说唱俑 明器.jpg", title: "陶瓷 国博 东汉 击鼓说唱俑 明器" },
@@ -281,15 +282,43 @@ const SITE_DATA = {
         { src: "assets/images/bowu/tc/陶瓷 辽宁省博 清代 粉彩花卉纹玉壶春瓶 陶瓷.jpg", title: "陶瓷 辽宁省博 清代 粉彩花卉纹玉壶春瓶 陶瓷" },
         { src: "assets/images/bowu/tc/陶瓷 辽宁省博 辽代 辽青瓷飞鱼形水盂 盛贮器.jpg", title: "陶瓷 辽宁省博 辽代 辽青瓷飞鱼形水盂 盛贮器" },
         { src: "assets/images/bowu/tc/陶瓷 青州博 明代 孔雀蓝釉双龙瓶 盛贮器.jpg", title: "陶瓷 青州博 明代 孔雀蓝釉双龙瓶 盛贮器" },
-        { src: "assets/images/bowu/tc/陶瓷 青州博 清代 清道光白釉褐彩蛙形花盆 盛贮器.jpg", title: "陶瓷 青州博 清代 清道光白釉褐彩蛙形花盆 盛贮器" }
-
+        { src: "assets/images/bowu/tc/陶瓷 青州博 清代 清道光白釉褐彩蛙形花盆 盛贮器.jpg", title: "陶瓷 青州博 清代 清道光白釉褐彩蛙形花盆 盛贮器" },
+        { src: "assets/images/bowu/yq/玉器 吉林省博 金代 玉带銙 服饰器.jpg", title: "玉器 吉林省博 金代 玉带銙 服饰器" },
+        { src: "assets/images/bowu/yq/玉器 吉林省博 金代 白玉耳杯 玉器.jpg", title: "玉器 吉林省博 金代 白玉耳杯 玉器" },
+        { src: "assets/images/bowu/yq/玉器 四川省博 五代 前蜀龙纹玉大带 服饰器.jpg", title: "玉器 四川省博 五代 前蜀龙纹玉大带 服饰器" },
+        { src: "assets/images/bowu/yq/玉器 四川省博 新石器时代 大溪文化人面形玉佩 陈设器.jpg", title: "玉器 四川省博 新石器时代 大溪文化人面形玉佩 陈设器" },
+        { src: "assets/images/bowu/yq/玉器 国博 新石器时代 新石器红山文化玉龙 陈设器.jpg", title: "玉器 国博 新石器时代 新石器红山文化玉龙 陈设器" },
+        { src: "assets/images/bowu/yq/玉器 国博 新石器时代 玦形龙 佩饰.jpg", title: "玉器 国博 新石器时代 玦形龙 佩饰" },
+        { src: "assets/images/bowu/yq/玉器 国博 新石器时代 玦形龙玉猪龙 佩饰.jpg", title: "玉器 国博 新石器时代 玦形龙玉猪龙 佩饰" },
+        { src: "assets/images/bowu/yq/玉器 国博 新石器时代 红山文化玉猪龙 玉器.jpg", title: "玉器 国博 新石器时代 红山文化玉猪龙 玉器" },
+        { src: "assets/images/bowu/yq/玉器 国博 新石器时代 良渚文化十九节玉琮 礼器.jpg", title: "玉器 国博 新石器时代 良渚文化十九节玉琮 礼器" },
+        { src: "assets/images/bowu/yq/玉器 国博 清代 银鎏金点翠镶玉嵌玛瑙饰件 佩饰.jpg", title: "玉器 国博 清代 银鎏金点翠镶玉嵌玛瑙饰件 佩饰" },
+        { src: "assets/images/bowu/yq/玉器 国博 西汉 金缕玉衣.jpg", title: "玉器 国博 西汉 金缕玉衣" },
+        { src: "assets/images/bowu/yq/玉器 天津市博 东汉 青玉双螭谷纹玉璧 礼器.jpg", title: "玉器 天津市博 东汉 青玉双螭谷纹玉璧 礼器" },
+        { src: "assets/images/bowu/yq/玉器 天津市博 新石器时代 红山文化黄玉猪龙 玉器.jpg", title: "玉器 天津市博 新石器时代 红山文化黄玉猪龙 玉器" },
+        { src: "assets/images/bowu/yq/玉器 天津市博 清代 翡翠缠枝菊花纹环耳扁盖瓶 佩饰.jpg", title: "玉器 天津市博 清代 翡翠缠枝菊花纹环耳扁盖瓶 佩饰" },
+        { src: "assets/images/bowu/yq/玉器 徐州博 西汉 出廓透雕螭虎玉戈 仪仗器.jpg", title: "玉器 徐州博 西汉 出廓透雕螭虎玉戈 仪仗器" },
+        { src: "assets/images/bowu/yq/玉器 徐州博 西汉 出廓龙纹玉璜 礼器.jpg", title: "玉器 徐州博 西汉 出廓龙纹玉璜 礼器" },
+        { src: "assets/images/bowu/yq/玉器 徐州博 西汉 出廓龙纹玉璜抠图 礼器.jpg", title: "玉器 徐州博 西汉 出廓龙纹玉璜抠图 礼器" },
+        { src: "assets/images/bowu/yq/玉器 徐州博 西汉 玉卮 玉器.jpg", title: "玉器 徐州博 西汉 玉卮 玉器" },
+        { src: "assets/images/bowu/yq/玉器 徐州博 西汉 透雕龙凤纹玉环 佩饰.jpg", title: "玉器 徐州博 西汉 透雕龙凤纹玉环 佩饰" },
+        { src: "assets/images/bowu/yq/玉器 徐州博 西汉 金缕玉衣.jpg", title: "玉器 徐州博 西汉 金缕玉衣" },
+        { src: "assets/images/bowu/yq/玉器 徐州博 西汉 银缕玉衣.jpg", title: "玉器 徐州博 西汉 银缕玉衣" },
+        { src: "assets/images/bowu/yq/玉器 徐州博 西汉 食官监漆木芯镶玉枕 玉器.jpg", title: "玉器 徐州博 西汉 食官监漆木芯镶玉枕 玉器" },
+        { src: "assets/images/bowu/yq/玉器 徐州博 西汉 龙形玉佩 佩饰.jpg", title: "玉器 徐州博 西汉 龙形玉佩 佩饰" },
+        { src: "assets/images/bowu/yq/玉器 考古博 商代 玉鸮 陈设器.jpg", title: "玉器 考古博 商代 玉鸮 陈设器" },
+        { src: "assets/images/bowu/yq/玉器 辽宁省博 新石器时代 红山文化玉猪龙 玉器.jpg", title: "玉器 辽宁省博 新石器时代 红山文化玉猪龙 玉器" },
+        { src: "assets/images/bowu/yq/玉器 重庆三峡博 东汉 朔宁王太后玺 印玺.jpg", title: "玉器 重庆三峡博 东汉 朔宁王太后玺 印玺" },
+        { src: "assets/images/bowu/yq/玉器 青州博 东汉 宜子孙玉璧 礼器.jpg", title: "玉器 青州博 东汉 宜子孙玉璧 礼器" }
       ]
+
     },
      {
       city: "中国 北京",
       desc: "",
       seal: "京",
-      star: true,          // ← 星标：封面左上角会出现一枚圆形铜钱标记（不想要就删掉这行）
+      star: true,          //  星标：封面左上角会出现一枚圆形铜钱标
+      tags: ["颐和园", "北海", "雍和宫", "天安门", "天坛", "中山公园"],
       photos: [
         { src: "assets/images/travel-28.jpg", title: "古今同框：中国尊故宫" },
         { src: "assets/images/travel-29.jpg", title: "雍和宫" },
@@ -357,6 +386,7 @@ const SITE_DATA = {
       desc: "",
       seal: "圆明园",
       star: true, 
+      tags: ["大水法", "海晏堂", "鸿慈永秙", "遗址", "鸳鸯", "荷"],
       photos: [
         { src: "assets/images/bj2/ymy/圆明园西洋楼景区的大水法遗址3.jpg", title: "大水法遗址 " },
         { src: "assets/images/bj2/ymy/圆明园西洋楼景区的大水法遗址2.jpg", title: "大水法遗址 其二" },
@@ -410,6 +440,7 @@ const SITE_DATA = {
       desc: "",
       seal: "构件",
       star: true,
+      tags: ["脊兽"],
       photos: [
         { src: "assets/images/bj3/骑凤仙人.jpg", title: "脊兽第一 骑凤仙人" },
         { src: "assets/images/bj3/龙.jpg", title: "脊兽第二 龙" },
@@ -429,6 +460,7 @@ const SITE_DATA = {
       desc: "",
       seal: "坛庙",
       star: true, 
+      tags: ["天坛", "太庙", "社稷坛", "地坛", "先蚕坛"],
       photos: [ 
         { src: "assets/images/bj3/jtbm/天坛 祈年殿.jpg", title: "天坛 祈年殿" },
         { src: "assets/images/bj3/jtbm/天坛 回音壁.jpg", title: "天坛 回音壁" },
@@ -450,6 +482,7 @@ const SITE_DATA = {
       desc: "",
       seal: "渝",          // 本图集专属印章字（不想要就删掉这一行，会统一用 site.photoSeal）
       star: true,          // ← 星标：封面左上角会出现一枚圆形铜钱标记（不想要就删掉这行）
+      tags: ["老君洞", "华岩寺", "风吹岭", "夜", "江"],
       photos: [
         { src: "assets/images/travel-16.jpg", title: "嘉陵江意" },
         { src: "assets/images/travel-17.jpg", title: "长江国际" },
@@ -483,6 +516,7 @@ const SITE_DATA = {
       desc: "",
       seal: "长",
       star: true, 
+      tags: ["净月潭", "红旗街", "同志街", "电车"],
       photos: [
         { src: "assets/images/changchun20260916018.jpg", title: "漫画轻轨" },
         { src: "assets/images/changchun20260916004.jpg", title: "长春大学之春" },
@@ -511,6 +545,7 @@ const SITE_DATA = {
       desc: "",
       seal: "伪满",
       star: true,  
+      tags: ["伪满皇宫", "伪满", "建国", "东本愿寺", "鸣放宫"],
       photos: [
         { src: "assets/images/weiman1.jpg", title: "东本愿寺" },
         { src: "assets/images/weiman2.jpg", title: "伪满中央银行旧址" },
@@ -550,6 +585,7 @@ const SITE_DATA = {
       city: "山东 淄博",
       desc: "",
       seal: "淄", 
+      tags: ["四宝山", "桓台", "周村", "淄川", "海岱楼"],
       photos: [
         { src: "assets/images/travel-13.jpg", title: "四宝山俯拍" },
         { src: "assets/images/travel-14.jpg", title: "叹淄景" },
@@ -581,6 +617,7 @@ const SITE_DATA = {
       desc: "",
       seal: "沈",
       star: true,  
+      tags: ["清故宫", "北陵公园", "中街", "工业博物馆", "教堂", "扫街"],
       photos: [
         { src: "assets/images/travel-4.jpg", title: "北陵公园" },
         { src: "assets/images/sy2/sy201.jpg", title: "沈阳小南教堂" },
@@ -631,6 +668,7 @@ const SITE_DATA = {
       desc: "",
       seal: "连",
       star: true,  
+      tags: ["星海广场", "莲花山", "渔人码头", "东港", "威尼斯"],
       photos: [
         { src: "assets/images/travel-9.jpg", title: "星海广场" },
         { src: "assets/images/dl2/dl12.jpg", title: "星海广场大桥其二" },
@@ -655,6 +693,7 @@ const SITE_DATA = {
       city: "华东四市",
       seal: "沪苏杭",
       desc: "2019初至",
+      tags: ["上海", "杭州", "乌镇", "苏州"],
       photos: [    
         { src: "assets/images/hdws/上海外滩 夜.jpg", title: "上海外滩 夜" },
         { src: "assets/images/hdws/上海外滩 日.jpg", title: "上海外滩 日" },
@@ -680,6 +719,7 @@ const SITE_DATA = {
       city: "陕西 西安",
       desc: "2021年高考结束 至渭南、西安游玩。",
       seal: "秦",
+      tags: ["华山", "兵马俑", "不夜城", "骊山", "华清池"],
       photos: [
         { src: "assets/images/xian/2021年 大唐不夜城.jpg", title: "2021年 大唐不夜城" },
         { src: "assets/images/xian/华山盛景.jpg", title: "华山盛景" },
@@ -702,6 +742,7 @@ const SITE_DATA = {
       city: "山东 泰安",
       desc: "",
       seal: "泰",
+      tags: ["泰山"],
       photos: [
         { src: "assets/images/travel-6.jpg", title: "泰山 南天门" }
       ]
@@ -770,6 +811,7 @@ const SITE_DATA = {
       desc: "2021年至西岳华山，2025年至东岳泰山，2026年至北岳恒山。",
       seal: "五岳",
       star: true,  
+      tags: ["泰山", "华山"],
       photos: [
         { src: "assets/images/wuyue/东岳 泰山.jpg", title: "东岳 泰山" },
         { src: "assets/images/wuyue/西岳 华山.jpg", title: "西岳 华山" }

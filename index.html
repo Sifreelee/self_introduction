@@ -186,6 +186,9 @@
         <button class="album-browser-note-btn" id="album-browser-note-btn" type="button"
                 aria-expanded="false" aria-controls="album-browser-note" hidden>简介</button>
       </header>
+      <!-- 自定义标签栏：在 js/data.js 的图集里写 tags: ["标签1","标签2"] 即可，
+           点标签只显示照片名中含该标签的照片 -->
+      <div class="album-tagbar" id="album-tagbar" role="group" aria-label="相册标签筛选" hidden><!-- JS 渲染 --></div>
       <div class="album-browser-note" id="album-browser-note" aria-hidden="true">
         <div class="album-browser-note-inner" id="album-browser-note-inner"><!-- JS 渲染 --></div>
       </div>

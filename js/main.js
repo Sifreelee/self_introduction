@@ -278,13 +278,20 @@ function starHTML(group) {
   </svg>`;
 }
 
-/* 相册搜索：既按相册名（城市）过滤，也按相册内的图片名（标题 / 文件名）过滤；
+/* 相册搜索：既按相册名（城市）过滤，也按相册内照片「显示在网页上的名字」过滤；
    命中时跳过分页、一次列全，清空即回到原界面 */
 let photoQuery = "";
 
-/* 文件名的「裸名」：assets/images/zb2/zb201.jpg → zb201（便于按文件名搜） */
+/* 文件名的「裸名」：assets/images/zb2/zb201.jpg → zb201 */
 function shotBaseName(src) {
   return (src || "").split("/").pop().replace(/\.[A-Za-z0-9]+$/, "");
+}
+/* 照片在网页上显示的名字：就是 data.js 里写的 title。
+   搜索、标签筛选用的是这个名字 —— 源文件叫什么一律不参与匹配，
+   免得出现「文件名里带这几个字、但网页上明明显示的是别的分类」的误命中。
+   只有 title 没写（空）时，才退回文件名裸名兜底，保证这张照片仍能被搜到。 */
+function shotName(p) {
+  return ((p && p.title) || "").trim() || shotBaseName(p && p.src);
 }
 /* 命中片段标红：先按原始下标切开再各自转义，避免转义后的实体被误伤 */
 function hitHTML(text, q) {
@@ -357,13 +364,12 @@ function renderPhotos() {
 
   let slice, pager = "", shots = [];
   if (q) {
-    // 搜索：相册名命中 → 相册卡片；照片标题或文件名命中 → 照片卡片。两者都一次列全
+    // 搜索：相册名命中 → 相册卡片；照片在网页上显示的名字命中 → 照片卡片。两者都一次列全
     slice = [];
     groups.forEach((g, gi) => {
       if ((g.city || "").toLowerCase().includes(q)) slice.push({ g, gi });
       (g.photos || []).forEach((p, pi) => {
-        const name = (p.title || "") + " " + shotBaseName(p.src);
-        if (name.toLowerCase().includes(q)) shots.push({ g, gi, p, pi });
+        if (shotName(p).toLowerCase().includes(q)) shots.push({ g, gi, p, pi });
       });
     });
     setSearchHint(slice.length, shots.length, q);
@@ -403,7 +409,7 @@ function renderPhotos() {
 
   // 命中的单张照片：左上角标城市，右下角标照片名，点开直接放大（可在该图集内前后翻）
   const shotHTML = shots.map(({ g, gi, p, pi }) => {
-    const label = p.title || shotBaseName(p.src);
+    const label = shotName(p);
     return `
       <div class="photo-wrap reveal">
         <figure class="photo-card photo-shot" data-gi="${gi}" data-pi="${pi}" tabindex="0" role="button" aria-label="查看 ${esc(label)}（${esc(g.city)}）">
@@ -531,8 +537,9 @@ function emptyTip(text) {
 
 /* ═══════════ 图集缩略图选择器（点击相册封面先弹出，一行三张、可下滑） ═══════════ */
 const albumBrowser = $("#album-browser");
-let browserPhotos = [];   // 当前选择器里的照片数组
-let browserGroup = null;  // 当前图集对象（含 city / seal）
+let browserPhotos = [];   // 当前选择器里的照片数组（已按标签筛选）
+let browserGroup = null;  // 当前图集对象（含 city / seal / tags）
+let browserTag = "";      // 当前选中的标签；空串 = 全部
 
 /* 右侧极细下滑进度条：按滚动比例定位滑块；内容不足一屏时整条隐藏 */
 function updateBrowserRail() {
@@ -666,32 +673,83 @@ function setAlbumNote(open) {
   applyNoteHeight();
 }
 
-function openAlbum(gi) {
-  const group = SITE_DATA.photos[gi];
-  if (!group || !group.photos.length) return;
-  browserGroup = group;
-  browserPhotos = group.photos;
+/* ═══════════ 相册自定义标签 ═══════════
+   标签写在 js/data.js 的每个图集里：tags: ["青铜器", "佛教文物"]
+   点一个标签 → 只显示「照片在网页上显示的名字」（data.js 的 title）中含有该标签的照片；
+   再点一次 → 取消，回到全部。没配 tags 的相册不显示标签栏。
+   源文件叫什么不参与匹配（见上方 shotName）。 */
 
-  // 标题 / 印章 / 数量
-  const title = $("#album-browser-title");
-  title.textContent = group.city;
-  const seal = $("#album-browser-seal");
-  seal.textContent = group.seal || (SITE_DATA.site && SITE_DATA.site.photoSeal) || "影";
-  seal.style.display = seal.textContent ? "flex" : "none";
-  fitSealText(seal);
-  $("#album-browser-count").textContent = `共 ${group.photos.length} 张`;
+/* 命中规则：网页显示名里含有该标签即算命中（不区分大小写） */
+function shotHasTag(p, tag) {
+  if (!tag) return true;
+  return shotName(p).toLowerCase().indexOf(String(tag).toLowerCase()) > -1;
+}
 
-  // 相册简介：内容来自 js/album-desc.js，网页上只能看
-  renderAlbumNote(group);
+/* 标签栏：开头固定一个「全部」，后面是 data.js 里配的标签，圆角小框 */
+function renderBrowserTags() {
+  const bar = $("#album-tagbar");
+  if (!bar || !browserGroup) return;
+  const tags = (browserGroup.tags || []).filter((t) => String(t || "").trim());
+  const all = browserGroup.photos || [];
+  if (!tags.length) { bar.hidden = true; bar.innerHTML = ""; return; }
 
-  // 渲染缩略图（一行三张）
+  const chip = (label, value, n) => {
+    const on = browserTag === value;
+    const empty = n === 0;
+    return `
+      <button class="tag-chip${on ? " is-on" : ""}${empty ? " is-empty" : ""}" type="button"
+              data-tag="${esc(value)}" aria-pressed="${on ? "true" : "false"}"
+              title="${empty ? "此相册暂无照片名含该标签" : (value ? `只显示名字含「${esc(label)}」的 ${n} 张` : `显示全部 ${n} 张`)}">
+        <span class="tag-chip-text">${esc(label)}</span><i class="tag-chip-num">${n}</i>
+      </button>`;
+  };
+
+  bar.innerHTML =
+    chip("全部", "", all.length) +
+    tags.map((t) => chip(t, t, all.filter((p) => shotHasTag(p, t)).length)).join("");
+  bar.hidden = false;
+
+  bar.querySelectorAll(".tag-chip").forEach((el) => {
+    el.addEventListener("click", () => setBrowserTag(el.dataset.tag));
+  });
+}
+
+/* 切换标签：点已选中的那个就取消，回到全部 */
+function setBrowserTag(tag) {
+  browserTag = (browserTag === tag) ? "" : (tag || "");
+  renderBrowserTags();
+  renderBrowserGrid();
+  updateBrowserCount();
+}
+
+/* 数量文案：筛选时显示「命中 / 总数」，未筛选时显示「共 N 张」 */
+function updateBrowserCount() {
+  const el = $("#album-browser-count");
+  if (!el || !browserGroup) return;
+  const total = (browserGroup.photos || []).length;
+  el.textContent = browserTag
+    ? `${browserPhotos.length} / ${total} 张`
+    : `共 ${total} 张`;
+}
+
+/* 缩略图区：按当前标签筛完再摆（一行三张，保留原始比例） */
+function renderBrowserGrid() {
   const grid = $("#album-browser-grid");
-  // 直接摆照片：一行三张，各自保留原始比例，不再塞进统一的小方框
-  grid.innerHTML = group.photos.map((p, i) => `
+  if (!grid || !browserGroup) return;
+  browserPhotos = (browserGroup.photos || []).filter((p) => shotHasTag(p, browserTag));
+
+  if (!browserPhotos.length) {
+    grid.innerHTML = emptyTip(browserTag ? `没有照片名含「${browserTag}」的照片` : "这个相册还没有照片");
+    updateBrowserRail();
+    return;
+  }
+
+  grid.innerHTML = browserPhotos.map((p, i) => `
     <button class="thumb-cell reveal" data-i="${i}" type="button" aria-label="查看 ${esc(p.title)}">
       <img src="${esc(p.src)}" alt="${esc(p.title)}">
       <span class="thumb-title">${esc(p.title)}</span>
     </button>`).join("");
+
   // 瀑布流占位：按每张实际高度占掉对应的细行数，尽量补平高低差带来的空位
   if (thumbMasonry) {
     thumbMasonry.disconnect();
@@ -700,7 +758,7 @@ function openAlbum(gi) {
   grid.querySelectorAll("img").forEach((img, i) =>
     bindImgFallback(img, `assets/images/travel-${(i % 6) + 1}.svg`));
 
-  // 点击缩略图 → 进灯箱（此时才把图集交给灯箱，保证灯箱拿到照片列表）
+  // 点击缩略图 → 进灯箱；灯箱里前后翻的也是筛出来的这批照片
   grid.querySelectorAll(".thumb-cell").forEach((el) => {
     el.addEventListener("click", () => {
       albumPhotos = browserPhotos;
@@ -709,13 +767,11 @@ function openAlbum(gi) {
     });
   });
 
-  albumBrowser.classList.add("open");
-  albumBrowser.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
-  // 渐入：滚动容器先滚回顶部，再让缩略图依次浮现
+  // 渐入：先滚回顶部，再让缩略图依次浮现
   grid.scrollTop = 0;
-  const cells = grid.querySelectorAll(".thumb-cell");
-  cells.forEach((el, i) => { el.style.animationDelay = `${Math.min(i, 24) * 0.04}s`; });
+  grid.querySelectorAll(".thumb-cell").forEach((el, i) => {
+    el.style.animationDelay = `${Math.min(i, 24) * 0.04}s`;
+  });
 
   // 进度条：图片陆续加载会改变总高度，得多刷几次
   updateBrowserRail();
@@ -724,6 +780,33 @@ function openAlbum(gi) {
     if (!img.complete) img.addEventListener("load", updateBrowserRail, { once: true });
   });
   setTimeout(updateBrowserRail, 400);
+}
+
+function openAlbum(gi) {
+  const group = SITE_DATA.photos[gi];
+  if (!group || !group.photos.length) return;
+  browserGroup = group;
+  browserTag = "";              // 每次打开相册都从「全部」开始
+
+  // 标题 / 印章
+  const title = $("#album-browser-title");
+  title.textContent = group.city;
+  const seal = $("#album-browser-seal");
+  seal.textContent = group.seal || (SITE_DATA.site && SITE_DATA.site.photoSeal) || "影";
+  seal.style.display = seal.textContent ? "flex" : "none";
+  fitSealText(seal);
+
+  // 相册简介：内容来自 js/album-desc.js，网页上只能看
+  renderAlbumNote(group);
+
+  // 标签栏 + 缩略图 + 数量
+  renderBrowserTags();
+  renderBrowserGrid();
+  updateBrowserCount();
+
+  albumBrowser.classList.add("open");
+  albumBrowser.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
 }
 
 function closeAlbumBrowser() {
