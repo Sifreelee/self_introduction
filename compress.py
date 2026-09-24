@@ -167,6 +167,8 @@ def resolve_dir():
     ap.add_argument("-r", "--recursive", action="store_true", help="连子文件夹一起处理")
     ap.add_argument("--bg", default="",
                     help="透明区填充色：#RRGGBB 或 css 变量名（--card/--paper/--paper-2），默认 --card")
+    ap.add_argument("--no-dialog", action="store_true",
+                    help="不弹结果提示框（被其它脚本串起来调用时用，免得卡住后续步骤）")
     args = ap.parse_args()
 
     global IMG_DIR, RECURSIVE, ARGS
@@ -315,6 +317,10 @@ def main():
 
     msg = "\n".join(report)
     print(msg)
+    # 双击 compress.bat 时弹窗提示结果；被 tools.bat 串起来调用时不弹，免得卡住后续步骤
+    no_dialog = getattr(ARGS, "no_dialog", False) or os.environ.get("WB_NO_DIALOG") == "1"
+    if no_dialog:
+        return
     try:
         import ctypes
         ctypes.windll.user32.MessageBoxW(0, msg, "处理完成（已统一为 jpg）", 0)

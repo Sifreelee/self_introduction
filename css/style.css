@@ -1011,20 +1011,27 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 
 /* ─────────── 相册自定义标签栏 ───────────
    标签写在 js/data.js 的图集里（tags: [...]），没配就不显示这一行。
-   样式：一枚枚圆角小框，横向排列，排不下可左右滑动。
+   样式：一枚枚圆角小框，横向排列，**放不下自动换行**（不再横向滑动）。
    选中：朱砂底 + 米白字；未选中：老纸底 + 墨字。 */
 .album-tagbar {
   flex: none;
-  display: flex; align-items: center; gap: 8px;
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 8px 9px;                    /* 行间距 8px，框间距 9px */
   padding: 11px 22px 12px;
   border-bottom: 1px solid var(--line);
   background: var(--card);
-  overflow-x: auto; overflow-y: hidden;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
+  /* 标签特别多时：大约三行封顶，再多了自己滚，不把下面的照片区挤没 */
+  max-height: 124px;
+  overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin;
 }
 .album-tagbar[hidden] { display: none; }
-.album-tagbar::-webkit-scrollbar { height: 0; display: none; }
+.album-tagbar::-webkit-scrollbar { width: 6px; }
+.album-tagbar::-webkit-scrollbar-track { background: transparent; }
+.album-tagbar::-webkit-scrollbar-thumb {
+  background: rgba(168, 58, 50, .26); border-radius: 3px;
+}
+.album-tagbar::-webkit-scrollbar-thumb:hover { background: rgba(168, 58, 50, .42); }
 
 .tag-chip {
   flex: none;
@@ -1456,7 +1463,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   .album-browser-sheet { width: 94vw; max-height: 86vh; }
   .album-browser-grid { grid-template-columns: repeat(2, 1fr); padding: 12px 18px 18px 14px; }
   .album-browser-head { padding: 14px 64px 10px 16px; }
-  .album-tagbar { padding: 10px 16px 11px; gap: 7px; }
+  .album-tagbar { padding: 10px 16px 11px; gap: 7px 8px; max-height: 116px; }
   .tag-chip { font-size: 13px; padding: 4px 11px 5px; border-radius: 11px; }
   .album-browser-title { font-size: 17px; }
   .album-browser-note-btn { font-size: 14px; letter-spacing: 0.16em; }
