@@ -452,6 +452,7 @@ const SITE_DATA = {
         { src: "assets/images/bj2/tiananmen/天安门.jpg", title: "天安门" },
         { src: "assets/images/bj2/tiananmen/天安门 其二.jpg", title: "天安门 其二" },
         { src: "assets/images/bj2/tiananmen/天安门 其三.jpg", title: "天安门 其三" }
+        
       ]
     },
         {
@@ -509,6 +510,48 @@ const SITE_DATA = {
       ]
     },
     
+      {
+      city: "北京 天安门广场及奥体中心",
+      desc: "",
+      seal: "天安门",
+      star: true, 
+       tags: ["天安门", "太庙", "劳动人民文化宫"],
+      photos: [
+        { src: "assets/images/bj2/gq/天安门 其一.png", title: "天安门 其一" },
+        { src: "assets/images/bj2/gq/天安门 其二.png", title: "天安门 其二" },
+        { src: "assets/images/bj2/gq/天安门 其三.png", title: "天安门 其三" },
+        { src: "assets/images/bj2/gq/中山像.png", title: "中山像" },
+        { src: "assets/images/bj2/gq/人民大会堂 其一.png", title: "人民大会堂 其一" },
+        { src: "assets/images/bj2/gq/人民大会堂 其二.png", title: "人民大会堂 其二" },
+        { src: "assets/images/bj2/gq/劳动人民文化宫 其一.png", title: "劳动人民文化宫 其一" },
+        { src: "assets/images/bj2/gq/劳动人民文化宫 其二.png", title: "劳动人民文化宫 其二" },
+        { src: "assets/images/bj2/gq/劳动人民文化宫 其三.png", title: "劳动人民文化宫 其三" },
+        { src: "assets/images/bj2/gq/劳动人民文化宫 其四.png", title: "劳动人民文化宫 其四" },
+        { src: "assets/images/bj2/gq/劳动人民文化宫 其五.png", title: "劳动人民文化宫 其五" },
+        { src: "assets/images/bj2/gq/劳动人民文化宫 其六.png", title: "劳动人民文化宫 其六" },
+        { src: "assets/images/bj2/gq/国博.png", title: "国博" },
+        { src: "assets/images/bj2/gq/国庆花篮.png", title: "国庆花篮" },
+        { src: "assets/images/bj2/gq/太庙 其一.png", title: "太庙 其一" },
+        { src: "assets/images/bj2/gq/太庙 其二.png", title: "太庙 其二" },
+        { src: "assets/images/bj2/gq/太庙桂花 其一.png", title: "太庙桂花 其一" },
+        { src: "assets/images/bj2/gq/太庙桂花 其二.png", title: "太庙桂花 其二" },
+        { src: "assets/images/bj2/gq/太庙桂花 其三.png", title: "太庙桂花 其三" },
+        { src: "assets/images/bj2/gq/太庙桂花 其四.png", title: "太庙桂花 其四" },
+        { src: "assets/images/bj2/gq/太庙石蒜.png", title: "太庙石蒜" },
+        { src: "assets/images/bj2/gq/太庙菊花 其一.png", title: "太庙菊花 其一" },
+        { src: "assets/images/bj2/gq/太庙菊花 其二.png", title: "太庙菊花 其二" },
+        { src: "assets/images/bj2/gq/太庙菊花 其三.png", title: "太庙菊花 其三" },
+        { src: "assets/images/bj2/gq/太庙菊花 其四.png", title: "太庙菊花 其四" },
+        { src: "assets/images/bj2/gq/太庙菊花 其五.png", title: "太庙菊花 其五" },
+        { src: "assets/images/bj2/gq/奥体地标.png", title: "奥体地标" },
+        { src: "assets/images/bj2/gq/文庙后街.png", title: "文庙后街" },
+        { src: "assets/images/bj2/gq/王府井.png", title: "王府井" },
+        { src: "assets/images/bj2/gq/考古博.png", title: "考古博" },
+        { src: "assets/images/bj2/gq/非遗博雕塑.png", title: "非遗博雕塑" },
+        { src: "assets/images/bj2/gq/鸟巢.png", title: "鸟巢" }
+      ]
+    },
+
      {
       city: "中国 大同",
       seal: "云州",
