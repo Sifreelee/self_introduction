@@ -581,7 +581,15 @@ const SITE_DATA = {
         { src: "assets/images/dt/法华寺 其一.jpg", title: "法华寺 其一" },
         { src: "assets/images/dt/法华寺 其二.jpg", title: "法华寺 其二" },
         { src: "assets/images/dt/纯阳宫广场.jpg", title: "纯阳宫广场" },
-        { src: "assets/images/dt/钟楼.jpg", title: "钟楼" }
+        { src: "assets/images/dt/钟楼.jpg", title: "钟楼" },
+        { src: "assets/images/dt/dtbu/九龙壁 航拍.jpg", title: "九龙壁 航拍" },
+        { src: "assets/images/dt/dtbu/云冈石窟 航拍 其二.jpg", title: "云冈石窟 航拍 其二" },
+        { src: "assets/images/dt/dtbu/云冈石窟 航拍.jpg", title: "云冈石窟 航拍" },
+        { src: "assets/images/dt/dtbu/华严寺 航拍.jpg", title: "华严寺 航拍" },
+        { src: "assets/images/dt/dtbu/华严广场 航拍.jpg", title: "华严广场 航拍" },
+        { src: "assets/images/dt/dtbu/善化寺 航拍.jpg", title: "善化寺 航拍" },
+        { src: "assets/images/dt/dtbu/四牌坊中央枢纽.jpg", title: "四牌坊中央枢纽" },
+        { src: "assets/images/dt/dtbu/恒山 俯瞰.jpg", title: "恒山 俯瞰" }
       ]
     },
 
