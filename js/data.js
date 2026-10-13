@@ -514,6 +514,7 @@ const SITE_DATA = {
       seal: "云州",
       star: true, 
       desc: "2026年中秋与友同游云州，主要为荔荔是相机拍摄，部分航拍图来自观峫",
+      tags: ["华严寺", "善化寺", "云冈", "悬空寺", "古城", "恒山"],
       photos: [
         { src: "assets/images/dt/华严寺 其一.jpg", title: "华严寺 其一" },
         { src: "assets/images/dt/华严寺 其二.jpg", title: "华严寺 其二" },
@@ -960,10 +961,11 @@ const SITE_DATA = {
       desc: "2021年至西岳华山，2025年至东岳泰山，2026年至北岳恒山。",
       seal: "五岳",
       star: true,  
-      tags: ["泰山", "华山"],
+      tags: ["泰山", "华山", "恒山"],
       photos: [
         { src: "assets/images/wuyue/东岳 泰山.jpg", title: "东岳 泰山" },
-        { src: "assets/images/wuyue/西岳 华山.jpg", title: "西岳 华山" }
+        { src: "assets/images/wuyue/西岳 华山.jpg", title: "西岳 华山" },
+        { src: "assets/images/wuyue/北岳 恒山.jpg", title: "北岳 恒山" }
 
       ]
     }
