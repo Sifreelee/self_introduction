@@ -8,9 +8,9 @@ echo   Drag a folder onto this file, or press Enter for assets\images
 echo.
 
 if "%~1"=="" (
-  "C:\Users\lenovo\.workbuddy\binaries\python\versions\3.13.12\python.exe" "%~dp0compress.py"
+  "C:\Users\lenovo\.workbuddy\binaries\python\envs\default\Scripts\python.exe" "%~dp0compress.py"
 ) else (
-  "C:\Users\lenovo\.workbuddy\binaries\python\versions\3.13.12\python.exe" "%~dp0compress.py" --dir "%~1"
+  "C:\Users\lenovo\.workbuddy\binaries\python\envs\default\Scripts\python.exe" "%~dp0compress.py" --dir "%~1"
 )
 
 echo.

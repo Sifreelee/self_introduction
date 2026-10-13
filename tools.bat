@@ -13,7 +13,7 @@ rem     0) Exit
 rem   Tip: drag a folder onto this bat to set the target folder.
 rem ============================================================
 
-set "PY=C:\Users\lenovo\.workbuddy\binaries\python\versions\3.13.12\python.exe"
+set "PY=C:\Users\lenovo\.workbuddy\binaries\python\envs\default\Scripts\python.exe"
 set "FOLDER="
 set "SEL="
 
