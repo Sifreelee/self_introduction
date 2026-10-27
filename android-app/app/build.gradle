@@ -1,0 +1,56 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.sifreelee.intro'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.sifreelee.intro"
+        minSdk 24
+        targetSdk 34
+        versionCode 7
+        versionName "1.1.2"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("../keystore/luqing-release.jks")
+            storePassword "luqing2026"
+            keyAlias "luqing"
+            keyPassword "luqing2026"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            // 站点内容由线上托管，App 无需混淆；保持签名一致以便后续覆盖安装
+            signingConfig signingConfigs.release
+        }
+        debug {
+            applicationIdSuffix ".debug"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+// 源文件含中文注释，强制 UTF-8 编译，避免 Windows 默认 GBK 解析报错
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+}

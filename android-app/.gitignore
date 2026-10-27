@@ -1,0 +1,13 @@
+## Android 构建产物与敏感文件，不纳入版本库
+build/
+.gradle/
+local.properties
+keystore/
+*.apk
+*.aab
+*.jks
+*.keystore
+icon-preview.png
+captures/
+.externalNativeBuild/
+.cxx/

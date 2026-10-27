@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>暂时无法连接</title>
+<style>
+  :root{
+    --paper:#F4F1EA;
+    --paper-2:#EDE8DD;
+    --ink:#2B2B2B;
+    --ink-2:#6B6459;
+    --seal:#B03A2E;
+    --line:rgba(43,43,43,.14);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Songti SC","Noto Serif CJK SC","Source Han Serif SC",serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 24px;
+    /* 隐约的纸纹，弱到几乎只提供质感 */
+    background-image:
+      radial-gradient(circle at 20% 15%, rgba(176,58,46,.045), transparent 42%),
+      radial-gradient(circle at 82% 78%, rgba(43,43,43,.045), transparent 46%);
+  }
+  .wrap{
+    width:100%;
+    max-width:340px;
+    text-align:center;
+  }
+  .seal{
+    width:64px;height:64px;
+    margin:0 auto 28px;
+    border:2px solid var(--seal);
+    border-radius:6px;
+    color:var(--seal);
+    font-size:30px;
+    line-height:60px;
+    letter-spacing:0;
+    display:flex;align-items:center;justify-content:center;
+    opacity:.9;
+  }
+  h1{
+    font-size:21px;
+    font-weight:600;
+    letter-spacing:.12em;
+    margin:0 0 14px;
+  }
+  .divider{
+    width:44px;height:1px;
+    background:var(--line);
+    margin:0 auto 18px;
+  }
+  p{
+    font-size:14px;
+    line-height:2;
+    color:var(--ink-2);
+    margin:0 0 8px;
+    letter-spacing:.04em;
+  }
+  .hint{
+    font-size:12.5px;
+    color:#948C7E;
+    margin-top:20px;
+    line-height:1.9;
+  }
+  button{
+    margin-top:30px;
+    width:100%;
+    padding:14px 0;
+    font-family:inherit;
+    font-size:15px;
+    letter-spacing:.22em;
+    text-indent:.22em;
+    color:var(--paper);
+    background:var(--ink);
+    border:0;
+    border-radius:2px;
+    cursor:pointer;
+    transition:opacity .18s ease, transform .18s ease;
+  }
+  button:active{opacity:.82;transform:scale(.985);}
+  .foot{
+    margin-top:34px;
+    font-size:11.5px;
+    letter-spacing:.3em;
+    color:#B3ABA0;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="seal">清</div>
+    <h1>网络暂不可达</h1>
+    <div class="divider"></div>
+    <p>未能载入「洛晴跃飞」，<br>请检查网络连接后重试。</p>
+    <button onclick="location.href='https://sifreelee.github.io/self_introduction/'">重 新 载 入</button>
+    <div class="hint">已浏览过的内容仍可从缓存中查看</div>
+    <div class="foot">洛 晴 跃 飞</div>
+  </div>
+</body>
+</html>

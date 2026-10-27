@@ -675,7 +675,9 @@ const SITE_DATA = {
         { src: "assets/images/bj3/jtbm/太庙  其二.jpg", title: "太庙  其二" },
         { src: "assets/images/bj3/jtbm/景山 寿皇殿.jpg", title: "景山 寿皇殿" },
         { src: "assets/images/bj3/jtbm/社稷坛.jpg", title: "社稷坛" },
-        { src: "assets/images/bj3/jtbm/社稷坛 其二.jpg", title: "社稷坛 其二" }
+        { src: "assets/images/bj3/jtbm/社稷坛 其二.jpg", title: "社稷坛 其二" },
+        { src: "assets/images/bj3/jtbm/历代帝王庙 其一.jpg", title: "历代帝王庙 其一" },
+        { src: "assets/images/bj3/jtbm/历代帝王庙 其二.jpg", title: "历代帝王庙 其二" }
       ]
     },
     {
