@@ -836,6 +836,22 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
   padding-left: 16px;
 }
 .footer-text { font-size: 13px; letter-spacing: 0.22em; color: #97917E; }
+/* 页脚「最近更新」：贴在版权行下方，字号更小、颜色更淡 */
+.footer-updated {
+  margin: -14px 0 0; display: flex; align-items: center; gap: 12px;
+  font-family: var(--font-kai); font-size: 12px; letter-spacing: 0.2em;
+  color: #7C7768;
+}
+.footer-updated::before {
+  content: ""; width: 26px; height: 1px; flex: none;
+  background: rgba(207, 200, 180, 0.3);
+}
+.footer-updated-date {
+  color: #97917E; letter-spacing: 0.14em;
+  font-variant-numeric: tabular-nums;
+}
+/* 拿到真实提交时间后略微提亮，和写死的占位日期区分开 */
+.footer-updated.is-on .footer-updated-date { color: #B5AE9C; }
 /* 页脚访问量（不蒜子）：拿到真实数字才淡入；脚本被拦截或服务挂了就整块不显示 */
 .footer-count {
   display: none; align-items: center; gap: 16px; margin: 0;

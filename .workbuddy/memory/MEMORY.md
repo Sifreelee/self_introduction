@@ -4,6 +4,11 @@
 - 个人静态站「洛晴跃飞」，新中式风格，GitHub Pages 托管：`https://sifreelee.github.io/self_introduction/`
 - 目录：`assets/images` 相册照片、`js/data.js` 内容数据 + `js/main.js` 渲染、`css/style.css`
 - 改 CSS/JS 后需改 `index.html` 里 `?v=` 版本号才能绕过浏览器缓存
+- 页脚「最近更新」由 `js/last-updated.js` 取 GitHub 仓库最后一次提交时间，
+  三级兜底（接口 → localStorage `lx-last-update` → HTML 写死日期）；
+  改版时记得同步改 `#footer-updated-date` 里的静态占位日期
+- 导航栏菜单文字的基准样式是 `.nav-links a`（楷体 17px / `.3em` 字距 /
+  `::after` 朱砂下划线展开到 55%），App 注入的「设置」入口按这套参数对齐
 
 ## 安卓 App（android-app/）
 - 定位：**WebView 外壳**，直接加载线上站点，网站更新自动同步，不打包静态快照

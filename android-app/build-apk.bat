@@ -11,7 +11,7 @@ set "JAVA_HOME=C:\Program Files\Java\jdk-17.0.2"
 set "ANDROID_HOME=F:\android-sdk"
 set "GRADLE_BIN=F:\android-build\gradle-8.9\bin\gradle.bat"
 set "PROJ=%~dp0"
-set "APPNAME=LuQingYueFei-v1.1.2.apk"
+set "APPNAME=LuQingYueFei-v1.1.4.apk"
 
 if not exist "%JAVA_HOME%\bin\java.exe" goto no_java
 if not exist "%ANDROID_HOME%\platforms\android-34\android.jar" goto no_sdk

@@ -7,7 +7,7 @@
   <title>洛晴跃飞</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260923f">
   <!-- ?v= 是版本号：改了 style.css 却没生效时，把数字加一即可绕过浏览器缓存 -->
-  <link rel="stylesheet" href="css/style.css?v=20260923f">
+  <link rel="stylesheet" href="css/style.css?v=20261027a">
 </head>
 <body>
 
@@ -171,6 +171,12 @@
         <span id="busuanzi_container_site_pv">浏览量 <b id="busuanzi_value_site_pv">&mdash;</b> 次</span>
       </p>
       <p class="footer-text" id="footer-text">© 2026 洛晴跃飞，以影存真</p>
+      <!-- 最近更新时间：由 js/last-updated.js 取仓库最后一次提交时间填充；
+           取不到（离线 / 接口异常）时沿用上次记录，再不行显示这里写死的日期 -->
+      <p class="footer-updated" id="footer-updated" title="取自仓库最后一次提交时间">
+        <span class="footer-updated-label">最近更新</span>
+        <time class="footer-updated-date" id="footer-updated-date">2026-10-27</time>
+      </p>
     </div>
   </footer>
 
@@ -234,6 +240,7 @@
   <script src="js/data.js?v=20260923f"></script>
   <script src="js/china-map.js?v=20260923f"></script>
   <script src="js/main.js?v=20260923f"></script>
+  <script src="js/last-updated.js?v=20261027a"></script>
 
   <!-- 访问量统计：不蒜子（免注册、免账号）。脚本被拦截或服务不可用时，页脚计数会自动隐藏 -->
   <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>

@@ -82,16 +82,12 @@ public class WebCache {
         long savedAt;
         /**
          * 上次与服务器核对的时间（可能只是 304，文件没重写）。
-         * 与 savedAt 分开记，才能实现「本地已有就不联网」。
+         * 与 savedAt 分开记：手动「立即同步」把本地资源也核对一遍时，
+         * 只刷新这个时间，不动文件。
          */
         long checkedAt;
     }
 
-    /**
-     * 图片等媒体文件的核对保质期：这段时间内本地已有就不再发请求。
-     * 页面 / 样式 / 脚本不适用，每次同步都会核对，保证站点改版立刻可见。
-     */
-    private static final long MEDIA_CHECK_TTL_MS = 7L * 24 * 3600 * 1000;
 
     /** 同步结果统计 */
     public static class SyncResult {
@@ -301,17 +297,26 @@ public class WebCache {
             return;
         }
 
-        final long now = System.currentTimeMillis();
+        // 核心思路：把资源分成两类，分别用不同策略，避免每次都把几百张照片过一遍。
+        //
+        //   页面 / 样式 / 脚本（数量少、体积小）→ 每次核对，静态站发版时它们一定会变
+        //   图片 / 视频（占绝大多数）→ 本地已有就跳过，只补本地没有的
+        //
+        // 站点新增照片时，data.js 这类脚本会先被核对出「已更新」，
+        // 新照片的 URL 在本地索引里自然不存在，于是只有它们会被下载。
+        // 这样「重开」时通常只有十来个条件请求，而不是 695 个。
         final List<String> targets = new ArrayList<>();
         int preSkipped = 0;
         for (String u : urls) {
             if (u == null) continue;
-            if (mode == MODE_SHELL && isMedia(u)) continue; // 只缓存页面与文字
-            // 本地已有 + 在保质期内 + 是图片这类不会随页面改版而变的东西 → 直接跳过
-            if (!deep && isMedia(u)) {
-                Entry e = entries.get(u);
-                if (e != null && e.checkedAt > 0
-                        && now - e.checkedAt < MEDIA_CHECK_TTL_MS) {
+            if (mode == MODE_SHELL && isMedia(u)) {
+                preSkipped++; // 只缓存页面与文字
+                continue;
+            }
+            if (isMedia(u)) {
+                boolean known = entries.containsKey(u);
+                // 本地已有就不再碰它；只有手动「立即同步」(deep) 才逐项核对
+                if (known && !deep) {
                     preSkipped++;
                     continue;
                 }

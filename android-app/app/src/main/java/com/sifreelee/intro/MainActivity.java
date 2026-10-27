@@ -190,13 +190,16 @@ public class MainActivity extends Activity {
             + "})();";
 
     /**
-     * 在导航栏里、三条杠左侧插入「设置」按钮。
+     * 在导航栏里、三条杠左侧插入「设置」入口。
      *
      * 站点结构是 .nav-inner(flex, space-between) 包着 .nav-logo / #nav-toggle / #nav-links。
-     * 把按钮插到 #nav-toggle 之前并给 margin-left:auto，视觉上就是
+     * 把入口插到 #nav-toggle 之前并给 margin-left:auto，视觉上就是
      * 「大标题 …… 设置 三条杠」，贴着三条杠，不进下拉菜单。
      * 万一站点改版拿不到 #nav-toggle，退化为追加到 .nav-inner 末尾；
      * 再不行还有长按空白页兜底。
+     *
+     * 外观与 .nav-links a 完全一致（楷体 / 17px / .3em 字距 / 朱砂下划线），
+     * 不额外加边框和底色，看起来就是菜单位里的一项，只是位置挪到了导航栏上。
      */
     private static final String SETTINGS_BTN_JS =
             "(function(){"
@@ -205,21 +208,32 @@ public class MainActivity extends Activity {
             + "if(!inner)return;"
             + "var st=document.getElementById('lx-settings-style');"
             + "if(!st){st=document.createElement('style');st.id='lx-settings-style';"
-            + "st.textContent='#lx-settings-btn{margin-left:auto;margin-right:10px;"
-            + "display:flex;align-items:center;height:30px;padding:0 11px;"
-            + "border:1px solid rgba(120,100,70,.35);border-radius:999px;"
-            + "background:rgba(255,255,255,.55);color:#5B5145;font-family:inherit;"
-            + "font-size:13px;letter-spacing:.12em;line-height:1;cursor:pointer;"
+            // 与 css/style.css 里 .nav-links a 同一套排版参数
+            + "st.textContent='#lx-settings-btn{"
+            + "margin-left:auto;margin-right:0;"
+            + "position:relative;display:block;box-sizing:border-box;"
+            + "padding:8px 16px;border:0;background:none;outline:none;"
+            + "font-family:var(--font-kai);font-size:17px;line-height:1.35;"
+            + "letter-spacing:.3em;white-space:nowrap;"
+            + "color:var(--ink-2);cursor:pointer;"
             + "-webkit-tap-highlight-color:transparent;"
-            + "transition:background .25s,border-color .25s,color .25s}"
-            + "#lx-settings-btn:active{background:rgba(168,58,50,.12);"
-            + "border-color:rgba(168,58,50,.45);color:#A83A32}';"
+            + "-webkit-appearance:none;appearance:none;"
+            + "transition:color .3s}"
+            // 同款下划线：居中、2px、朱砂、点击/选中时展开到 55%
+            + "#lx-settings-btn::after{content:\"\";position:absolute;left:50%;bottom:2px;"
+            + "width:0;height:2px;background:var(--cinnabar);"
+            + "transform:translateX(-50%);transition:width .35s}"
+            + "#lx-settings-btn:hover,#lx-settings-btn:active,"
+            + "#lx-settings-btn.lx-active{color:var(--cinnabar)}"
+            + "#lx-settings-btn:hover::after,#lx-settings-btn:active::after,"
+            + "#lx-settings-btn.lx-active::after{width:55%}';"
             + "document.head.appendChild(st);}"
             + "var b=document.createElement('button');"
             + "b.id='lx-settings-btn';b.type='button';b.textContent='设置';"
             + "b.setAttribute('aria-label','设置');"
             + "b.addEventListener('click',function(e){"
             + "e.preventDefault();e.stopPropagation();"
+            + "b.classList.add('lx-active');"
             + "var t=document.getElementById('nav-toggle');if(t)t.classList.remove('open');"
             + "var ul=document.getElementById('nav-links');if(ul)ul.classList.remove('show');"
             + "try{window.AndroidBridge.onSettings();}catch(err){}"
@@ -228,6 +242,11 @@ public class MainActivity extends Activity {
             + "if(toggle&&toggle.parentNode===inner){inner.insertBefore(b,toggle);}"
             + "else{inner.appendChild(b);}"
             + "})();";
+
+    /** 设置面板关掉后收回导航栏上的下划线选中态 */
+    private static final String SETTINGS_BTN_IDLE_JS =
+            "(function(){var b=document.getElementById('lx-settings-btn');"
+            + "if(b)b.classList.remove('lx-active');})();";
 
     private WebSwipeRefreshLayout refreshLayout;
     private FrameLayout root;
@@ -304,7 +323,21 @@ public class MainActivity extends Activity {
 
         cache = WebCache.get(this);
         configureWebView();
+
+        final boolean firstRun = cache.isFirstRun();
         askCacheIfFirstRun();
+
+        // 启动就把设置面板亮出来，不用点按钮。
+        // 首次安装时先让「离线浏览」询问独占一次，免得两个弹窗叠在一起；
+        // 旋转屏幕等重建（savedInstanceState 非空）也不重复弹。
+        if (!firstRun && savedInstanceState == null) {
+            ui.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (!isFinishing() && !isDestroyed()) showSettings();
+                }
+            }, 450);
+        }
 
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
@@ -644,12 +677,16 @@ public class MainActivity extends Activity {
                 ui.post(new Runnable() {
                     @Override
                     public void run() {
-                        // 「仅打开」模式是后台默默攒缓存，不打扰用户
-                        if (!openedMode || force) toast(text);
-                        // 发现新内容时最多自动刷新一次，防止个别资源每次都判为变更
-                        // 导致页面反复 reload
+                        // 只在「手动触发」或「确实拿到新内容」时提示；
+                        // 自动同步没变化就完全静默，重开不被打断。
+                        boolean notify = force || (!openedMode && ok && result.changed() > 0);
+                        if (notify) toast(text);
+                        // 页面 / 脚本有更新时刷新一次：
+                        // 新的 data.js 生效后，COLLECT_JS 才能枚举出这次新增的照片，
+                        // 所以刷新后必须再强制同步一轮去补那些新 URL。
                         if (ok && result.changed() > 0 && !autoReloaded && webView != null) {
                             autoReloaded = true;
+                            pendingForceSync = true;
                             webView.reload();
                         }
                     }
@@ -906,6 +943,8 @@ public class MainActivity extends Activity {
         dialog.setOnDismissListener(d -> {
             alive[0] = false;
             ui.removeCallbacks(refreshUi);
+            // 面板关闭后收回导航栏「设置」的下划线选中态
+            if (webView != null) webView.evaluateJavascript(SETTINGS_BTN_IDLE_JS, null);
         });
         dialog.show();
         ui.post(refreshUi);
