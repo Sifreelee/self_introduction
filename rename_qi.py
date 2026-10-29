@@ -4,6 +4,7 @@
 把文件夹里同一大标题的一组文件，按原有编号顺序改成：
     天安门01.png / 天安门05.png / 天安门08.png
         -> 天安门 其一.png / 天安门 其二.png / 天安门 其三.png
+超过 10 个的组：第 11 个起不再加「其」，直接 天安门 十一.png / 天安门 十二.png
 大标题（去掉末尾编号后的部分）保持不变，与序号之间空一格（--sep 可改）。
 
 ==================== 三种用法 ====================
@@ -18,9 +19,11 @@
   · 大标题 = 文件名去掉末尾的编号（含分隔符），如「太庙桂花04」-> 太庙桂花
   · 只认 1~4 位末尾数字（--max-digits 可调），避免把 20231008 这类日期当编号
   · 无编号的排在最前（视作其一），其余按数字从小到大
+  · 序号不连续也没关系：11、21、31 会按原数字排成 其一、其二、其三（重新顺序编号）
+  · 超过 10 的不用「其」：第 1~10 个是 其一..其十，第 11 个起是 十一 十二……，如 三十一
   · 每组独立编号：太庙桂花 其一..其四、太庙菊花 其一..其五，互不影响
   · 大标题和序号之间默认空一格（--sep 可改成 _ 或 · 等，空串则紧贴）
-  · 已经叫「XX 其一」的也能识别，序号会被读回来参与排序，重复运行不会乱序
+  · 已经叫「XX 其一」或「XX 十一」的也能识别，序号会被读回来参与排序，重复运行不会乱序
 
 ==================== 只有一张的组 ====================
   --single strip  默认，去掉末尾编号，只留大标题（国博02 -> 国博）
@@ -89,8 +92,14 @@ def cn_parse(text):
 
 
 def ordinal(n):
-    """1 -> 其一，2 -> 其二 ..."""
-    return "其" + cn_number(n)
+    """1 -> 其一，2 -> 其二 ... 10 -> 其十，11 -> 十一，12 -> 十二。
+
+    不超过十的用「其」打头；超过十（11 起）不加「其」，直接读中文数字，
+    即 11=十一、12=十二……，和用户要求的「重命名后超过十就不用其」一致。
+    """
+    if n <= 10:
+        return "其" + cn_number(n)
+    return cn_number(n)
 
 
 def make_parser(max_digits):
@@ -98,9 +107,10 @@ def make_parser(max_digits):
                       % (re.escape(SEPARATORS), max_digits))
 
 
-# 已存在的「其一 / 其二」后缀：再跑一次时把序号读回来，保证不乱序
-ORDINAL_RE = re.compile(r"^(?P<title>.*?)[%s]*其(?P<ord>[%s十百]+|\d+)$"
-                        % (re.escape(SEPARATORS), CN_DIGITS))
+# 已存在的序号后缀：再跑一次时把序号读回来，保证不乱序
+# 1~10 一定是「其X」；>10 是纯中文数字（十一、十二……），「其」可有可无
+ORDINAL_RE = re.compile(r"^(?P<title>.*?)[%s]*其?(?P<ord>[%s十百]+|\d+)$"
+                      % (re.escape(SEPARATORS), CN_DIGITS))
 
 
 def split_name(stem, num_re):
@@ -326,7 +336,7 @@ def write_csv(out_dir, folder, plan):
         w = csv.writer(f)
         w.writerow(["大标题", "序号", "新文件名", "原文件名", "是否改动"])
         for old, new, title, idx in plan:
-            w.writerow([title, ("其" + cn_number(idx)) if idx else "", new,
+            w.writerow([title, ordinal(idx) if idx else "", new,
                         origin_of.get(old, old), "是" if old != new else "否"])
         w.writerow([])
         w.writerow(["说明：大标题 = 文件名去掉末尾编号后的部分，保持不变；"

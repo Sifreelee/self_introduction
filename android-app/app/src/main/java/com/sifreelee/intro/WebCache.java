@@ -71,6 +71,19 @@ public class WebCache {
     private volatile long pBytes;
     private volatile boolean syncing;
 
+    // 同步互斥：同一时刻只允许跑一轮，跑的过程中来的清单排队等补跑
+    private final Object syncLock = new Object();
+    private boolean syncRunning;
+    private final List<String> queued = new ArrayList<>();
+    private boolean queuedDeep;
+    private SyncCallback queuedCb;
+
+    /** 单文件上限：超过的直接放弃，避免异常大文件撑爆存储或反复重试 */
+    private static final long MAX_BYTES = 48L * 1024 * 1024;
+    /** 确认下不了（体积超限）的地址，同一进程内不再重试 */
+    private final java.util.Set<String> tooBig =
+            java.util.Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
     /** 单条缓存记录 */
     public static class Entry {
         String url;
@@ -270,18 +283,18 @@ public class WebCache {
     /**
      * 增量同步一组 URL。
      *
-     * 默认是「只补缺口」：本地已有且仍在保质期内的图片直接跳过，一个请求都不发；
+     * 只补缺口：本地已有的图片直接跳过，一个请求都不发；
      * 页面 / 样式 / 脚本每次都会核对，保证站点改版能立刻被发现。
      *
      * @param urls   待同步的绝对地址（调用方给的是当前页枚举到的清单）
-     * @param deep   true = 忽略保质期，全部与服务器核对一遍（手动「立即同步」用）
+     * @param deep   true = 忽略「本地已有就跳过」，全部与服务器核对一遍
      * @param onDone 回调
      */
     public void sync(final List<String> urls, final String userAgent,
                      final boolean deep, final SyncCallback onDone) {
         final int mode = getMode();
-        // MODE_OPENED 也允许同步：调用方传入的是「当前这一页」的资源清单，
-        // 于是天然等于「浏览过的才留下」，不需要额外逻辑。
+        // MODE_OPENED 也允许同步：调用方传入的是「当前这一页 DOM 里出现的资源」，
+        // 于是天然等于「浏览过的才留下」。
         if (mode != MODE_FULL && mode != MODE_SHELL && mode != MODE_OPENED) {
             if (onDone != null) {
                 onDone.onFinished(new SyncResult(), false, "缓存未开启");
@@ -293,30 +306,35 @@ public class WebCache {
             return;
         }
         if (isWifiOnly() && !isOnWifi()) {
-            if (onDone != null) onDone.onFinished(new SyncResult(), false, "当前非 Wi-Fi，已按设置跳过");
+            if (onDone != null) {
+                onDone.onFinished(new SyncResult(), false, "当前非 Wi-Fi，已按设置跳过");
+            }
             return;
         }
 
-        // 核心思路：把资源分成两类，分别用不同策略，避免每次都把几百张照片过一遍。
+        // 把资源分成两类，分别用不同策略，避免每次都把几百张照片过一遍。
         //
         //   页面 / 样式 / 脚本（数量少、体积小）→ 每次核对，静态站发版时它们一定会变
         //   图片 / 视频（占绝大多数）→ 本地已有就跳过，只补本地没有的
         //
         // 站点新增照片时，data.js 这类脚本会先被核对出「已更新」，
         // 新照片的 URL 在本地索引里自然不存在，于是只有它们会被下载。
-        // 这样「重开」时通常只有十来个条件请求，而不是 695 个。
         final List<String> targets = new ArrayList<>();
         int preSkipped = 0;
         for (String u : urls) {
             if (u == null) continue;
+            if (tooBig.contains(u)) {
+                // 超大文件上一轮已确认下不了，别再每轮都白试一次
+                preSkipped++;
+                continue;
+            }
             if (mode == MODE_SHELL && isMedia(u)) {
                 preSkipped++; // 只缓存页面与文字
                 continue;
             }
             if (isMedia(u)) {
-                boolean known = entries.containsKey(u);
                 // 本地已有就不再碰它；只有手动「立即同步」(deep) 才逐项核对
-                if (known && !deep) {
+                if (entries.containsKey(u) && !deep) {
                     preSkipped++;
                     continue;
                 }
@@ -324,6 +342,37 @@ public class WebCache {
             targets.add(u);
         }
 
+        // 一个要处理的都没有：直接回报，不进入「同步中」状态，
+        // 否则设置面板会一直转圈显示「正在检查更新…」，看着像卡死
+        if (targets.isEmpty()) {
+            SyncResult r = new SyncResult();
+            r.skipped = preSkipped;
+            if (onDone != null) onDone.onFinished(r, true, "本地已是最新，无需重新缓存");
+            return;
+        }
+
+        synchronized (syncLock) {
+            if (syncRunning) {
+                // 已经在跑一轮了。并发跑两轮会互相覆盖进度总数，
+                // 而且先结束的那个会把「同步中」置否 → 面板显示已完成、实际还在下。
+                // 所以这里只把新清单并进队列，等这轮结束再补跑一次。
+                for (String u : targets) {
+                    if (!queued.contains(u)) queued.add(u);
+                }
+                queuedDeep |= deep;
+                if (onDone != null) queuedCb = onDone;
+                return;
+            }
+            syncRunning = true;
+        }
+
+        startBatch(targets, userAgent, deep, preSkipped, onDone);
+    }
+
+    /** 真正执行一轮下载。调用前必须已把 syncRunning 置为 true */
+    private void startBatch(final List<String> targets, final String userAgent,
+                            final boolean deep, final int preSkipped,
+                            final SyncCallback onDone) {
         final SyncResult result = new SyncResult();
         result.skipped = preSkipped;
         final AtomicInteger index = new AtomicInteger(0);
@@ -349,8 +398,13 @@ public class WebCache {
                         else if (r == R_UNCHANGED) result.unchanged++;
                         else result.failed++;
                     }
-                    pDone = index.incrementAndGet();
+                    int done = index.incrementAndGet();
+                    pDone = done;
                     pBytes = bytes.get();
+                    // 每 25 项落一次索引。首轮几百张照片要跑几分钟，
+                    // 中途退出或被系统杀掉时，已下好的部分要能留下，
+                    // 否则索引没写盘 → 下次全部重下，用户感受就是「缓存白跑了」。
+                    if (done % 25 == 0) saveIndex();
                 }
             });
         }
@@ -367,11 +421,26 @@ public class WebCache {
                 saveIndex();
                 prefs.edit().putLong(KEY_LAST_SYNC, System.currentTimeMillis()).apply();
                 if (onDone != null) {
-                    onDone.onFinished(result, true,
-                            total == 0 && result.skipped > 0
-                                    ? "本地已是最新，无需重新缓存"
-                                    : "共 " + total + " 项需核对");
+                    onDone.onFinished(result, true, "共 " + total + " 项需核对");
                 }
+
+                // 跑的过程中又来了新清单（换页 / 刷新 / 手动同步）→ 合并后补跑一轮
+                List<String> next = null;
+                boolean nextDeep = false;
+                SyncCallback nextCb = null;
+                synchronized (syncLock) {
+                    if (!queued.isEmpty()) {
+                        next = new ArrayList<>(queued);
+                        queued.clear();
+                        nextDeep = queuedDeep;
+                        queuedDeep = false;
+                        nextCb = queuedCb;
+                        queuedCb = null;
+                    } else {
+                        syncRunning = false;
+                    }
+                }
+                if (next != null) startBatch(next, userAgent, nextDeep, 0, nextCb);
             }
         }).start();
     }
@@ -408,8 +477,20 @@ public class WebCache {
                 return R_FAILED;
             }
 
-            byte[] data = readAll(conn.getInputStream(), 24 * 1024 * 1024);
-            if (data == null) return R_FAILED;
+            // 先看声明体积：超限的直接放弃并记下来，否则每一轮同步都会
+            // 把这个文件重下一半再失败，进度永远走不完
+            long declared = conn.getContentLengthLong();
+            if (declared > MAX_BYTES) {
+                tooBig.add(url);
+                return R_FAILED;
+            }
+
+            byte[] data = readAll(conn.getInputStream(), (int) MAX_BYTES);
+            if (data == null) {
+                // 多半是读的过程中发现超限
+                tooBig.add(url);
+                return R_FAILED;
+            }
 
             // 服务端若没按预期返回 304，可能出现「200 但内容其实没变」，
             // 用内容哈希兜底，避免每次都判成更新、白白重写文件并触发页面刷新
@@ -442,11 +523,19 @@ public class WebCache {
 
     public void clear() {
         entries.clear();
+        tooBig.clear();
+        // 队列里排着的补跑也要清掉，否则清完缓存又被自动补回来
+        synchronized (syncLock) {
+            queued.clear();
+            queuedDeep = false;
+            queuedCb = null;
+        }
         File[] files = dir.listFiles();
         if (files != null) {
             for (File f : files) if (!INDEX_NAME.equals(f.getName())) f.delete();
         }
         prefs.edit().remove(KEY_LAST_SYNC).apply();
+        saveIndex();
     }
 
     // ───────────────────────── 索引持久化 ─────────────────────────

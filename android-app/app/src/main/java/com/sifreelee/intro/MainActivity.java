@@ -190,6 +190,34 @@ public class MainActivity extends Activity {
             + "})();";
 
     /**
+     * 「仅打开时缓存」专用：只收页面 DOM 里真实出现过的资源。
+     *
+     * 不能用上面的 COLLECT_JS —— 它会遍历 data.js，把全站 695 张照片
+     * 一次性全捞出来，于是「仅打开」变成「全量预下载」，和这个选项的
+     * 含义正好相反，还会让用户以为缓存不听话、一开就狂下载。
+     *
+     * 只用 DOM：相册封面、页面里真正渲染出的图片、样式与脚本。
+     * 点进某个相册后，那里的大图进了 DOM，才会被收进来。
+     */
+    private static final String COLLECT_DOM_JS =
+            "(function(){"
+            + "var set={};"
+            + "function abs(u){try{return new URL(u,location.href).href;}catch(e){return null;}}"
+            + "function add(u){if(typeof u!=='string'||!u)return;"
+            + "if(!/\\.(jpg|jpeg|png|gif|webp|bmp|svg|mp4|webm|mp3|css|js)(\\?|$)/i.test(u))return;"
+            + "var a=abs(u);if(a)set[a]=1;}"
+            + "var i,n;"
+            + "n=document.querySelectorAll('img[src]');for(i=0;i<n.length;i++)add(n[i].getAttribute('src'));"
+            + "n=document.querySelectorAll('video[src],source[src]');for(i=0;i<n.length;i++)add(n[i].getAttribute('src'));"
+            + "n=document.querySelectorAll('link[rel=\"stylesheet\"]');for(i=0;i<n.length;i++)add(n[i].getAttribute('href'));"
+            + "n=document.querySelectorAll('link[rel=\"icon\"]');for(i=0;i<n.length;i++)add(n[i].getAttribute('href'));"
+            + "n=document.querySelectorAll('script[src]');for(i=0;i<n.length;i++)add(n[i].getAttribute('src'));"
+            + "set[location.href.split('#')[0]]=1;"
+            + "var out=[];for(var k in set){out.push(k);}"
+            + "try{window.AndroidBridge.onAssets(JSON.stringify(out));}catch(e){}"
+            + "})();";
+
+    /**
      * 在导航栏里、三条杠左侧插入「设置」入口。
      *
      * 站点结构是 .nav-inner(flex, space-between) 包着 .nav-logo / #nav-toggle / #nav-links。
@@ -203,6 +231,9 @@ public class MainActivity extends Activity {
      */
     private static final String SETTINGS_BTN_JS =
             "(function(){"
+            // 同一个页面重复注入直接返回；换页后由 window 级重试循环重新装
+            + "if(document.getElementById('lx-settings-btn'))return;"
+            + "function ensure(){"
             + "if(document.getElementById('lx-settings-btn'))return;"
             + "var inner=document.querySelector('.nav-inner');"
             + "if(!inner)return;"
@@ -241,6 +272,25 @@ public class MainActivity extends Activity {
             + "var toggle=document.getElementById('nav-toggle');"
             + "if(toggle&&toggle.parentNode===inner){inner.insertBefore(b,toggle);}"
             + "else{inner.appendChild(b);}"
+            + "}"
+            // 立即试一次；导航栏还没渲染出来就每 100ms 再试，最多 12 秒。
+            // 这样页面刚打开、标题栏一出现，「设置」就已经在上面了，
+            // 不用等几十张相册封面加载完（onPageFinished 可能晚好几秒）。
+            + "var n=0;"
+            + "function tick(){ensure();"
+            + "if(document.getElementById('lx-settings-btn'))return;"
+            + "if(++n<120)setTimeout(tick,100);}"
+            + "tick();"
+            + "document.addEventListener('DOMContentLoaded',ensure);"
+            + "window.addEventListener('load',ensure);"
+            + "if(window.__lxBtnTick)clearInterval(window.__lxBtnTick);"
+            + "var m=0;"
+            + "window.__lxBtnTick=setInterval(function(){"
+            + "if(document.getElementById('lx-settings-btn')){"
+            + "clearInterval(window.__lxBtnTick);window.__lxBtnTick=0;return;}"
+            // 兜底轮询最多 15 秒，站点若结构性改动导致找不到导航栏就自然停下
+            + "if(++m>38){clearInterval(window.__lxBtnTick);window.__lxBtnTick=0;return;}"
+            + "ensure();},400);"
             + "})();";
 
     /** 设置面板关掉后收回导航栏上的下划线选中态 */
@@ -268,6 +318,8 @@ public class MainActivity extends Activity {
     private boolean pendingDeepSync;
     /** 本次会话是否已为「新内容」自动刷新过一次，避免来回 reload */
     private boolean autoReloaded;
+    /** 本轮导航是否已注入过导航栏「设置」入口 */
+    private boolean btnInjected;
     /** 是否已用本地缓存主文档兜底过，防止断网时反复触发 */
     private boolean fallbackLoaded;
 
@@ -324,20 +376,9 @@ public class MainActivity extends Activity {
         cache = WebCache.get(this);
         configureWebView();
 
-        final boolean firstRun = cache.isFirstRun();
+        // 首次安装才弹「离线浏览」询问；设置面板不再自动弹出，
+        // 由导航栏上的「设置」按钮点击打开（长按页面空白处同一入口）。
         askCacheIfFirstRun();
-
-        // 启动就把设置面板亮出来，不用点按钮。
-        // 首次安装时先让「离线浏览」询问独占一次，免得两个弹窗叠在一起；
-        // 旋转屏幕等重建（savedInstanceState 非空）也不重复弹。
-        if (!firstRun && savedInstanceState == null) {
-            ui.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (!isFinishing() && !isDestroyed()) showSettings();
-                }
-            }, 450);
-        }
 
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
@@ -406,6 +447,18 @@ public class MainActivity extends Activity {
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                 progressBar.setVisibility(View.VISIBLE);
+                // 新一轮导航：允许重新注入导航栏入口
+                btnInjected = false;
+            }
+
+            @Override
+            public void onPageCommitVisible(WebView view, String url) {
+                // 页面一开始可见就插「设置」，不等图片全部加载完。
+                // 站点首页有几十张相册封面，onPageFinished 往往要等好几秒，
+                // 那几秒里标题栏是空的，看起来就好像没有设置入口。
+                if (url != null && url.startsWith("http")) {
+                    injectSettingsBtn(view);
+                }
             }
 
             @Override
@@ -418,9 +471,8 @@ public class MainActivity extends Activity {
                 }
                 // 先装交互脚本（长按），再枚举资源并触发缓存同步
                 view.evaluateJavascript(INTERACT_JS, null);
-                // 导航栏里插入「设置」按钮（标题右侧、三条杠左边）
-                view.evaluateJavascript(SETTINGS_BTN_JS, null);
-                view.evaluateJavascript(COLLECT_JS, null);
+                injectSettingsBtn(view);
+                collectAndSync(view);
                 // 恢复用户上次设定的每行相册数
                 applyDensity();
             }
@@ -620,6 +672,29 @@ public class MainActivity extends Activity {
     }
 
     /**
+     * 往导航栏注入「设置」入口。
+     *
+     * 每次导航只调用一次（onProgressChanged 每 10% 触发一次，别反复 evaluate）。
+     * 注入脚本自带重试，所以哪怕这一刻 .nav-inner 还没渲染出来也能补上。
+     */
+    private void injectSettingsBtn(WebView view) {
+        if (view == null || btnInjected) return;
+        btnInjected = true;
+        view.evaluateJavascript(SETTINGS_BTN_JS, null);
+    }
+
+    /**
+     * 按当前缓存模式选资源清单脚本：
+     * 「全部缓存」用 COLLECT_JS（含 data.js 里的全部照片）；
+     * 「仅打开」用 COLLECT_DOM_JS（只认页面里真出现过的）。
+     */
+    private void collectAndSync(WebView view) {
+        if (view == null) return;
+        boolean opened = cache != null && cache.getMode() == WebCache.MODE_OPENED;
+        view.evaluateJavascript(opened ? COLLECT_DOM_JS : COLLECT_JS, null);
+    }
+
+    /**
      * 拉起一次同步：先从当前页面收集资源清单，再交给缓存层增量下载。
      *
      * @param deep true = 忽略保质期，把本地已有的也跟服务器核对一遍（手动「立即同步」）
@@ -633,7 +708,7 @@ public class MainActivity extends Activity {
         if (startTip != null) toast(startTip);
         pendingForceSync = true;
         pendingDeepSync = deep;
-        webView.evaluateJavascript(COLLECT_JS, null);
+        collectAndSync(webView);
     }
 
     /** 由 JS 回传的资源清单触发实际下载 */
