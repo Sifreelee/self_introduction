@@ -846,6 +846,19 @@ const SITE_DATA = {
         { src: "assets/images/weiman32.jpg", title: "鸣放宫摩天轮同框" }
       ]
     },
+        {
+      city: "九龙壁",
+      desc: "2026年11月7日，集齐三大九龙壁",
+      star: true,
+      seal: "九龙壁",
+      photos: [
+        { src: "assets/images/jlb/北海 九龙壁 其一.jpg", title: "北海 九龙壁 其一" },
+        { src: "assets/images/jlb/北海 九龙壁 其二.jpg", title: "北海 九龙壁 其二" },
+        { src: "assets/images/jlb/大同 九龙壁 其一.jpg", title: "大同 九龙壁 其一" },
+        { src: "assets/images/jlb/大同 九龙壁 其二.jpg", title: "大同 九龙壁 其二" },
+        { src: "assets/images/jlb/故宫 九龙壁.jpg", title: "故宫 九龙壁" }
+      ]
+    },
     {
       city: "山东 淄博",
       desc: "",
