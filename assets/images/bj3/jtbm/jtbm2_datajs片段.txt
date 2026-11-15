@@ -1,0 +1,14 @@
+    {
+      city: "九坛八庙",
+      desc: "",
+      seal: "遗迹",
+      photos: [
+        { src: "assets/images/bj3/jtbm/jtbm2/传心殿前殿.png", title: "传心殿前殿" },
+        { src: "assets/images/bj3/jtbm/jtbm2/故宫 奉先殿.png", title: "故宫 奉先殿" },
+        { src: "assets/images/bj3/jtbm/jtbm2/文庙.png", title: "文庙" },
+        { src: "assets/images/bj3/jtbm/jtbm2/日坛 其一.png", title: "日坛 其一" },
+        { src: "assets/images/bj3/jtbm/jtbm2/日坛 其二.png", title: "日坛 其二" },
+        { src: "assets/images/bj3/jtbm/jtbm2/月坛 其一.png", title: "月坛 其一" },
+        { src: "assets/images/bj3/jtbm/jtbm2/月坛 其二.png", title: "月坛 其二" }
+      ]
+    },

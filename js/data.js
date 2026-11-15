@@ -720,17 +720,17 @@ const SITE_DATA = {
     },
         {
       city: "北京 九坛八庙",
-      desc: "",
+      desc: "九坛八庙是北京明清时期皇家祭祀建筑的总称，其中“九坛”包括天坛（含祈谷坛、圜丘坛）、地坛、日坛、月坛、社稷坛、先农坛（含太岁坛）、先蚕坛；“八庙”涵盖太庙、孔庙、历代帝王庙、奉先殿、传心殿、雍和宫、寿皇殿、堂子。堂子目前已无留存，故宫内传心殿、奉先殿不开放。",
       seal: "坛庙",
       star: true, 
-      tags: ["天坛", "太庙", "社稷坛", "地坛", "先蚕坛"],
+      tags: ["天坛", "太庙", "社稷坛", "地坛", "先农坛","先蚕坛","日坛","月坛","太庙","雍和宫","文庙","寿皇殿","历代帝王庙","传心殿前殿","奉先殿"],
       photos: [ 
         { src: "assets/images/bj3/jtbm/天坛 祈年殿.jpg", title: "天坛 祈年殿" },
         { src: "assets/images/bj3/jtbm/天坛 回音壁.jpg", title: "天坛 回音壁" },
         { src: "assets/images/bj3/jtbm/天坛 圜丘坛.jpg", title: "天坛 圜丘坛" },
         { src: "assets/images/bj3/jtbm/先蚕坛.jpg", title: "先蚕坛" },
         { src: "assets/images/bj3/jtbm/地坛.jpg", title: "地坛" },
-        { src: "assets/images/bj3/jtbm/太岁殿大殿.jpg", title: "太岁殿大殿" },
+        { src: "assets/images/bj3/jtbm/太岁殿大殿.jpg", title: " 先农坛之太岁坛" },
         { src: "assets/images/bj3/jtbm/拜殿.jpg", title: "拜殿" },
         { src: "assets/images/bj3/jtbm/神仓.jpg", title: "神仓" },
         { src: "assets/images/bj3/jtbm/太庙.jpg", title: "太庙" },
@@ -739,7 +739,19 @@ const SITE_DATA = {
         { src: "assets/images/bj3/jtbm/社稷坛.jpg", title: "社稷坛" },
         { src: "assets/images/bj3/jtbm/社稷坛 其二.jpg", title: "社稷坛 其二" },
         { src: "assets/images/bj3/jtbm/历代帝王庙 其一.jpg", title: "历代帝王庙 其一" },
-        { src: "assets/images/bj3/jtbm/历代帝王庙 其二.jpg", title: "历代帝王庙 其二" }
+        { src: "assets/images/bj3/jtbm/历代帝王庙 其二.jpg", title: "历代帝王庙 其二" },
+        { src: "assets/images/bj3/jtbm/jtbm2/传心殿前殿.png", title: "故宫 传心殿前殿" },
+        { src: "assets/images/bj3/jtbm/jtbm2/故宫 奉先殿.png", title: "故宫 奉先殿" },
+        { src: "assets/images/bj3/jtbm/jtbm2/文庙.png", title: "文庙" },
+        { src: "assets/images/bj3/jtbm/jtbm2/日坛 其一.png", title: "日坛 其一" },
+        { src: "assets/images/bj3/jtbm/jtbm2/日坛 其二.png", title: "日坛 其二" },
+        { src: "assets/images/bj3/jtbm/jtbm2/月坛 其一.png", title: "月坛 其一" },
+        { src: "assets/images/bj3/jtbm/jtbm2/月坛 其二.png", title: "月坛 其二" },
+        { src: "assets/images/travel-29.jpg", title: "雍和宫" },
+        { src: "assets/images/bj2/bj201.jpg", title: "雍和宫其二" },
+        { src: "assets/images/bj2/bj202.jpg", title: "雍和宫其三" },
+        { src: "assets/images/bj2/bj203.jpg", title: "雍和宫其四" },  
+
       ]
     },
     {
