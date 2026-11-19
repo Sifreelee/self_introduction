@@ -1,2 +1,11 @@
 _*.*
 __pycache__/
+
+# 桌面管家的配置、备份、构建及导出（源码仍可纳入版本管理）
+desktop-tool/_data/
+desktop-tool/.build/
+desktop-tool/.test-work/
+desktop-tool/dist/
+desktop-tool/desktop-output/
+desktop-tool/*.png
+desktop-tool/*.zip

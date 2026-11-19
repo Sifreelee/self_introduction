@@ -955,7 +955,10 @@ const SITE_DATA = {
       {"src": "assets/images/bj3/bjgg/皇极殿 其四.jpg", "title": "皇极殿 其四"},
       {"src": "assets/images/bj3/bjgg/皇极殿瑞兽.jpg", "title": "皇极殿瑞兽"},
       {"src": "assets/images/bj3/bjgg/重檐之美.jpg", "title": "重檐之美"},
-      {"src": "assets/images/bj3/bjgg/金水桥.jpg", "title": "金水桥"}
+      {"src": "assets/images/bj3/bjgg/金水桥.jpg", "title": "金水桥"},
+    
+      {"src": "assets/images/bj3/bjgg/养心殿殿内.jpg", "title": "养心殿殿内"},
+      {"src": "assets/images/bj3/bjgg/协和门 其五.jpg", "title": "协和门 其五"}
     ]
 },
     {
