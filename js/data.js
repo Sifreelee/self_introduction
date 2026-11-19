@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════
    ★ 欢迎来到内容配置文件 ★
    ─────────────────────────────────────────────────────────────────
    您以后只需要修改这一个文件，即可更新全站文字内容。
@@ -859,6 +859,106 @@ const SITE_DATA = {
       ]
     },
         {
+  "city": "北京 故宫",
+  "seal": "故宫",
+  "star": true,
+  "tags": ["东华门", "午门", "太和殿", "养心殿", "乾清宫", "皇极殿"],
+  "desc": "于2026年11月参观雨中故宫",
+  "cover": "assets/images/bj3/bjgg/太和殿 其五.jpg",
+  "photos": [
+      {"src": "assets/images/bj3/bjgg/东六宫 其一.jpg", "title": "东六宫 其一"},
+      {"src": "assets/images/bj3/bjgg/东六宫 其二.jpg", "title": "东六宫 其二"},
+      {"src": "assets/images/bj3/bjgg/东华门.jpg", "title": "东华门"},
+      {"src": "assets/images/bj3/bjgg/东华门至午门 其一.jpg", "title": "东华门至午门 其一"},
+      {"src": "assets/images/bj3/bjgg/东华门至午门 其三.jpg", "title": "东华门至午门 其三"},
+      {"src": "assets/images/bj3/bjgg/东华门至午门 其二.jpg", "title": "东华门至午门 其二"},
+      {"src": "assets/images/bj3/bjgg/东华门至午门 其五.jpg", "title": "东华门至午门 其五"},
+      {"src": "assets/images/bj3/bjgg/东华门至午门 其四.jpg", "title": "东华门至午门 其四"},
+      {"src": "assets/images/bj3/bjgg/中左门 其一.jpg", "title": "中左门 其一"},
+      {"src": "assets/images/bj3/bjgg/中左门 其二.jpg", "title": "中左门 其二"},
+      {"src": "assets/images/bj3/bjgg/乐寿堂 其一.jpg", "title": "乐寿堂 其一"},
+      {"src": "assets/images/bj3/bjgg/乐寿堂 其三.jpg", "title": "乐寿堂 其三"},
+      {"src": "assets/images/bj3/bjgg/乐寿堂 其二.jpg", "title": "乐寿堂 其二"},
+      {"src": "assets/images/bj3/bjgg/乐寿堂 其五.jpg", "title": "乐寿堂 其五"},
+      {"src": "assets/images/bj3/bjgg/乐寿堂 其四.jpg", "title": "乐寿堂 其四"},
+      {"src": "assets/images/bj3/bjgg/九龙壁.jpg", "title": "九龙壁"},
+      {"src": "assets/images/bj3/bjgg/乾清宫.jpg", "title": "乾清宫"},
+      {"src": "assets/images/bj3/bjgg/乾清门前.jpg", "title": "乾清门前"},
+      {"src": "assets/images/bj3/bjgg/交泰殿.jpg", "title": "交泰殿"},
+      {"src": "assets/images/bj3/bjgg/传心殿前殿.jpg", "title": "传心殿前殿"},
+      {"src": "assets/images/bj3/bjgg/体仁阁.jpg", "title": "体仁阁"},
+      {"src": "assets/images/bj3/bjgg/保和殿后 其一.jpg", "title": "保和殿后 其一"},
+      {"src": "assets/images/bj3/bjgg/保和殿后 其二.jpg", "title": "保和殿后 其二"},
+      {"src": "assets/images/bj3/bjgg/养心殿殿内png.jpg", "title": "养心殿殿内png"},
+      {"src": "assets/images/bj3/bjgg/养心殿牌匾.jpg", "title": "养心殿牌匾"},
+      {"src": "assets/images/bj3/bjgg/养心殿藻井.jpg", "title": "养心殿藻井"},
+      {"src": "assets/images/bj3/bjgg/养性殿.jpg", "title": "养性殿"},
+      {"src": "assets/images/bj3/bjgg/午门 其一.jpg", "title": "午门 其一"},
+      {"src": "assets/images/bj3/bjgg/午门 其七.jpg", "title": "午门 其七"},
+      {"src": "assets/images/bj3/bjgg/午门 其三.jpg", "title": "午门 其三"},
+      {"src": "assets/images/bj3/bjgg/午门 其二.jpg", "title": "午门 其二"},
+      {"src": "assets/images/bj3/bjgg/午门 其五.jpg", "title": "午门 其五"},
+      {"src": "assets/images/bj3/bjgg/午门 其六.jpg", "title": "午门 其六"},
+      {"src": "assets/images/bj3/bjgg/午门 其四.jpg", "title": "午门 其四"},
+      {"src": "assets/images/bj3/bjgg/午门背.jpg", "title": "午门背"},
+      {"src": "assets/images/bj3/bjgg/协和门5png.jpg", "title": "协和门5png"},
+      {"src": "assets/images/bj3/bjgg/协和门 其一.jpg", "title": "协和门 其一"},
+      {"src": "assets/images/bj3/bjgg/协和门 其三.jpg", "title": "协和门 其三"},
+      {"src": "assets/images/bj3/bjgg/协和门 其二.jpg", "title": "协和门 其二"},
+      {"src": "assets/images/bj3/bjgg/协和门 其四.jpg", "title": "协和门 其四"},
+      {"src": "assets/images/bj3/bjgg/南三所 其一.jpg", "title": "南三所 其一"},
+      {"src": "assets/images/bj3/bjgg/南三所 其二.jpg", "title": "南三所 其二"},
+      {"src": "assets/images/bj3/bjgg/双房檐角.jpg", "title": "双房檐角"},
+      {"src": "assets/images/bj3/bjgg/右雁翅楼.jpg", "title": "右雁翅楼"},
+      {"src": "assets/images/bj3/bjgg/后左门.jpg", "title": "后左门"},
+      {"src": "assets/images/bj3/bjgg/太和殿 其一.jpg", "title": "太和殿 其一"},
+      {"src": "assets/images/bj3/bjgg/太和殿 其三.jpg", "title": "太和殿 其三"},
+      {"src": "assets/images/bj3/bjgg/太和殿 其二.jpg", "title": "太和殿 其二"},
+      {"src": "assets/images/bj3/bjgg/太和殿 其五.jpg", "title": "太和殿 其五"},
+      {"src": "assets/images/bj3/bjgg/太和殿 其六.jpg", "title": "太和殿 其六"},
+      {"src": "assets/images/bj3/bjgg/太和殿 其四.jpg", "title": "太和殿 其四"},
+      {"src": "assets/images/bj3/bjgg/太和殿前日晷.jpg", "title": "太和殿前日晷"},
+      {"src": "assets/images/bj3/bjgg/太和殿旁.jpg", "title": "太和殿旁"},
+      {"src": "assets/images/bj3/bjgg/太和门雄狮.jpg", "title": "太和门雄狮"},
+      {"src": "assets/images/bj3/bjgg/太和门雌狮 其一.jpg", "title": "太和门雌狮 其一"},
+      {"src": "assets/images/bj3/bjgg/太和门雌狮 其二.jpg", "title": "太和门雌狮 其二"},
+      {"src": "assets/images/bj3/bjgg/左雁翅楼.jpg", "title": "左雁翅楼"},
+      {"src": "assets/images/bj3/bjgg/延禧宫.jpg", "title": "延禧宫"},
+      {"src": "assets/images/bj3/bjgg/延禧宫旁.jpg", "title": "延禧宫旁"},
+      {"src": "assets/images/bj3/bjgg/故宫 奉先殿.jpg", "title": "故宫 奉先殿"},
+      {"src": "assets/images/bj3/bjgg/故宫一角.jpg", "title": "故宫一角"},
+      {"src": "assets/images/bj3/bjgg/故宫九龙壁 其一.jpg", "title": "故宫九龙壁 其一"},
+      {"src": "assets/images/bj3/bjgg/故宫九龙壁 其三.jpg", "title": "故宫九龙壁 其三"},
+      {"src": "assets/images/bj3/bjgg/故宫九龙壁 其二.jpg", "title": "故宫九龙壁 其二"},
+      {"src": "assets/images/bj3/bjgg/故宫北红墙 其一.jpg", "title": "故宫北红墙 其一"},
+      {"src": "assets/images/bj3/bjgg/故宫北红墙 其二.jpg", "title": "故宫北红墙 其二"},
+      {"src": "assets/images/bj3/bjgg/故宫古今.jpg", "title": "故宫古今"},
+      {"src": "assets/images/bj3/bjgg/故宫结构 其一.jpg", "title": "故宫结构 其一"},
+      {"src": "assets/images/bj3/bjgg/故宫结构 其二.jpg", "title": "故宫结构 其二"},
+      {"src": "assets/images/bj3/bjgg/故宫角楼.jpg", "title": "故宫角楼"},
+      {"src": "assets/images/bj3/bjgg/文华门.jpg", "title": "文华门"},
+      {"src": "assets/images/bj3/bjgg/昭华门.jpg", "title": "昭华门"},
+      {"src": "assets/images/bj3/bjgg/昭德门附近 其一.jpg", "title": "昭德门附近 其一"},
+      {"src": "assets/images/bj3/bjgg/昭德门附近 其二.jpg", "title": "昭德门附近 其二"},
+      {"src": "assets/images/bj3/bjgg/水龙头古建筑.jpg", "title": "水龙头古建筑"},
+      {"src": "assets/images/bj3/bjgg/王府井夜 其一.jpg", "title": "王府井夜 其一"},
+      {"src": "assets/images/bj3/bjgg/王府井夜 其二.jpg", "title": "王府井夜 其二"},
+      {"src": "assets/images/bj3/bjgg/珍妃井.jpg", "title": "珍妃井"},
+      {"src": "assets/images/bj3/bjgg/珍宝馆.jpg", "title": "珍宝馆"},
+      {"src": "assets/images/bj3/bjgg/珍宝馆附近.jpg", "title": "珍宝馆附近"},
+      {"src": "assets/images/bj3/bjgg/皇极殿 其一.jpg", "title": "皇极殿 其一"},
+      {"src": "assets/images/bj3/bjgg/皇极殿 其七.jpg", "title": "皇极殿 其七"},
+      {"src": "assets/images/bj3/bjgg/皇极殿 其三.jpg", "title": "皇极殿 其三"},
+      {"src": "assets/images/bj3/bjgg/皇极殿 其二.jpg", "title": "皇极殿 其二"},
+      {"src": "assets/images/bj3/bjgg/皇极殿 其五.jpg", "title": "皇极殿 其五"},
+      {"src": "assets/images/bj3/bjgg/皇极殿 其六.jpg", "title": "皇极殿 其六"},
+      {"src": "assets/images/bj3/bjgg/皇极殿 其四.jpg", "title": "皇极殿 其四"},
+      {"src": "assets/images/bj3/bjgg/皇极殿瑞兽.jpg", "title": "皇极殿瑞兽"},
+      {"src": "assets/images/bj3/bjgg/重檐之美.jpg", "title": "重檐之美"},
+      {"src": "assets/images/bj3/bjgg/金水桥.jpg", "title": "金水桥"}
+    ]
+},
+    {
       city: "九龙壁",
       desc: "2026年11月7日，集齐三大九龙壁",
       star: true,
@@ -902,7 +1002,7 @@ const SITE_DATA = {
         { src: "assets/images/zb2/唐库.jpg", title: "唐库文创园" }
       ]
     },
-    {
+     {
       city: "辽宁 沈阳",
       desc: "",
       seal: "沈",
@@ -953,7 +1053,7 @@ const SITE_DATA = {
         { src: "assets/images/sy2/sy241.jpg", title: "北陵公园三" }
       ]
     },
-     {
+       {
       city: "辽宁 大连",
       desc: "",
       seal: "连",
@@ -979,7 +1079,7 @@ const SITE_DATA = {
         { src: "assets/images/dl2/dl14.jpg", title: "黑石礁" }
       ]
     },
-       {
+    {
       city: "华东四市",
       seal: "沪苏杭",
       desc: "2019初至",
@@ -997,7 +1097,7 @@ const SITE_DATA = {
         { src: "assets/images/hdws/苏州山塘街 其二.jpg", title: "苏州 山塘街 其二" }
       ]
     },
-    {
+        {
       city: "江苏 徐州",
       desc: "",
       seal: "彭",
@@ -1005,7 +1105,7 @@ const SITE_DATA = {
         { src: "assets/images/travel-5.jpg", title: "户部山" }
       ]
     },
-        {
+    {
       city: "陕西 西安",
       desc: "2021年高考结束 至渭南、西安游玩。",
       seal: "秦",
@@ -1037,6 +1137,7 @@ const SITE_DATA = {
         { src: "assets/images/travel-6.jpg", title: "泰山 南天门" }
       ]
     },
+  
     {
       city: "山东 青州",
       desc: "",
@@ -1045,7 +1146,6 @@ const SITE_DATA = {
         { src: "assets/images/travel-7.jpg", title: "青州古城落日" }
       ]
     },
-  
     {
       city: "湖北 武汉",
       desc: "",
@@ -1102,7 +1202,7 @@ const SITE_DATA = {
         { src: "assets/images/travel-22.jpg", title: "中央大街" }
       ]
     },
-    {
+       {
       city: "山东 济南",
       desc: "",
       seal: "济",
@@ -1111,7 +1211,8 @@ const SITE_DATA = {
         { src: "assets/images/travel-24.jpg", title: "胶济铁路博物馆" }
       ]
     },
-       {
+  
+      {
       city: "名胜古迹 三山五岳",
       desc: "2021年至西岳华山，2025年至东岳泰山，2026年至北岳恒山。",
       seal: "五岳",
@@ -1124,7 +1225,7 @@ const SITE_DATA = {
 
       ]
     }
-  ],
+    ],
   
 
   /* ─────────── 贰 · 行迹 之 影像集（社交视频平台入口） ───────────

@@ -450,20 +450,23 @@ function renderPhotos() {
     pager = paginationHTML("photos", total);
   }
 
-  // 每个城市一张封面卡片（用第一张照片做封面）
+  // 优先用自选封面，否则用第一张照片；空相册也展示，避免创建后看不到。
   const albumHTML = slice.map(({ g, gi }) => {
-    const cover = g.photos[0];
-    if (!cover) return "";
+    const photos = g.photos || [];
+    const coverSrc = g.cover || (photos[0] && photos[0].src);
+    const coverHTML = coverSrc
+      ? `<img src="${esc(coverSrc)}" alt="${esc(g.city)}" loading="lazy">`
+      : `<div class="album-empty-cover"><span>待添新影</span><small>这个相册还没有照片</small></div>`;
     return `
       <div class="photo-wrap reveal">
         ${starHTML(g)}
         <figure class="photo-card photo-album" data-gi="${gi}" tabindex="0" role="button" aria-label="查看 ${esc(g.city)} 图集">
-          <img src="${esc(cover.src)}" alt="${esc(g.city)}" loading="lazy">
+          ${coverHTML}
           ${sealHTML(g)}
-          <span class="album-count">${g.photos.length} 张</span>
+          <span class="album-count">${photos.length} 张</span>
           <figcaption class="photo-meta">
             <span class="photo-title">${hitHTML(g.city, q)}</span>
-            <span class="photo-place">共 ${g.photos.length} 张</span>
+            <span class="photo-place">${photos.length ? `共 ${photos.length} 张` : "等待添加照片"}</span>
           </figcaption>
         </figure>
       </div>`;
@@ -846,7 +849,7 @@ function renderBrowserGrid() {
 
 function openAlbum(gi) {
   const group = SITE_DATA.photos[gi];
-  if (!group || !group.photos.length) return;
+  if (!group) return;
   browserGroup = group;
   browserTag = "";              // 每次打开相册都从「全部」开始
 
