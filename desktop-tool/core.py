@@ -15,6 +15,7 @@ import tempfile
 import time
 import uuid
 import zipfile
+from urllib.parse import unquote, urlsplit, urlunsplit
 from datetime import datetime
 
 from PIL import Image, ImageOps
@@ -25,6 +26,11 @@ import rename_qi
 IMAGES = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tif', '.tiff', '.gif', '.svg'}
 IGNORE = {'.git', '.workbuddy', '.codex', '.agents', '__pycache__', 'node_modules', '_internal', 'desktop-tool', 'desktop-output'}
 PALETTE = {'paper': '#EFE8D6', 'card': '#F6F0E2', 'ink': '#2B2B26', 'teal': '#2C4A52', 'cinnabar': '#A83A32', 'gold': '#A98545'}
+
+
+def report_progress(callback, stage, done, total, detail=''):
+    if callback is not None:
+        callback(stage, done, total, detail)
 
 
 def is_site(path):
@@ -177,24 +183,13 @@ def atomic(path, data):
 
 class Transaction:
     def __init__(self, state, label):
-        self.folder = writable(state) / 'history' / (datetime.now().strftime('%Y%m%d-%H%M%S-') + uuid.uuid4().hex[:8])
+        self.temp_root = writable(state) / 'temp'
+        self.folder = self.temp_root / ('work-' + uuid.uuid4().hex)
         self.folder.mkdir(parents=True)
-        self.meta = {'label': label, 'status': 'running', 'files': [], 'created_at': time.time()}
-        self.save()
-
-    def save(self):
-        atomic(self.folder / 'manifest.json', json.dumps(self.meta, ensure_ascii=False, indent=2).encode('utf-8'))
 
     def remember(self, path):
-        p = writable(path)
-        if any(x['path'] == str(p) for x in self.meta['files']):
-            return
-        item = {'path': str(p), 'before': digest(p), 'backup': None}
-        if p.exists():
-            item['backup'] = str(len(self.meta['files'])) + '.bak'
-            shutil.copy2(str(p), str(self.folder / item['backup']))
-        self.meta['files'].append(item)
-        self.save()
+        # 兼容调用方的写入前校验，不复制原文件、不生成 .bak 或 history。
+        writable(path)
 
     def write(self, path, data):
         self.remember(path)
@@ -208,76 +203,13 @@ class Transaction:
         return self
 
     def __exit__(self, typ, value, tb):
-        if typ:
-            for item in reversed(self.meta['files']):
-                p = Path(item['path'])
-                if item['backup']:
-                    atomic(p, (self.folder / item['backup']).read_bytes())
-                elif p.exists():
-                    p.unlink()
-            self.meta['status'] = 'failed-rolled-back'
-        else:
-            for item in self.meta['files']:
-                item['after'] = digest(Path(item['path']))
-            self.meta['status'] = 'complete'
-        self.meta['finished_at'] = time.time()
-        self.save()
+        if self.folder.exists():
+            if not within(self.folder.resolve(), self.temp_root.resolve()) or self.folder.is_symlink():
+                raise ValueError('临时目录超出程序缓存范围，已停止清理。')
+            shutil.rmtree(str(self.folder))
         return False
 
 
-def cleanup_history(state, now=None, retention_seconds=24 * 3600):
-    """只删除本工具 history 中超过保留期的已完成事务，不访问 manifest 的原图路径。"""
-    state = Path(state).absolute()
-    now = time.time() if now is None else now
-    result = {'removed': 0, 'freed_bytes': 0}
-    reparse = getattr(stat, 'FILE_ATTRIBUTE_REPARSE_POINT', 0x400)
-    def linked(path):
-        return path.is_symlink() or bool(getattr(path.lstat(), 'st_file_attributes', 0) & reparse)
-    if not state.exists() or linked(state):
-        return result
-    history = writable(state) / 'history'
-    if not history.exists() or linked(history):
-        return result
-    for folder in history.iterdir():
-        if not re.fullmatch(r'\d{8}-\d{6}-[a-f0-9]{8}', folder.name) or not folder.is_dir() or linked(folder) or not within(folder, history):
-            continue
-        manifest = folder / 'manifest.json'
-        try:
-            if linked(manifest):
-                continue
-            meta = json.loads(manifest.read_text(encoding='utf-8'))
-            if meta.get('status') not in ('complete', 'undone') or not isinstance(meta.get('files'), list):
-                continue
-            finished = float(meta.get('finished_at', manifest.stat().st_mtime))
-            if not math.isfinite(finished) or now - finished < retention_seconds:
-                continue
-            size, safe = 0, True
-            for base, dirs, names in os.walk(str(folder), followlinks=False):
-                for name in dirs + names:
-                    p = Path(base) / name
-                    if linked(p) or not within(p, folder):
-                        safe = False
-                        break
-                    if p.is_file():
-                        size += p.stat().st_size
-                if not safe:
-                    break
-            if not safe:
-                continue
-            def readonly_retry(func, path, error):
-                if not within(path, folder):
-                    raise ValueError('备份清理路径超出历史目录。')
-                os.chmod(path, stat.S_IWRITE | stat.S_IREAD)
-                func(path)
-            # 递归删除前再次确认最终绝对路径仍然属于当前 history。
-            if not within(folder.resolve(), history.resolve()) or linked(folder):
-                continue
-            shutil.rmtree(str(folder), onerror=readonly_retry)
-            result['removed'] += 1
-            result['freed_bytes'] += size
-        except (OSError, ValueError, TypeError):
-            continue
-    return result
 
 
 def push_script_resource():
@@ -287,16 +219,16 @@ def push_script_resource():
 
 
 def clear_cache(state):
-    """仅清理程序自己的临时目录；不扫描网站、原图、设置或未到期备份。"""
+    """清理程序临时文件和旧版残留备份，不扫描网站、原图或设置。"""
     state = Path(state).absolute()
-    result = {'files': 0, 'freed_bytes': 0, 'skipped': 0, 'expired_backups': 0}
+    result = {'files': 0, 'freed_bytes': 0, 'skipped': 0}
     reparse = getattr(stat, 'FILE_ATTRIBUTE_REPARSE_POINT', 0x400)
     def linked(path):
         return path.is_symlink() or bool(getattr(path.lstat(), 'st_file_attributes', 0) & reparse)
     if not state.exists() or linked(state):
         return result
     state = writable(state)
-    for name in ('temp', 'preview-cache'):
+    for name in ('temp', 'preview-cache', 'history'):
         cache = state / name
         if not cache.exists():
             continue
@@ -333,9 +265,6 @@ def clear_cache(state):
                     folder.rmdir()
                 except OSError:
                     pass
-    expired = cleanup_history(state)
-    result['expired_backups'] = expired['removed']
-    result['freed_bytes'] += expired['freed_bytes']
     return result
 
 
@@ -367,25 +296,6 @@ def launch_push_script(root, state, resource_path=None):
     return process, script
 
 
-def undo(state):
-    for folder in sorted((Path(state) / 'history').glob('*'), reverse=True):
-        f = folder / 'manifest.json'
-        meta = json.loads(f.read_text(encoding='utf-8'))
-        if meta['status'] != 'complete' or not meta['files']:
-            continue
-        for item in meta['files']:
-            if digest(Path(item['path'])) != item['after']:
-                raise ValueError('操作后文件已被修改，不能直接撤销：' + item['path'])
-        for item in reversed(meta['files']):
-            p = writable(item['path'])
-            if item['backup']:
-                atomic(p, (folder / item['backup']).read_bytes())
-            elif p.exists():
-                p.unlink()
-        meta['status'] = 'undone'
-        atomic(f, json.dumps(meta, ensure_ascii=False, indent=2).encode('utf-8'))
-        return meta['label']
-    raise ValueError('没有可以撤销的文件操作。')
 
 
 # 词法扫描保留原 JS 注释和排版；不执行用户代码，不把中文转成转义乱码。
@@ -716,6 +626,210 @@ def site_info(root):
     return albums, sorted(dirs, key=natural), palette
 
 
+def inspect_image_references(root, progress=None):
+    """只读核对 data.js 和 assets 图片，报告保留快照以供安全修复。"""
+    root = Path(root).resolve()
+    report_progress(progress, '扫描图片文件', 0, 0, '正在读取网站图片和 data.js')
+    data = root / 'js/data.js'
+    raw = data.read_bytes()
+    doc = Document(raw.decode('utf-8-sig'))
+    albums = doc.albums()
+    reference_count = sum(len(album['refs']) + bool(doc.string(doc.prop(album['object'], 'cover'))) for album in albums)
+    inventory = {p.relative_to(root).as_posix(): p for p in collect(root / 'assets', images_only=True)} if (root / 'assets').is_dir() else {}
+    folded = {path.casefold(): path for path in inventory}
+    used, issues, external, checked = set(), [], 0, 0
+    album_reference_tokens = set()
+    total_work = reference_count + len(inventory) + 1
+
+    def resolve_reference(value):
+        parsed = urlsplit(value.replace('\\', '/'))
+        if parsed.scheme in ('http', 'https', 'data', 'blob') or parsed.netloc:
+            return 'external', None, None
+        path = unquote(parsed.path)
+        candidate = root / path
+        if parsed.scheme or not path.casefold().startswith('assets/') or not within(candidate, root / 'assets'):
+            return 'invalid', None, None
+        canonical = folded.get(path.casefold())
+        if canonical:
+            used.add(canonical)
+            if canonical != path:
+                replacement = urlunsplit(('', '', canonical, parsed.query, parsed.fragment))
+                return 'case', canonical, replacement
+            return 'exists', canonical, None
+        if candidate.is_file():
+            used.add(path)
+            return 'exists', path, None
+        return 'missing', path, None
+
+    def check(value, album_index, photo_index, role, title=''):
+        nonlocal external, checked
+        checked += 1
+        report_progress(progress, '核对照片代码', min(checked, reference_count), total_work, '%d/%d 条引用 · %s' % (min(checked, reference_count), reference_count, Path(value).name))
+        state, canonical, replacement = resolve_reference(value)
+        if state == 'external':
+            external += 1
+            return state, value
+        if state == 'exists':
+            return state, canonical
+        kind = state + '_' + role
+        labels = {'missing': '文件已不存在', 'case': '路径大小写不一致', 'invalid': '图片路径不合法'}
+        notes = {'missing': '文件可能被删除或改名；可选择删除这条照片代码', 'case': '本地 Windows 可能正常，GitHub 上可能打不开；需手动核对路径大小写', 'invalid': '请手动修改为网站 assets 内的相对路径'}
+        issue = {'id': '%s:%s:%s:%s' % (kind, album_index, photo_index, value), 'kind': kind, 'type': labels[state] + ('（封面）' if role == 'cover' else ''), 'album': albums[album_index]['name'], 'album_index': album_index, 'photo_index': photo_index, 'title': title, 'path': value, 'suggestion': notes[state], 'repairable': state in ('missing', 'case'), 'replacement': replacement}
+        if state == 'missing' and canonical:
+            candidates = [path for path in inventory if Path(path).parent == Path(canonical).parent and Path(path).stem.casefold() == Path(canonical).stem.casefold()]
+            if len(candidates) == 1:
+                issue['suggestion'] += '；发现同名不同格式文件：' + candidates[0]
+        issues.append(issue)
+        return state, canonical
+
+    for album_index, album in enumerate(albums):
+        seen = set()
+        if album['array'] is not None:
+            for photo_index, obj in enumerate(doc.objects(album['array'])):
+                src = doc.string(doc.prop(obj, 'src'))
+                album_reference_tokens.add(doc.prop(obj, 'src'))
+                try:
+                    title = doc.string(doc.prop(obj, 'title'))
+                except ValueError:
+                    title = ''
+                state, canonical = check(src, album_index, photo_index, 'photo', title)
+                identity = canonical if canonical else src
+                if identity in seen:
+                    issues.append({'id': 'duplicate:%s:%s' % (album_index, photo_index), 'kind': 'duplicate_photo', 'type': '同相册重复照片', 'album': album['name'], 'album_index': album_index, 'photo_index': photo_index, 'title': title, 'path': src, 'suggestion': '可删除重复条目，保留第一次登记；不删除图片文件', 'repairable': True})
+                seen.add(identity)
+        cover = doc.string(doc.prop(album['object'], 'cover'))
+        album_reference_tokens.add(doc.prop(album['object'], 'cover'))
+        if cover:
+            check(cover, album_index, None, 'cover')
+
+    # 肖像、游记封面等 data.js 中的其他图片不误报为“未登记”。
+    for index, token in enumerate(doc.tokens):
+        if token[0].startswith(('"', "'")):
+            try:
+                value = doc.string(index)
+                if value.replace('\\', '/').casefold().startswith('assets/'):
+                    state, canonical, replacement = resolve_reference(value)
+                    if index not in album_reference_tokens and state in ('missing', 'case', 'invalid'):
+                        checked += 1
+                        issues.append({'id': 'other:%d' % index, 'kind': state + '_other', 'type': '其他栏目图片：' + {'missing': '文件缺失', 'case': '大小写不一致', 'invalid': '路径不合法'}[state], 'album': '其他栏目', 'title': '', 'path': value, 'suggestion': '请在 data.js 相应栏目中手动修改；不会自动删除非相册内容', 'repairable': False})
+            except (ValueError, OSError):
+                pass
+    other = []
+    for scanned, path in enumerate(sorted(inventory, key=photo_sort_key), 1):
+        report_progress(progress, '核对未登记图片', reference_count + scanned, total_work, '%d/%d 个文件 · %s' % (scanned, len(inventory), Path(path).name))
+        if path not in used and Path(path).suffix.lower() != '.svg':
+            other.append({'path': path, 'size': inventory[path].stat().st_size, 'suggestion': '未在 data.js 中使用，可能是新增照片或页面其他素材；请确认后再登记，不会自动删文件'})
+    counts = {'albums': len(albums), 'references': checked, 'files': len(inventory), 'missing': sum(i['kind'].startswith('missing_') for i in issues), 'case': sum(i['kind'].startswith('case_') for i in issues), 'duplicates': sum(i['kind'] == 'duplicate_photo' for i in issues), 'invalid': sum(i['kind'].startswith('invalid_') for i in issues), 'unlisted': len(other), 'external': external}
+    report_progress(progress, '检查完成', total_work, total_work, '%d 个相册，%d 个图片文件' % (len(albums), len(inventory)))
+    return {'root': str(root), 'data_hash': hashlib.sha256(raw).hexdigest(), 'issues': issues, 'unlisted': other, 'counts': counts, 'album_names': [a['name'] for a in albums]}
+
+
+def reference_local_file(root, value):
+    parsed = urlsplit(value.replace('\\', '/'))
+    path = Path(root) / unquote(parsed.path)
+    if parsed.scheme or parsed.netloc or not unquote(parsed.path).casefold().startswith('assets/') or not within(path, Path(root) / 'assets'):
+        return None
+    return path
+
+
+def repair_image_references(root, state, report, selected, operation_label='调整照片与代码对应关系'):
+    root = writable(root)
+    data = root / 'js/data.js'
+    if root != Path(report['root']).resolve() or digest(data) != report['data_hash']:
+        raise ValueError('网站或 data.js 已发生变化，请先重新检查，再操作。')
+    text = data.read_text(encoding='utf-8-sig')
+    doc = Document(text)
+    albums = doc.albums()
+    chosen = [issue for issue in report['issues'] if issue['id'] in set(selected) and issue['repairable']]
+    if not chosen:
+        raise ValueError('请先选中需要操作的照片代码；未登记的图片不会自动删除。')
+    removed, edits, fixed = set(), [], 0
+    for issue in chosen:
+        album = albums[issue['album_index']]
+        role = 'cover' if issue['kind'].endswith('_cover') else 'photo'
+        if role == 'photo':
+            obj = list(doc.objects(album['array']))[issue['photo_index']]
+            index = doc.prop(obj, 'src')
+        else:
+            obj = album['object']
+            index = doc.prop(obj, 'cover')
+        value = doc.string(index)
+        local = reference_local_file(root, value)
+        if issue['kind'].startswith('missing_') and (local is None or local.is_file()):
+            raise ValueError('文件已经恢复或路径变化，请重新检查：' + value)
+        if issue['kind'].startswith('case_'):
+            correct = reference_local_file(root, issue['replacement'])
+            if correct is None or not correct.is_file():
+                raise ValueError('建议路径已发生变化，请重新检查。')
+            edits.append((doc.tokens[index][1], doc.tokens[index][2], q(issue['replacement'])))
+        elif role == 'cover':
+            edits.append((doc.tokens[index][1], doc.tokens[index][2], '""'))
+        else:
+            if obj in removed:
+                continue
+            removed.add(obj)
+            end = doc.pairs[obj]
+            a, b = doc.tokens[obj][1], doc.tokens[end][2]
+            if doc.tokens[end + 1][0] == ',':
+                b = doc.tokens[end + 1][2]
+            elif doc.tokens[obj - 1][0] == ',':
+                a = doc.tokens[obj - 1][1]
+            edits.append((a, b, ''))
+        fixed += 1
+    # 相邻删除可能共用分隔逗号；合并范围，避免误删保留的照片或产生语法错误。
+    deletion = sorted((a, b) for a, b, value in edits if value == '')
+    merged = []
+    for a, b in deletion:
+        if merged and a <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(b, merged[-1][1]))
+        else:
+            merged.append((a, b))
+    replacements = [(a, b, value) for a, b, value in edits if value != '' and not any(start <= a < stop for start, stop in merged)]
+    all_edits = replacements + [(a, b, '') for a, b in merged]
+    for a, b, value in sorted(all_edits, reverse=True):
+        text = text[:a] + value + text[b:]
+    Document(text).albums()
+    if digest(data) != report['data_hash']:
+        raise ValueError('保存前发现代码已被修改，请重新检查。')
+    with Transaction(state, operation_label) as tx:
+        tx.write(data, text.encode('utf-8'))
+    return fixed
+
+
+def delete_image_entries(root, state, report, selected):
+    selected = set(selected)
+    choices = [issue for issue in report['issues'] if issue['id'] in selected]
+    allowed = {'missing_photo', 'missing_cover', 'duplicate_photo'}
+    if not choices or any(issue['kind'] not in allowed for issue in choices):
+        raise ValueError('请选择可删除的缺失照片、失效封面或重复照片代码；其他路径提示请手动核对。')
+    return repair_image_references(root, state, report, selected, operation_label='删除选中的照片代码')
+
+
+def register_unlisted_images(root, state, report, paths, album):
+    root = writable(root)
+    data = root / 'js/data.js'
+    if root != Path(report['root']).resolve() or digest(data) != report['data_hash']:
+        raise ValueError('网站代码已变化，请重新检查。')
+    album = album.strip()
+    if not album:
+        raise ValueError('请选择或输入相册名称。')
+    allowed = {item['path'] for item in report['unlisted']}
+    entries = []
+    for path in sorted(set(paths), key=photo_sort_key):
+        local = root / path
+        if path not in allowed or not within(local, root / 'assets') or not local.is_file():
+            raise ValueError('图片已变化，请重新检查：' + path)
+        entries.append({'src': path, 'title': local.stem})
+    if not entries:
+        raise ValueError('请先选择需要登记到相册的图片。')
+    text = sync_album(data.read_text(encoding='utf-8-sig'), album, entries)
+    if digest(data) != report['data_hash']:
+        raise ValueError('保存前发现代码已修改，请重新检查。')
+    with Transaction(state, '登记新增图片到相册') as tx:
+        tx.write(data, text.encode('utf-8'))
+    return len(entries)
+
+
 def image_bytes(path, options):
     ext = path.suffix.lower()
     if not options.get('compress') or ext not in IMAGES - {'.gif', '.svg'}:
@@ -805,11 +919,14 @@ def upload_code(root, jobs, options):
     return {'本次照片 data.js 片段': snippet, 'data.js': text}
 
 
-def import_jobs(root, state, jobs, options, log):
+def import_jobs(root, state, jobs, options, log, progress=None):
     root = writable(root)
     config = root / 'js/data.js'
     text = config.read_text(encoding='utf-8-sig')
     tasks, occupied = [], set()
+    total_files = sum(len(job['items']) for job in jobs)
+    total_work = total_files * 2 + len({job.get('album') for job in jobs if job.get('album')}) + 2
+    report_progress(progress, '准备添加照片', 0, total_work, '共 %d 个文件' % total_files)
     with Transaction(state, '添加照片并更新相册') as tx:
         staging = tx.folder / 'staging'
         staging.mkdir()
@@ -832,27 +949,32 @@ def import_jobs(root, state, jobs, options, log):
                 occupied.add(key)
                 if target.exists() and not options.get('overwrite'):
                     if digest(target) != hashlib.sha256(data).hexdigest():
-                        raise ValueError('同名文件内容不同，请启用“备份后覆盖”或改名：' + str(target))
+                        raise ValueError('同名文件内容不同，请启用“同名文件自动覆盖”或改名：' + str(target))
                     log('已存在相同文件，保留：' + target.name)
                 staged = staging / str(len(tasks))
                 atomic(staged, data)
                 tasks.append((target, staged, job.get('album', ''), source.stem))
+                report_progress(progress, '处理并暂存照片', len(tasks), total_work, '%d/%d 个 · %s' % (len(tasks), total_files, source.name))
         grouped = {}
         for target, staged, album, title in tasks:
-            tx.write(target, staged.read_bytes())
-            log('已保存照片或文件 → ' + target.relative_to(root).as_posix())
             if album and target.suffix.lower() in IMAGES:
                 grouped.setdefault(album, []).append({'src': target.relative_to(root).as_posix(), 'title': title})
         for title, entries in grouped.items():
             entries.sort(key=lambda entry: photo_sort_key(entry['src']))
             text = sync_album(text, title, entries)
         Document(text).albums()
+        for copied, (target, staged, album, title) in enumerate(tasks, 1):
+            tx.write(target, staged.read_bytes())
+            log('已保存照片或文件 → ' + target.relative_to(root).as_posix())
+            report_progress(progress, '保存照片到网站', total_files + copied, total_work, '%d/%d 个 · %s' % (copied, total_files, target.name))
         if text != config.read_text(encoding='utf-8-sig'):
             tx.write(config, text.encode('utf-8'))
-        # 暂存件已写回，历史记录只保留撤销所需的原文件。
+        # 只保留成功输出，暂存结果立即删除。
         for p in staging.iterdir():
             p.unlink()
         staging.rmdir()
+        report_progress(progress, '保存相册代码', total_work - 1, total_work, '正在完成本次添加')
+    report_progress(progress, '添加照片完成', total_work, total_work, '已添加 %d 个文件' % len(tasks))
     return len(tasks)
 
 
@@ -884,89 +1006,154 @@ def rename_plan(folder, mode, prefix, start, pad, recursive=False, filter_mode='
     return plan if include_unchanged else [(a, b) for a, b in plan if a != b]
 
 
-def apply_rename(root, state, plan, log):
+def apply_rename(root, state, plan, log, progress=None):
     root = Path(root).resolve()
     config = root / 'js/data.js'
+    count, total_work = len(plan), len(plan) * 3 + 1
+    report_progress(progress, '准备批量改名', 0, total_work, '共 %d 个文件' % count)
     sources = {str(a.resolve()).casefold() for a, _ in plan}
     targets = [str(b.resolve()).casefold() for _, b in plan]
     if len(targets) != len(set(targets)):
         raise ValueError('重命名目标重复，请重新预览。')
-    for a, b in plan:
+    for i, (a, b) in enumerate(plan, 1):
         writable(a)
         writable(b)
-        if not a.is_file():
-            raise ValueError('源文件不存在，请重新预览：' + str(a))
-        if b.exists() and str(b.resolve()).casefold() not in sources:
-            raise ValueError('目标已被其他文件占用，请重新预览：' + str(b))
-    with Transaction(state, '批量重命名') as tx:
-        for a, b in plan:
-            tx.remember(a)
-            tx.remember(b)
-        # 先写入独立暂存目录，再写回正式名称，支持互换文件名。
-        staging = tx.folder / 'staging'
-        staging.mkdir()
-        for i, (a, _) in enumerate(plan):
-            shutil.copy2(str(a), str(staging / str(i)))
-        for a, _ in plan:
-            a.unlink()
-        for i, (a, b) in enumerate(plan):
-            atomic(b, (staging / str(i)).read_bytes())
-            log(a.name + ' → ' + b.name)
-        for p in staging.iterdir():
-            p.unlink()
-        staging.rmdir()
-        mapping = {a.relative_to(root).as_posix(): b.relative_to(root).as_posix() for a, b in plan if within(a, root)}
-        if mapping:
-            text = config.read_text(encoding='utf-8-sig')
-            new = replace_refs(text, mapping)
-            if new != text:
-                tx.write(config, new.encode('utf-8'))
-        output = io.StringIO(newline='')
-        writer = csv.writer(output)
-        writer.writerow(['原路径', '新路径'])
-        writer.writerows((str(a), str(b)) for a, b in plan)
-        atomic(tx.folder / '重命名对照表.csv', output.getvalue().encode('utf-8-sig'))
+        if not a.is_file() or (b.exists() and str(b.resolve()).casefold() not in sources):
+            raise ValueError('文件状态已变化，请重新生成改名预览。')
+        report_progress(progress, '检查文件', i, total_work, '%d/%d 个 · %s' % (i, count, a.name))
+    mapping = {a.relative_to(root).as_posix(): b.relative_to(root).as_posix() for a, b in plan if within(a, root)}
+    before = config.read_bytes() if mapping and config.is_file() else None
+    updated = replace_refs(before.decode('utf-8-sig'), mapping) if before is not None else None
+    moves = []
+    try:
+        for i, (original, target) in enumerate(plan):
+            temporary = original.with_name('.ssqy-rename-' + uuid.uuid4().hex + '.tmp')
+            original.rename(temporary)
+            moves.append([original, temporary, target, False])
+            report_progress(progress, '暂时改名', count + i + 1, total_work, '%d/%d 个 · %s' % (i + 1, count, original.name))
+        for i, move in enumerate(moves):
+            original, temporary, target, _ = move
+            temporary.rename(target)
+            move[3] = True
+            log(original.name + ' → ' + target.name)
+            report_progress(progress, '保存新名称', count * 2 + i + 1, total_work, '%d/%d 个 · %s' % (i + 1, count, target.name))
+        if before is not None and updated != before.decode('utf-8-sig'):
+            if config.read_bytes() != before:
+                raise ValueError('改名期间代码发生变化，请重试。')
+            atomic(config, updated.encode('utf-8'))
+    except Exception:
+        # 失败时只移动文件名回原位置，不复制照片，不产生原图缓存。
+        for move in moves:
+            if move[3]:
+                move[2].rename(move[1])
+                move[3] = False
+        for original, temporary, _, _ in moves:
+            if temporary.exists():
+                temporary.rename(original)
+        raise
+    report_progress(progress, '批量改名完成', total_work, total_work, '已改名 %d 个文件' % count)
 
 
-def compress_folder(source, dest, state, options, log):
+def compress_folder(source, dest, state, options, log, progress=None):
     source, dest = Path(source).resolve(), writable(dest)
-    if within(dest, source) or within(source, dest):
-        raise ValueError('输出目录与源目录应互相独立，原图会保留。')
+    in_place = source == dest
+    if not in_place and (within(dest, source) or within(source, dest)):
+        raise ValueError('源目录和输出目录可以完全相同，或互相独立；请不要选择彼此包含的不同目录。')
     files = collect(source, options.get('recursive', True), images_only=True)
     if not files:
         raise ValueError('未发现图片。')
-    occupied = set()
+    if in_place:
+        total_work = len(files) * 3 + 2
+        report_progress(progress, '准备原地压缩', 0, total_work, '共 %d 个文件，处理后保留压缩结果' % len(files))
+        root = Path(options['site_root']).resolve() if options.get('site_root') else None
+        data_file = root / 'js/data.js' if root and within(source, root / 'assets') else None
+        data_snapshot = data_file.read_bytes() if data_file and data_file.is_file() else None
+        with Transaction(state, '原地压缩图片（保留压缩结果）') as tx:
+            staging = tx.folder / 'staging'
+            staging.mkdir()
+            tasks = []
+            # 先生成所有处理结果，不复制原图备份，避免同名输入互相影响。
+            for processed, path in enumerate(files, 1):
+                tx.remember(path)
+                name, content = image_bytes(path, dict(options, compress=True))
+                staged = staging / str(processed)
+                atomic(staged, content)
+                tasks.append((path, path.with_name(name), staged))
+                report_progress(progress, '压缩图片', processed, total_work, '%d/%d 个 · %s' % (processed, len(files), path.name))
+            final_paths = {str(target.resolve()).casefold() for _, target, _ in tasks}
+            changes = {}
+            for processed, (original, target, staged) in enumerate(tasks, 1):
+                tx.write(target, staged.read_bytes())
+                log('原地压缩 → ' + target.name)
+                if original != target and data_snapshot is not None:
+                    changes[original.relative_to(root).as_posix()] = target.relative_to(root).as_posix()
+                report_progress(progress, '保存压缩结果', len(files) + processed, total_work, '%d/%d 个 · %s' % (processed, len(files), target.name))
+            if data_snapshot is not None and changes:
+                if data_file.read_bytes() != data_snapshot:
+                    raise ValueError('压缩期间 data.js 已被修改，原文件尚未删除，请重新检查。')
+                before = data_snapshot.decode('utf-8-sig')
+                updated = replace_refs(before, changes)
+                if updated != before:
+                    Document(updated).albums()
+                    tx.write(data_file, updated.encode('utf-8'))
+                    log('已同步 data.js 中转换后的图片路径。')
+            for processed, (original, target, _) in enumerate(tasks, 1):
+                if original != target and str(original.resolve()).casefold() not in final_paths:
+                    tx.remove(original)
+                    log('已移除转换前文件 → ' + original.name)
+                report_progress(progress, '整理原目录', len(files) * 2 + processed, total_work, '%d/%d 个文件' % (processed, len(files)))
+            for _, _, staged in tasks:
+                staged.unlink()
+            staging.rmdir()
+            report_progress(progress, '完成原地压缩', total_work - 1, total_work, '目录内仅保留处理后的文件')
+        report_progress(progress, '原地压缩完成', total_work, total_work, '已处理 %d 个文件' % len(files))
+        return len(files)
+    total_work = len(files) * 2 + 1
+    report_progress(progress, '准备压缩图片', 0, total_work, '共 %d 个文件' % len(files))
     with Transaction(state, '压缩图片导出') as tx:
-        for p in files:
+        tasks = []
+        for processed, p in enumerate(files, 1):
             name, data = image_bytes(p, dict(options, compress=True))
             target = (dest / p.relative_to(source)).with_name(name)
-            key = str(target).casefold()
-            if key in occupied or target.exists():
-                raise ValueError('输出文件重名，请选择空目录或调整命名：' + str(target))
-            occupied.add(key)
-            tx.write(target, data)
-            log('导出 → ' + target.name)
+            staged = tx.folder / str(processed)
+            atomic(staged, data)
+            tasks.append((target, staged))
+            report_progress(progress, '压缩图片', processed, total_work, '%d/%d 个 · %s' % (processed, len(files), target.name))
+        for processed, (target, staged) in enumerate(tasks, 1):
+            overwritten = target.exists()
+            tx.write(target, staged.read_bytes())
+            log(('覆盖 → ' if overwritten else '导出 → ') + target.name)
+            report_progress(progress, '导出图片', len(files) + processed, total_work, '%d/%d 个 · %s' % (processed, len(files), target.name))
+        report_progress(progress, '保存输出结果', len(files) * 2, total_work, '已处理 %d/%d 个文件' % (len(files), len(files)))
+    report_progress(progress, '图片压缩完成', total_work, total_work, '已导出 %d 个文件' % len(files))
     return len(files)
 
 
-def make_zip(source, dest, log):
+def make_zip(source, dest, log, progress=None):
     source, dest = Path(source).resolve(), writable(dest)
-    if dest.exists():
-        raise ValueError('压缩包已存在，请选择新文件名。')
     if within(dest, source):
         raise ValueError('压缩包请保存到源目录之外，避免把输出打包进去。')
     files = collect(source)
+    total_bytes = sum(p.stat().st_size for p in files)
+    completed_bytes = 0
+    report_progress(progress, '准备 ZIP 打包', 0, total_bytes + 1, '共 %d 个文件' % len(files))
     dest.parent.mkdir(parents=True, exist_ok=True)
-    tmp = dest.with_name('.' + dest.name + '.tmp')
+    fd, temporary = tempfile.mkstemp(prefix='.ssqy-zip-', suffix='.tmp', dir=str(dest.parent))
+    os.close(fd)
+    tmp = Path(temporary)
     try:
         with zipfile.ZipFile(str(tmp), 'w', zipfile.ZIP_DEFLATED) as z:
-            for p in files:
+            for processed, p in enumerate(files, 1):
                 z.write(str(p), p.relative_to(source).as_posix())
+                completed_bytes += p.stat().st_size
+                report_progress(progress, '打包文件', min(completed_bytes, total_bytes), total_bytes + 1, '%d/%d 个 · %s' % (processed, len(files), p.name))
+        report_progress(progress, '保存压缩包', min(completed_bytes, total_bytes), total_bytes + 1, dest.name)
         os.replace(str(tmp), str(dest))
     finally:
         if tmp.exists():
             tmp.unlink()
     log('ZIP 已保存：' + str(dest))
+    report_progress(progress, 'ZIP 打包完成', total_bytes + 1, total_bytes + 1, '已打包 %d 个文件' % len(files))
     return len(files)
 
 

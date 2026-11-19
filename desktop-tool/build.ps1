@@ -59,7 +59,7 @@ $oldData = Join-Path $profileDir '_data'
 $newData = Join-Path $releaseDir '_data'
 if ($releaseDir -ne $profileDir -and (Test-Path -LiteralPath $oldData)) {
     New-Item -ItemType Directory -Force -Path $newData | Out-Null
-    Get-ChildItem -LiteralPath $oldData -Force | Where-Object { $_.Name -ne 'temp' } | ForEach-Object {
+    Get-ChildItem -LiteralPath $oldData -Force | Where-Object { $_.Name -notin @('temp','history','upload-sessions','preview-cache','previous-version-logs') } | ForEach-Object {
         Copy-Item -LiteralPath $_.FullName -Destination $newData -Recurse -Force
     }
 }

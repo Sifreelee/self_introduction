@@ -96,16 +96,16 @@ rem ---------- 4b. current branch ----------
 set "BRANCH=main"
 for /f "delims=" %%B in ('"!GITEXE!" rev-parse --abbrev-ref HEAD 2^>nul') do set "BRANCH=%%B"
 
-rem ---------- 5. reject oversized files (GitHub limit) ----------
-echo Checking for files over 25MB...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Get-ChildItem -Path . -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\.git\\' -and $_.Length -gt 25MB }) { exit 1 } else { exit 0 }"
+rem ---------- 5. check only files Git will upload (respect .gitignore) ----------
+echo Checking upload files over 25MB (ignored caches are excluded)...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding=[Text.Encoding]::UTF8; $listing= & $env:GITEXE ls-files --cached --others --exclude-standard -z; if($LASTEXITCODE -ne 0) {Write-Host '[ERROR] Cannot read Git file list.'; exit 2}; $large=@(); foreach($p in (($listing -join [Environment]::NewLine).Split([char]0))) {if($p -and (Test-Path -LiteralPath $p -PathType Leaf)) {$f=Get-Item -LiteralPath $p -Force; if($f.Length -gt 25MB) {$large+=$f}}}; if($large.Count) {Write-Host '[STOPPED] These upload files are too big:'; $large | ForEach-Object {Write-Host ('  {0:N1} MB  {1}' -f ($_.Length/1MB),$_.FullName)}; exit 1}; exit 0"
+if errorlevel 2 (
+  echo [ERROR] Cannot check Git upload files.
+  pause
+  exit /b 1
+)
 if not errorlevel 1 goto SIZE_OK
-echo.
-echo [STOPPED] These files are too big for GitHub:
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-ChildItem -Path . -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '\\.git\\' -and $_.Length -gt 25MB } | ForEach-Object { Write-Host ('   ' + [math]::Round($_.Length/1MB,1) + ' MB  ' + $_.FullName) }"
-echo.
-echo Please run compress.bat first, then run this again.
-echo.
+echo Please compress the files listed above, then try again.
 pause
 exit /b 1
 :SIZE_OK

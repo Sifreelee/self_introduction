@@ -7,6 +7,7 @@ import re
 import shutil
 import sys
 import threading
+import time
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, colorchooser, simpledialog
 import webbrowser
@@ -34,8 +35,13 @@ class App(tk.Tk):
                 pass
         self.site = tk.StringVar(value=core.locate_site(self.settings, BASE))
         self.events = queue.Queue()
+        self.progress_lock = threading.Lock()
+        self.pending_progress = None
+        self.operation_started = None
+        self.last_progress_at = None
+        self.operation_timer = None
+        self.active_label = ''
         self.busy = False
-        self.backup_cleanup_running = False
         self.upload_process = None
         self.jobs = []
         self.files = []
@@ -53,8 +59,6 @@ class App(tk.Tk):
         self.build()
         self.refresh_site(initial=True)
         self.after(100, self.pump)
-        if maintenance:
-            self.after(1000, self.start_backup_cleanup)
         self.protocol('WM_DELETE_WINDOW', self.close)
 
     def setup_style(self):
@@ -75,13 +79,14 @@ class App(tk.Tk):
         s.configure('TCombobox', fieldbackground='#FCF9F1', padding=5)
         s.configure('Treeview', background=p['card'], fieldbackground=p['card'], rowheight=29, borderwidth=0)
         s.configure('Treeview.Heading', background='#E7DFC8', padding=7)
+        s.configure('Work.Horizontal.TProgressbar', background=p['teal'], troughcolor='#E7DFC8', thickness=12)
         s.map('Treeview', background=[('selected', p['teal'])], foreground=[('selected', '#FFFFFF')])
         s.configure('TNotebook', tabmargins=(0, 10, 0, 0))
         s.configure('TNotebook.Tab', padding=(20, 11), background='#E7DFC8')
         s.map('TNotebook.Tab', background=[('selected', p['card'])], foreground=[('selected', p['cinnabar'])])
 
     def build(self):
-        header = ttk.Frame(self, padding=(28, 18))
+        header = ttk.Frame(self, padding=(28, 14))
         header.pack(fill='x')
         self.logo = tk.Label(header, text='荔', font=('KaiTi', 29), bg=self.palette['cinnabar'], fg=self.palette['card'], width=2)
         self.logo.pack(side='left', padx=(0, 14))
@@ -100,6 +105,15 @@ class App(tk.Tk):
         ttk.Button(bar, text='预览本地网站', style='Accent.TButton', command=self.preview).pack(side='left', padx=7)
         self.status = tk.StringVar(value='就绪')
         ttk.Label(self, textvariable=self.status, style='Hint.TLabel', padding=(28, 2)).pack(fill='x')
+        progress_panel = ttk.Frame(self, padding=(28, 1, 28, 4))
+        progress_panel.pack(fill='x')
+        progress_panel.columnconfigure(0, weight=1)
+        self.progress_text = tk.StringVar(value='任务进度：就绪')
+        self.elapsed_text = tk.StringVar(value='已用 00:00')
+        ttk.Label(progress_panel, textvariable=self.progress_text, style='Hint.TLabel').grid(row=0, column=0, sticky='w')
+        ttk.Label(progress_panel, textvariable=self.elapsed_text, style='Hint.TLabel').grid(row=0, column=1, sticky='e', padx=(10, 0))
+        self.progress = ttk.Progressbar(progress_panel, mode='determinate', maximum=100, value=0, style='Work.Horizontal.TProgressbar')
+        self.progress.grid(row=1, column=0, columnspan=2, sticky='ew', pady=(4, 0))
         self.tabs = ttk.Notebook(self)
         self.tabs.pack(fill='both', expand=True, padx=28, pady=4)
         pages = []
@@ -118,14 +132,9 @@ class App(tk.Tk):
         row = ttk.Frame(bottom)
         row.pack(fill='x', pady=(0, 5))
         ttk.Label(row, text='操作记录', foreground=self.palette['teal']).pack(side='left')
-        ttk.Label(row, text='备份保留 24 小时 · 过期清理后无法撤销', style='Hint.TLabel').pack(side='left', padx=15)
-        ttk.Button(row, text='撤销上次文件操作', command=self.undo).pack(side='right')
-        ttk.Button(row, text='打开备份目录', command=self.open_history).pack(side='right', padx=8)
         ttk.Button(row, text='清除缓存', command=self.clear_cache).pack(side='right')
-        self.logbox = tk.Text(bottom, height=5, relief='flat', bg='#F6F0E2', fg='#55524A', font=('Microsoft YaHei UI', 9), padx=10, pady=7, state='disabled')
+        self.logbox = tk.Text(bottom, height=4, relief='flat', bg='#F6F0E2', fg='#55524A', font=('Microsoft YaHei UI', 9), padx=10, pady=7, state='disabled')
         self.logbox.pack(fill='x')
-        self.progress = ttk.Progressbar(bottom, mode='indeterminate')
-        self.progress.pack(fill='x', pady=(6, 0))
         self.apply_design()
         for variable in (self.target, self.album, self.do_compress, self.keep_png, self.overwrite, self.side, self.quality):
             variable.trace_add('write', lambda *_: self.schedule_upload_list())
@@ -159,7 +168,7 @@ class App(tk.Tk):
         row.pack(fill='x', pady=5)
         ttk.Checkbutton(row, text='导入时压缩图片', variable=self.do_compress).pack(side='left')
         ttk.Checkbutton(row, text='PNG 保留透明和格式', variable=self.keep_png).pack(side='left', padx=15)
-        ttk.Checkbutton(row, text='同名文件自动覆盖（先备份）', variable=self.overwrite).pack(side='left')
+        ttk.Checkbutton(row, text='同名文件自动覆盖', variable=self.overwrite).pack(side='left')
 
     def import_page(self, page):
         ttk.Label(page, text='选照片 → 选网站里的存放文件夹 → 选展示相册 → 点击添加。程序会复制照片并自动改好网站代码，原图保留。', style='Hint.TLabel', wraplength=950).pack(anchor='w')
@@ -205,6 +214,7 @@ class App(tk.Tk):
         row.pack(fill='x', pady=(4, 0))
         ttk.Button(row, text='获取本次照片 data.js 代码', command=self.current_upload_code).pack(side='left')
         ttk.Button(row, text='预览本地网站', command=self.preview).pack(side='left', padx=8)
+        ttk.Button(row, text='检查图片与代码', command=self.start_image_check).pack(side='left')
         ttk.Button(row, text='添加全部照片并更新网站代码', style='Accent.TButton', command=self.start_import).pack(side='right')
 
     def editor_page(self, page):
@@ -397,6 +407,156 @@ class App(tk.Tk):
             self.show_code(code, '网站当前保存的代码')
         except Exception as e:
             self.error(e)
+
+    def start_image_check(self):
+        try:
+            root = self.root_path()
+            self.run('检查图片与代码', lambda: core.inspect_image_references(root, self.worker_progress), self.show_image_check)
+        except Exception as e:
+            self.error(e)
+
+    def show_image_check(self, report):
+        window = tk.Toplevel(self)
+        window.title('图片与代码核对 · ' + report['root'])
+        window.geometry('1160x760')
+        window.minsize(1000, 670)
+        model = {'report': report}
+        summary = tk.StringVar()
+        ttk.Label(window, textvariable=summary, foreground=self.palette['teal'], wraplength=1090, padding=12).pack(fill='x')
+        ttk.Label(window, text='由你选择：删除失效 / 重复的照片代码，或增加新图片到相册。选中后点击相应按钮才会保存；图片文件保留。', style='Hint.TLabel', wraplength=1090, padding=(12, 0, 12, 8)).pack(fill='x')
+        tabs = ttk.Notebook(window)
+        tabs.pack(fill='both', expand=True, padx=12)
+        problems, unlisted = ttk.Frame(tabs, padding=8), ttk.Frame(tabs, padding=8)
+        tabs.add(problems, text='删除照片代码')
+        tabs.add(unlisted, text='增加图片')
+        issue_tree = self.table(problems, [('情况', 170), ('相册 / 栏目', 150), ('照片标题', 155), ('代码中的路径', 400), ('操作', 100)], 10)
+        issue_note = tk.StringVar(value='选择一行查看具体建议；可用 Ctrl 或 Shift 多选。')
+        ttk.Label(problems, textvariable=issue_note, style='Hint.TLabel', wraplength=1020).pack(fill='x', pady=8)
+        row = ttk.Frame(problems)
+        row.pack(fill='x', pady=5)
+        files_tree = self.table(unlisted, [('图片路径', 710), ('大小', 100)], 10)
+        ttk.Label(unlisted, text='这些图片尚未在 data.js 使用。请自己选择需要增加到相册的图片；图片文件不移动、不删除。', style='Hint.TLabel', wraplength=1000).pack(fill='x', pady=7)
+        add_row = ttk.Frame(unlisted)
+        add_row.pack(fill='x', pady=5)
+        ttk.Label(add_row, text='增加到相册').pack(side='left', padx=(0, 8))
+        chosen_album = tk.StringVar(value=self.album.get())
+        album_box = ttk.Combobox(add_row, textvariable=chosen_album, width=30)
+        album_box.pack(side='left')
+        notice = tk.StringVar(value='只执行你选中的删除或增加，不生成备份；请核对选择后操作。')
+        ttk.Label(window, textvariable=notice, style='Hint.TLabel', wraplength=1090, padding=12).pack(fill='x')
+        footer = ttk.Frame(window, padding=(12, 0, 12, 12))
+        footer.pack(fill='x')
+
+        def fill(current):
+            if not window.winfo_exists():
+                return
+            model['report'] = current
+            issue_tree.delete(*issue_tree.get_children())
+            files_tree.delete(*files_tree.get_children())
+            for i, issue in enumerate(current['issues']):
+                can_delete = issue['kind'] in ('missing_photo', 'missing_cover', 'duplicate_photo')
+                issue_tree.insert('', 'end', iid=str(i), values=(issue['type'], issue['album'], issue['title'], issue['path'], '可选删除' if can_delete else '手动核对'))
+            for i, item in enumerate(current['unlisted']):
+                files_tree.insert('', 'end', iid=str(i), values=(item['path'], self.format_file_size(item['size'])))
+            album_box['values'] = current['album_names']
+            c = current['counts']
+            summary.set('检查了 %d 个相册、%d 条引用、%d 个图片文件 · 缺失 %d · 重复 %d · 大小写 %d · 路径异常 %d · 未登记 %d' % (c['albums'], c['references'], c['files'], c['missing'], c['duplicates'], c['case'], c['invalid'], c['unlisted']))
+            issue_note.set('选择一行查看具体建议；可用 Ctrl 或 Shift 多选。')
+
+        def reload_report():
+            root = Path(model['report']['root'])
+            self.run('重新检查图片与代码', lambda: core.inspect_image_references(root, self.worker_progress), fill)
+
+        def after_change(message):
+            def done(current):
+                fill(current)
+                self.refresh_site(preserve_jobs=True)
+                self.refresh_upload_list()
+                notice.set(message + ' 已重新检查，可继续处理或预览网站。')
+            return done
+
+        def delete_selected():
+            try:
+                self.guard_idle()
+                current = model['report']
+                selected = [current['issues'][int(i)]['id'] for i in issue_tree.selection()]
+                if not selected:
+                    raise ValueError('请先选中需要删除的照片代码。')
+                root = Path(current['root'])
+                if root != self.root_path():
+                    raise ValueError('主窗口已经切换网站，请关闭此窗口后重新检查。')
+                def work():
+                    core.delete_image_entries(root, STATE, current, selected)
+                    return core.inspect_image_references(root, self.worker_progress)
+                self.run('删除选中的照片代码', work, after_change('选中的照片代码已删除，图片文件保留。'))
+            except Exception as e:
+                self.error(e)
+
+        def register():
+            try:
+                self.guard_idle()
+                current = model['report']
+                paths = [current['unlisted'][int(i)]['path'] for i in files_tree.selection()]
+                album = chosen_album.get().strip()
+                if not paths or not album:
+                    raise ValueError('请选择要增加的图片，并选择或输入相册名称。')
+                root = Path(current['root'])
+                if root != self.root_path():
+                    raise ValueError('主窗口已经切换网站，请关闭此窗口后重新检查。')
+                def work():
+                    core.register_unlisted_images(root, STATE, current, paths, album)
+                    return core.inspect_image_references(root, self.worker_progress)
+                self.run('增加选中的图片到相册', work, after_change('选中的图片已增加到“%s”。' % album))
+            except Exception as e:
+                self.error(e)
+
+        def suggestion(_=None):
+            selected = issue_tree.selection()
+            if selected:
+                issue = model['report']['issues'][int(selected[0])]
+                can_delete = issue['kind'] in ('missing_photo', 'missing_cover', 'duplicate_photo')
+                issue_note.set(issue['suggestion'] + (' · 可选择删除这条照片代码' if can_delete else ' · 只提示，需手动核对，不执行删除'))
+
+        def select_deletable():
+            issue_tree.selection_set([str(i) for i, issue in enumerate(model['report']['issues']) if issue['kind'] in ('missing_photo', 'missing_cover', 'duplicate_photo')])
+
+        def locate():
+            try:
+                selected = files_tree.selection()
+                if selected:
+                    path = Path(model['report']['root']) / model['report']['unlisted'][int(selected[0])]['path']
+                    core.reveal_file(path)
+            except Exception as e:
+                self.error(e)
+
+        def export():
+            dest = filedialog.asksaveasfilename(parent=window, title='导出检查报告', initialdir=str(BASE), initialfile='图片与代码检查报告.csv', defaultextension='.csv', filetypes=[('CSV 检查报告', '*.csv')])
+            if dest:
+                try:
+                    import csv, io
+                    output = io.StringIO(newline='')
+                    writer = csv.writer(output)
+                    writer.writerow(['问题类型', '相册或栏目', '照片标题', '图片路径', '建议'])
+                    for issue in model['report']['issues']:
+                        writer.writerow([issue['type'], issue['album'], issue['title'], issue['path'], issue['suggestion']])
+                    for item in model['report']['unlisted']:
+                        writer.writerow(['未登记图片', '', '', item['path'], item['suggestion']])
+                    core.atomic(dest, output.getvalue().encode('utf-8-sig'))
+                    notice.set('检查报告已导出。')
+                except Exception as e:
+                    self.error(e)
+
+        issue_tree.bind('<<TreeviewSelect>>', suggestion)
+        ttk.Button(row, text='全选可删除项', command=select_deletable).pack(side='left')
+        ttk.Button(row, text='删除选中的照片代码', style='Accent.TButton', command=delete_selected).pack(side='right')
+        ttk.Button(add_row, text='增加选中的图片到相册', command=register).pack(side='left', padx=10)
+        ttk.Button(add_row, text='在文件管理器中显示', command=locate).pack(side='left')
+        ttk.Button(footer, text='重新检查', command=reload_report).pack(side='left')
+        ttk.Button(footer, text='导出报告…', command=export).pack(side='left', padx=8)
+        ttk.Button(footer, text='预览本地网站', command=lambda: webbrowser.open((Path(model['report']['root']) / 'index.html').as_uri(), new=2)).pack(side='left')
+        ttk.Button(footer, text='关闭', command=window.destroy).pack(side='right')
+        fill(report)
+        return window
 
     def pending_job(self):
         root = self.root_path()
@@ -722,7 +882,7 @@ class App(tk.Tk):
 
     def compress_page(self, page):
         self.comp_source = tk.StringVar()
-        self.comp_dest = tk.StringVar(value=str(BASE / 'desktop-output' / '图片'))
+        self.comp_dest = tk.StringVar(value=str(Path(self.site.get()) / 'assets/images') if self.site.get() else '')
         for label, var in [('图片源文件夹', self.comp_source), ('图片输出目录', self.comp_dest)]:
             row, _ = self.field(page, label, var)
             ttk.Button(row, text='选择', command=lambda v=var: self.choose_dir(v)).pack(side='left', padx=(8, 0))
@@ -740,7 +900,7 @@ class App(tk.Tk):
         for label, color in [('卡片纸色', '#F6F0E2'), ('页面宣纸', '#EFE8D6'), ('老纸', '#E7DFC8')]:
             ttk.Button(row, text=label, command=lambda c=color: self.bg.set(c)).pack(side='left', padx=(0, 8))
         ttk.Checkbutton(row, text='PNG 保留透明和格式', variable=self.keep_png).pack(side='left', padx=12)
-        ttk.Label(page, text='这些压缩设置也用于“添加照片”。默认 JPG：最长边 1600、质量 82；小 JPG 保持原样，GIF / SVG / 动画保持原样。\n透明区按所选纸色合成；白底不透明图片保留原背景。独立压缩始终导出副本，包含子目录。', style='Hint.TLabel', wraplength=970).pack(anchor='w', pady=7)
+        ttk.Label(page, text='默认 JPG：最长边 1600、质量 82；小 JPG、GIF / SVG / 动画保持原样。透明 PNG 按所选底色合成。\n源和输出目录相同：只保留处理后的文件；目录不同：保留原图。同名直接覆盖，不生成备份。', style='Hint.TLabel', wraplength=970).pack(anchor='w', pady=7)
         ttk.Button(page, text='压缩并导出图片', style='Accent.TButton', command=self.start_compress).pack(anchor='e')
         ttk.Separator(page).pack(fill='x', pady=14)
         self.zip_source = tk.StringVar()
@@ -778,7 +938,7 @@ class App(tk.Tk):
             cell.pack(side='left', padx=(0, 20))
             tk.Label(cell, bg=color, width=10, height=3).pack()
             ttk.Label(cell, text=label + '\n' + color, justify='center').pack(pady=5)
-        ttk.Label(page, text='更换 EXE 文件本身的图标：把你的图片命名为 custom-icon.png 放入 desktop-tool，再运行 build.ps1 重新打包。\n窗口内更换图标无需重新打包。所有配置、操作备份与日志都在程序旁的 _data 目录。', style='Hint.TLabel', wraplength=960).pack(anchor='w', pady=20)
+        ttk.Label(page, text='更换 EXE 文件本身的图标：把你的图片命名为 custom-icon.png 放入 desktop-tool，再运行 build.ps1 重新打包。\n窗口内更换图标无需重新打包。配置与日志在程序旁的 _data 目录，不保存原图备份。', style='Hint.TLabel', wraplength=960).pack(anchor='w', pady=20)
 
     def error(self, e):
         self.log('未完成：' + str(e))
@@ -808,6 +968,7 @@ class App(tk.Tk):
                 raise ValueError('这不是网站根目录：请选择同时包含 index.html、js/data.js 和 css/style.css 的文件夹。')
             albums, dirs, palette = core.site_info(root)
             if root != getattr(self, 'loaded_site', None):
+                self.comp_dest.set(str(root / 'assets/images'))
                 self.files = []
                 self.selected_folder = None
                 self.selected_file_ids = {}
@@ -978,9 +1139,10 @@ class App(tk.Tk):
                 raise ValueError('请先选择照片或文件夹，然后选择相册。可直接点击添加，多批照片才需要加入列表。')
             self.remember_photo_paths()
             def work():
+                self.worker_progress('准备本次照片代码', 0, 0, '正在核对图片格式与目标路径')
                 code = core.upload_code(root, jobs, options)
                 plan = core.upload_plan(root, jobs, options)
-                count = core.import_jobs(root, STATE, jobs, options, self.worker_log)
+                count = core.import_jobs(root, STATE, jobs, options, self.worker_log, self.worker_progress)
                 return count, code, plan
             self.run('添加照片并更新网站代码', work, self.import_done)
         except Exception as e:
@@ -1004,31 +1166,56 @@ class App(tk.Tk):
         self.plan = []
         self.rename_apply.configure(state='disabled')
 
+    def rename_options(self):
+        return (self.rename_dir.get(), self.rename_mode.get(), self.prefix.get(), self.start.get(), self.pad.get(), self.rename_recursive.get(), self.filter_mode.get())
+
     def preview_rename(self):
         try:
             self.guard_idle()
-            preview = core.rename_plan(self.rename_dir.get(), self.rename_mode.get(), self.prefix.get(), int(self.start.get()), int(self.pad.get()), self.rename_recursive.get(), self.filter_mode.get(), include_unchanged=True)
-            self.plan = [(a, b) for a, b in preview if a != b]
-            self.plan_hashes = {str(a): core.digest(a) for a, _ in self.plan}
-            self.rename_tree.delete(*self.rename_tree.get_children())
-            folder = Path(self.rename_dir.get()).resolve()
-            for a, b in preview:
-                self.rename_tree.insert('', 'end', values=(a.relative_to(folder).as_posix(), b.relative_to(folder).as_posix(), '名称不变' if a == b else '将修改'))
-            self.rename_apply.configure(state='normal' if self.plan else 'disabled')
-            self.log('预览：共 %d 个文件，%d 个会改名，%d 个名称不变。' % (len(preview), len(self.plan), len(preview) - len(self.plan)))
+            options = self.rename_options()
+            folder, mode, prefix, start, pad, recursive, filter_mode = options
+            start, pad = int(start), int(pad)
+            self.invalidate_plan()
+            def work():
+                self.worker_progress('生成改名预览', 0, 0, '正在扫描文件夹')
+                preview = core.rename_plan(folder, mode, prefix, start, pad, recursive, filter_mode, include_unchanged=True)
+                changes = [(a, b) for a, b in preview if a != b]
+                hashes = {}
+                for i, (a, _) in enumerate(changes, 1):
+                    hashes[str(a)] = core.digest(a)
+                    self.worker_progress('核对待改名文件', i, len(changes) + 1, '%d/%d 个 · %s' % (i, len(changes), a.name))
+                return preview, changes, hashes
+            def done(result):
+                if self.rename_options() != options:
+                    self.invalidate_plan()
+                    self.status.set('改名规则已变化，请重新生成预览。')
+                    return
+                preview, self.plan, self.plan_hashes = result
+                self.rename_tree.delete(*self.rename_tree.get_children())
+                base = Path(folder).resolve()
+                for a, b in preview:
+                    self.rename_tree.insert('', 'end', values=(a.relative_to(base).as_posix(), b.relative_to(base).as_posix(), '名称不变' if a == b else '将修改'))
+                self.rename_apply.configure(state='normal' if self.plan else 'disabled')
+                self.log('预览：共 %d 个文件，%d 个会改名，%d 个名称不变。' % (len(preview), len(self.plan), len(preview) - len(self.plan)))
+            self.run('生成重命名预览', work, done)
         except Exception as e:
             self.error(e)
 
     def start_rename(self):
         try:
+            self.guard_idle()
             root = self.root_path()
             plan = list(self.plan)
             if not plan:
                 raise ValueError('请先生成重命名预览。')
-            for a, _ in plan:
-                if core.digest(a) != self.plan_hashes[str(a)]:
-                    raise ValueError('文件在预览后发生变化，请重新生成预览。')
-            self.run('批量重命名', lambda: core.apply_rename(root, STATE, plan, self.worker_log), lambda _: self.preview_rename())
+            hashes = dict(self.plan_hashes)
+            def work():
+                for i, (a, _) in enumerate(plan, 1):
+                    self.worker_progress('检查预览是否仍有效', 0, 0, '%d/%d 个 · %s' % (i, len(plan), a.name))
+                    if core.digest(a) != hashes[str(a)]:
+                        raise ValueError('文件在预览后发生变化，请重新生成预览。')
+                core.apply_rename(root, STATE, plan, self.worker_log, self.worker_progress)
+            self.run('批量重命名', work, lambda _: self.preview_rename())
         except Exception as e:
             self.error(e)
 
@@ -1041,8 +1228,8 @@ class App(tk.Tk):
         try:
             if not self.comp_source.get().strip():
                 raise ValueError('请选择图片源文件夹。')
-            source, dest, opts = self.comp_source.get(), self.comp_dest.get(), self.get_options()
-            self.run('图片压缩', lambda: core.compress_folder(source, dest, STATE, opts, self.worker_log))
+            source, dest, opts = self.comp_source.get(), self.comp_dest.get(), dict(self.get_options(), site_root=str(self.root_path()))
+            self.run('图片压缩', lambda: core.compress_folder(source, dest, STATE, opts, self.worker_log, self.worker_progress))
         except Exception as e:
             self.error(e)
 
@@ -1051,9 +1238,9 @@ class App(tk.Tk):
         if not Path(source).is_dir():
             self.error(ValueError('请选择 ZIP 源文件夹。'))
             return
-        dest = filedialog.asksaveasfilename(title='保存 ZIP（选择源目录之外）', initialdir=str(BASE), initialfile=Path(source).name + '.zip', defaultextension='.zip', filetypes=[('ZIP 压缩包', '*.zip')])
+        dest = filedialog.asksaveasfilename(title='保存 ZIP（选择源目录之外）', initialdir=str(BASE), initialfile=Path(source).name + '.zip', defaultextension='.zip', filetypes=[('ZIP 压缩包', '*.zip')], confirmoverwrite=False)
         if dest:
-            self.run('ZIP 打包', lambda: core.make_zip(source, dest, self.worker_log))
+            self.run('ZIP 打包', lambda: core.make_zip(source, dest, self.worker_log, self.worker_progress))
 
     def git_status(self):
         try:
@@ -1084,18 +1271,6 @@ class App(tk.Tk):
         except Exception as e:
             self.error(e)
 
-    def start_backup_cleanup(self):
-        if self.busy or self.backup_cleanup_running:
-            self.after(60000, self.start_backup_cleanup)
-            return
-        self.backup_cleanup_running = True
-        state = STATE
-        def worker():
-            try:
-                self.events.put(('cleanup_done', (core.cleanup_history(state), None)))
-            except Exception as e:
-                self.events.put(('cleanup_done', (None, str(e))))
-        threading.Thread(target=worker, daemon=True).start()
 
     def run(self, label, work, done=None):
         try:
@@ -1104,8 +1279,20 @@ class App(tk.Tk):
             self.error(e)
             return
         self.busy = True
+        self.active_label = label
+        self.operation_started = time.monotonic()
+        self.last_progress_at = self.operation_started
+        with self.progress_lock:
+            self.pending_progress = None
+        if self.operation_timer is not None:
+            self.after_cancel(self.operation_timer)
+            self.operation_timer = None
         self.status.set('正在' + label + '…')
+        self.progress.stop()
+        self.progress.configure(mode='indeterminate', value=0)
+        self.progress_text.set(label + ' · 正在准备…')
         self.progress.start(12)
+        self.tick_operation()
         self.log('开始' + label)
         def worker():
             try:
@@ -1118,29 +1305,70 @@ class App(tk.Tk):
     def worker_log(self, text):
         self.events.put(('log', text))
 
+    def worker_progress(self, stage, done, total, detail=''):
+        # 快速处理成千上万个文件时只保留最新进度，不让消息队列撑满。
+        with self.progress_lock:
+            self.pending_progress = (stage, done, total, detail, time.monotonic())
+
+    def tick_operation(self):
+        self.operation_timer = None
+        if not self.busy or self.operation_started is None:
+            return
+        seconds = int(time.monotonic() - self.operation_started)
+        text = '已用 %02d:%02d' % divmod(seconds, 60)
+        if self.last_progress_at is not None and time.monotonic() - self.last_progress_at >= 10:
+            text += ' · 当前步骤仍在处理中'
+        self.elapsed_text.set(text)
+        self.operation_timer = self.after(500, self.tick_operation)
+
+    def update_operation_progress(self):
+        with self.progress_lock:
+            progress, self.pending_progress = self.pending_progress, None
+        if progress is None or not self.busy:
+            return
+        stage, done, total, detail, stamp = progress
+        self.last_progress_at = stamp
+        if total and total > 0:
+            value = max(0, min(100, done * 100.0 / total))
+            self.progress.stop()
+            self.progress.configure(mode='determinate', maximum=100, value=value)
+            suffix = ' · %d%%' % value
+        else:
+            if str(self.progress.cget('mode')) != 'indeterminate':
+                self.progress.configure(mode='indeterminate', value=0)
+                self.progress.start(12)
+            suffix = ''
+        detail = str(detail)
+        if len(detail) > 78:
+            detail = detail[:75] + '…'
+        self.progress_text.set(stage + (' · ' + detail if detail else '') + suffix)
+
     def pump(self):
+        self.update_operation_progress()
         try:
             # 每轮限制数量，批量图片的日志不会阻塞窗口响应。
             for _ in range(150):
                 kind, value = self.events.get_nowait()
                 if kind == 'log':
                     self.log(value)
-                elif kind == 'cleanup_done':
-                    self.backup_cleanup_running = False
-                    result, error = value
-                    if error:
-                        self.log('备份清理暂未完成：' + error)
-                    elif result['removed']:
-                        self.log('已清理超过 24 小时的 %d 份操作备份，释放 %.1f MB；网站照片和原图保留。' % (result['removed'], result['freed_bytes'] / 1024 / 1024))
-                    self.after(3600000, self.start_backup_cleanup)
                 else:
                     self.busy = False
+                    was_indeterminate = str(self.progress.cget('mode')) == 'indeterminate'
                     self.progress.stop()
+                    if self.operation_timer is not None:
+                        self.after_cancel(self.operation_timer)
+                        self.operation_timer = None
+                    if self.operation_started is not None:
+                        self.elapsed_text.set('已用 %02d:%02d' % divmod(int(time.monotonic() - self.operation_started), 60))
                     if kind == 'error':
+                        self.progress.configure(mode='determinate', value=0 if was_indeterminate else self.progress.cget('value'))
+                        self.progress_text.set(self.active_label + ' · 未完成，请查看操作记录')
                         self.status.set('操作未完成，详情见操作记录。')
                         self.error(value)
                     else:
                         label, result, done = value
+                        self.progress.configure(mode='determinate', value=100)
+                        self.progress_text.set(label + '完成 · 100%')
                         self.status.set(label + '完成')
                         self.log(label + '完成')
                         if done:
@@ -1166,26 +1394,16 @@ class App(tk.Tk):
         except OSError:
             pass
 
-    def undo(self):
-        if self.backup_cleanup_running:
-            self.status.set('正在清理过期备份，请稍后再撤销。')
-            return
-        self.run('撤销上次文件操作', lambda: core.undo(STATE), lambda label: (self.log('已撤销：' + label), self.refresh_site()))
 
     def clear_cache(self):
         try:
             self.guard_idle()
-            if self.backup_cleanup_running:
-                self.status.set('正在自动清理过期备份，请稍后再点清除缓存。')
-                return
             if self.upload_process is not None and self.upload_process.poll() is None:
                 self.status.set('GitHub 上传窗口仍在运行，请关闭该窗口后再清理缓存，避免影响上传。')
                 return
             self.upload_name_cache.clear()
             def done(result):
-                text = '缓存已清理：%d 个临时文件，释放 %.1f MB；网站照片、原图、设置和 24 小时内的备份保留。' % (result['files'], result['freed_bytes'] / 1024 / 1024)
-                if result['expired_backups']:
-                    text += ' 同时清理 %d 份已过期备份。' % result['expired_backups']
+                text = '缓存已清理：%d 个文件，释放 %.1f MB；网站照片、原图和设置保留。' % (result['files'], result['freed_bytes'] / 1024 / 1024)
                 if result['skipped']:
                     text += ' %d 项被占用或为链接，已跳过。' % result['skipped']
                 self.status.set(text)
@@ -1194,10 +1412,6 @@ class App(tk.Tk):
         except Exception as e:
             self.error(e)
 
-    def open_history(self):
-        folder = core.writable(STATE / 'history')
-        folder.mkdir(parents=True, exist_ok=True)
-        os.startfile(str(folder))
 
     def save_settings(self):
         core.atomic(self.config_file, json.dumps(self.settings, ensure_ascii=False, indent=2).encode('utf-8'))
@@ -1259,8 +1473,8 @@ class App(tk.Tk):
             self.error(e)
 
     def close(self):
-        if self.busy or self.backup_cleanup_running:
-            messagebox.showinfo('任务进行中', '请等待当前任务完成后再关闭，保证文件和备份写入完整。', parent=self)
+        if self.busy:
+            messagebox.showinfo('任务进行中', '请等待当前任务完成后再关闭，保证文件写入完整。', parent=self)
         else:
             self.destroy()
 

@@ -12,6 +12,13 @@ if __name__ == '__main__':
     ui = app.App(maintenance=False)
     try:
         assert len(ui.albums) > 5
+        def all_children(parent):
+            for child in parent.winfo_children():
+                yield child
+                yield from all_children(child)
+        labels=[w.cget('text') for w in all_children(ui) if isinstance(w, app.ttk.Button)]
+        assert '清除缓存' in labels
+        assert '撤销上次文件操作' not in labels and '打开备份目录' not in labels
         # 真实网站的每本相册均能读取到表单，并生成代码；不保存、不修改网站。
         def fail(error):
             raise error
@@ -126,6 +133,9 @@ if __name__ == '__main__':
                         assert replaced.size == (64, 48)
                     assert flow.jobs_tree.item(flow.jobs_tree.get_children()[0], 'values')[-1] == '已添加'
                     assert flow.last_upload_code and '透明.jpg' in flow.last_upload_code['本次照片 data.js 片段']
+                    assert str(flow.progress.cget('mode')) == 'determinate'
+                    assert float(flow.progress.cget('value')) == 100
+                    assert '100%' in flow.progress_text.get()
                     assert flow.target.get() == 'assets/images/测试集'
                     restored = app.App(maintenance=False)
                     try:
@@ -176,6 +186,10 @@ if __name__ == '__main__':
                         (renames / name).write_bytes(b'photo')
                     flow.rename_dir.set(str(renames))
                     flow.preview_rename()
+                    deadline = time.monotonic() + 8
+                    while flow.busy and time.monotonic() < deadline:
+                        flow.update()
+                        time.sleep(.02)
                     assert len(flow.plan) == 2
                     flow.start_rename()
                     deadline = time.monotonic() + 8
@@ -184,6 +198,10 @@ if __name__ == '__main__':
                         time.sleep(.02)
                     assert not errors, errors
                     flow.preview_rename()
+                    deadline = time.monotonic() + 8
+                    while flow.busy and time.monotonic() < deadline:
+                        flow.update()
+                        time.sleep(.02)
                     assert len(flow.rename_tree.get_children()) == 2
                     assert not flow.plan
                     assert all(flow.rename_tree.item(row, 'values')[-1] == '名称不变' for row in flow.rename_tree.get_children())
@@ -195,6 +213,74 @@ if __name__ == '__main__':
                         assert '上传窗口' in flow.status.get()
                         flow.start_publish()
                         assert launch.call_count == 1
+                    process.poll.return_value = 0
+                    cached = app.STATE / 'temp' / 'cache.tmp'
+                    cached.parent.mkdir(parents=True, exist_ok=True)
+                    cached.write_bytes(b'cache')
+                    flow.upload_name_cache['test'] = 'cached'
+                    flow.clear_cache()
+                    deadline = time.monotonic() + 8
+                    while flow.busy and time.monotonic() < deadline:
+                        flow.update()
+                        time.sleep(.02)
+                    assert not errors, errors
+                    assert not cached.exists()
+                    assert not flow.upload_name_cache
+                    assert '缓存已清理' in flow.status.get()
+                    assert (app.STATE / 'settings.json').exists()
+                    data_file = site / 'js/data.js'
+                    text = core.sync_album(data_file.read_text(encoding='utf-8'), '回归新相册', [{'src': 'assets/images/已经删掉.jpg', 'title': '已删除照片'}])
+                    data_file.write_text(text, encoding='utf-8')
+                    report = core.inspect_image_references(site)
+                    check_window = flow.show_image_check(report)
+                    check_window.update()
+                    def descendants(widget):
+                        for child in widget.winfo_children():
+                            yield child
+                            yield from descendants(child)
+                    widgets = list(descendants(check_window))
+                    tables = [widget for widget in widgets if isinstance(widget, app.ttk.Treeview)]
+                    buttons = {widget.cget('text'): widget for widget in widgets if isinstance(widget, app.ttk.Button)}
+                    assert len(tables) == 2 and tables[0].get_children()
+                    buttons['全选可删除项'].invoke()
+                    assert tables[0].selection()
+                    buttons['删除选中的照片代码'].invoke()
+                    deadline = time.monotonic() + 8
+                    while flow.busy and time.monotonic() < deadline:
+                        flow.update()
+                        time.sleep(.02)
+                    assert not errors, errors
+                    assert core.inspect_image_references(site)['counts']['missing'] == 0
+                    assert '已经删掉.jpg' not in data_file.read_text(encoding='utf-8')
+                    check_window.destroy()
+                    in_place = site / 'assets/images/原地压缩'
+                    in_place.mkdir()
+                    app.Image.new('RGBA', (64, 48), (255, 0, 0, 0)).save(str(in_place / '原图.png'))
+                    text = core.sync_album(data_file.read_text(encoding='utf-8'), '回归新相册', [{'src': 'assets/images/原地压缩/原图.png', 'title': '原图'}])
+                    data_file.write_text(text, encoding='utf-8')
+                    flow.comp_source.set(str(in_place))
+                    flow.comp_dest.set(str(in_place))
+                    flow.start_compress()
+                    deadline = time.monotonic() + 8
+                    while flow.busy and time.monotonic() < deadline:
+                        flow.update()
+                        time.sleep(.02)
+                    assert not errors, errors
+                    assert (in_place / '原图.jpg').exists()
+                    assert not (in_place / '原图.png').exists()
+                    assert 'assets/images/原地压缩/原图.jpg' in data_file.read_text(encoding='utf-8')
+                    assert float(flow.progress.cget('value')) == 100
+                    failures_before = len(errors)
+                    def fail_operation():
+                        raise ValueError('测试失败状态')
+                    flow.run('测试进度失败', fail_operation)
+                    deadline = time.monotonic() + 8
+                    while flow.busy and time.monotonic() < deadline:
+                        flow.update()
+                        time.sleep(.02)
+                    assert len(errors) == failures_before + 1
+                    assert '未完成' in flow.progress_text.get()
+                    assert float(flow.progress.cget('value')) < 100
                 finally:
                     flow.destroy()
 

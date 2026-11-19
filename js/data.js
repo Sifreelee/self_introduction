@@ -719,6 +719,32 @@ const SITE_DATA = {
       ]
     },
         {
+  "city": "藻井与王座",
+  "seal": "藻井",
+  "star": true,
+  "tags": ["藻井", "王座"],
+  "desc": "目前在北京、大同收集的藻井，后期会更新",
+  "cover": "assets/images/zjyuwangzuo/原隆福寺藻井 其一.jpg",
+  "photos": [
+      {"src": "assets/images/zjyuwangzuo/北海公园 五龙亭藻井 其一.jpg", "title": "北海公园 五龙亭藻井 其一"},
+      {"src": "assets/images/zjyuwangzuo/北海公园 五龙亭藻井 其二.jpg", "title": "北海公园 五龙亭藻井 其二"},
+      {"src": "assets/images/zjyuwangzuo/原隆福寺藻井 其一.jpg", "title": "原隆福寺藻井 其一"},
+      {"src": "assets/images/zjyuwangzuo/原隆福寺藻井 其二.jpg", "title": "原隆福寺藻井 其二"},
+      {"src": "assets/images/zjyuwangzuo/原隆福寺藻井 其三.jpg", "title": "原隆福寺藻井 其三"},
+      {"src": "assets/images/zjyuwangzuo/原隆福寺藻井 其四.jpg", "title": "原隆福寺藻井 其四"},
+      {"src": "assets/images/zjyuwangzuo/原隆福寺藻井 其五.jpg", "title": "原隆福寺藻井 其五"},
+      {"src": "assets/images/zjyuwangzuo/大同 善化寺藻井.jpg", "title": "大同 善化寺藻井"},
+      {"src": "assets/images/zjyuwangzuo/故宫 万春亭 藻井.jpg", "title": "故宫 万春亭 藻井"},
+      {"src": "assets/images/zjyuwangzuo/故宫 乾清宫 王座.jpg", "title": "故宫 乾清宫 王座"},
+      {"src": "assets/images/zjyuwangzuo/故宫 养心殿藻井.jpg", "title": "故宫 养心殿藻井"},
+      {"src": "assets/images/zjyuwangzuo/故宫 千秋亭 藻井.jpg", "title": "故宫 千秋亭 藻井"},
+      {"src": "assets/images/zjyuwangzuo/故宫 皇极殿 王座.jpg", "title": "故宫 皇极殿 王座"},
+      {"src": "assets/images/zjyuwangzuo/智化寺藻井.jpg", "title": "智化寺藻井"},
+      {"src": "assets/images/zjyuwangzuo/雍和宫藻井.jpg", "title": "雍和宫藻井"},
+      {"src": "assets/images/zjyuwangzuo/香山 勤政殿 王座.jpg", "title": "香山 勤政殿 王座"}
+    ]
+},
+    {
       city: "北京 九坛八庙",
       desc: "九坛八庙是北京明清时期皇家祭祀建筑的总称，其中“九坛”包括天坛（含祈谷坛、圜丘坛）、地坛、日坛、月坛、社稷坛、先农坛（含太岁坛）、先蚕坛；“八庙”涵盖太庙、孔庙、历代帝王庙、奉先殿、传心殿、雍和宫、寿皇殿、堂子。堂子目前已无留存，故宫内传心殿、奉先殿不开放。",
       seal: "坛庙",
@@ -754,7 +780,7 @@ const SITE_DATA = {
 
       ]
     },
-    {
+      {
       city: "中国 重庆",
       desc: "",
       seal: "渝",          // 本图集专属印章字（不想要就删掉这一行，会统一用 site.photoSeal）
@@ -788,7 +814,7 @@ const SITE_DATA = {
         { src: "assets/images/cq2/cq219.jpg", title: "大剧院与大江" }
       ]
     },
-      {
+     {
       city: "吉林 长春",
       desc: "",
       seal: "长",
@@ -817,7 +843,7 @@ const SITE_DATA = {
         { src: "assets/images/changchun20260916019.jpg", title: "54路电车" }
       ]
     },
-     {
+        {
       city: "长春伪满和建国初期建筑",
       desc: "",
       seal: "伪满",
@@ -858,7 +884,7 @@ const SITE_DATA = {
         { src: "assets/images/weiman32.jpg", title: "鸣放宫摩天轮同框" }
       ]
     },
-        {
+    {
   "city": "北京 故宫",
   "seal": "故宫",
   "star": true,
@@ -889,7 +915,7 @@ const SITE_DATA = {
       {"src": "assets/images/bj3/bjgg/体仁阁.jpg", "title": "体仁阁"},
       {"src": "assets/images/bj3/bjgg/保和殿后 其一.jpg", "title": "保和殿后 其一"},
       {"src": "assets/images/bj3/bjgg/保和殿后 其二.jpg", "title": "保和殿后 其二"},
-      {"src": "assets/images/bj3/bjgg/养心殿殿内png.jpg", "title": "养心殿殿内png"},
+      
       {"src": "assets/images/bj3/bjgg/养心殿牌匾.jpg", "title": "养心殿牌匾"},
       {"src": "assets/images/bj3/bjgg/养心殿藻井.jpg", "title": "养心殿藻井"},
       {"src": "assets/images/bj3/bjgg/养性殿.jpg", "title": "养性殿"},
@@ -901,7 +927,7 @@ const SITE_DATA = {
       {"src": "assets/images/bj3/bjgg/午门 其六.jpg", "title": "午门 其六"},
       {"src": "assets/images/bj3/bjgg/午门 其四.jpg", "title": "午门 其四"},
       {"src": "assets/images/bj3/bjgg/午门背.jpg", "title": "午门背"},
-      {"src": "assets/images/bj3/bjgg/协和门5png.jpg", "title": "协和门5png"},
+      
       {"src": "assets/images/bj3/bjgg/协和门 其一.jpg", "title": "协和门 其一"},
       {"src": "assets/images/bj3/bjgg/协和门 其三.jpg", "title": "协和门 其三"},
       {"src": "assets/images/bj3/bjgg/协和门 其二.jpg", "title": "协和门 其二"},
@@ -974,7 +1000,7 @@ const SITE_DATA = {
         { src: "assets/images/jlb/故宫 九龙壁.jpg", title: "故宫 九龙壁" }
       ]
     },
-    {
+     {
       city: "山东 淄博",
       desc: "",
       seal: "淄", 
@@ -1005,7 +1031,7 @@ const SITE_DATA = {
         { src: "assets/images/zb2/唐库.jpg", title: "唐库文创园" }
       ]
     },
-     {
+       {
       city: "辽宁 沈阳",
       desc: "",
       seal: "沈",
@@ -1056,7 +1082,7 @@ const SITE_DATA = {
         { src: "assets/images/sy2/sy241.jpg", title: "北陵公园三" }
       ]
     },
-       {
+    {
       city: "辽宁 大连",
       desc: "",
       seal: "连",
@@ -1082,7 +1108,7 @@ const SITE_DATA = {
         { src: "assets/images/dl2/dl14.jpg", title: "黑石礁" }
       ]
     },
-    {
+        {
       city: "华东四市",
       seal: "沪苏杭",
       desc: "2019初至",
@@ -1100,12 +1126,12 @@ const SITE_DATA = {
         { src: "assets/images/hdws/苏州山塘街 其二.jpg", title: "苏州 山塘街 其二" }
       ]
     },
-        {
+    {
       city: "江苏 徐州",
       desc: "",
       seal: "彭",
       photos: [
-        { src: "assets/images/travel-5.jpg", title: "户部山" }
+        { src: "assets/images/xz/travel-5.jpg", title: "户部山" }
       ]
     },
     {
@@ -1131,6 +1157,7 @@ const SITE_DATA = {
         { src: "assets/images/xian/华清池景区 老蒋谏兵亭.jpg", title: "华清池景区 老蒋谏兵亭" },
       ]
     },
+  
     {
       city: "山东 泰安",
       desc: "",
@@ -1140,7 +1167,6 @@ const SITE_DATA = {
         { src: "assets/images/travel-6.jpg", title: "泰山 南天门" }
       ]
     },
-  
     {
       city: "山东 青州",
       desc: "",
@@ -1197,7 +1223,7 @@ const SITE_DATA = {
         { src: "assets/images/travel-25.jpg", title: "青羊宫" }
       ]
     },
-    {
+       {
       city: "黑龙江 哈尔滨",
       desc: "",
       seal: "哈",
@@ -1205,7 +1231,8 @@ const SITE_DATA = {
         { src: "assets/images/travel-22.jpg", title: "中央大街" }
       ]
     },
-       {
+  
+      {
       city: "山东 济南",
       desc: "",
       seal: "济",
@@ -1214,7 +1241,7 @@ const SITE_DATA = {
         { src: "assets/images/travel-24.jpg", title: "胶济铁路博物馆" }
       ]
     },
-  
+    
       {
       city: "名胜古迹 三山五岳",
       desc: "2021年至西岳华山，2025年至东岳泰山，2026年至北岳恒山。",
