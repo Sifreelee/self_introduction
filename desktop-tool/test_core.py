@@ -222,6 +222,24 @@ const SITE_DATA = {
         self.assertEqual(actual, code['data.js'])
         self.assertEqual([Path(ref).name for ref in core.Document(actual).albums()[0]['refs'][1:]], expected)
 
+    def test_existing_album_and_generated_code_regroup_ordinals(self):
+        names = ['午门 其十', '别的照片', '午门 其二', '午门 十二', '午门 其一', '午门 十一']
+        entries = [{'src': 'assets/images/北京/' + name + '.jpg', 'title': name, 'extra': i} for i, name in enumerate(names)]
+        text = 'const SITE_DATA = ' + core.q({'photos': [{'city': '测试', 'photos': entries}]}) + ';'
+        text = text.replace('"extra": 0', '"extra": /* 自定义字段 */ 0')
+        expected = [names[i] for i in [4, 2, 0, 5, 3, 1]]
+        actual = core.sync_album(text, '测试', [])
+        refs = core.Document(actual).albums()[0]['refs']
+        self.assertEqual([Path(ref).stem for ref in refs], expected)
+        self.assertIn('/* 自定义字段 */', actual)
+        self.assertEqual(core.sort_album_photos(actual, '测试'), actual)
+        (self.root / 'js/data.js').write_text(text, encoding='utf-8')
+        p = self.source / (names[0] + '.jpg')
+        Image.new('RGB', (4, 4), 'white').save(str(p))
+        job = {'items': [(str(p), p.name)], 'target': 'assets/images/北京', 'album': '测试'}
+        code = core.upload_code(self.root, [job], self.opts)
+        self.assertEqual(core.Document(code['data.js']).albums()[0]['refs'], refs)
+
     def test_refresh_selected_file_renamed_and_deleted(self):
         a, b = self.source / '选中.jpg', self.source / '删除.jpg'
         a.write_bytes(b'a')

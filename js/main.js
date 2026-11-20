@@ -3,6 +3,11 @@
    内容修改请前往 js/data.js
    ═══════════════════════════════════════════════════════════ */
 
+// 所有缩略图、搜索及大图浏览共用排好序的数组，图片索引保持一致。
+(SITE_DATA.photos || []).forEach(group => {
+  if (Array.isArray(group.photos)) group.photos = orderPhotos(group.photos);
+});
+
 /* ─────────── 内置图标集（描边风格） ─────────── */
 const ICONS = {
   brush: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 3l-9.5 9.5"/><path d="M20 3c-2.5.5-5 2-6.5 3.5"/><path d="M10.5 12.5c-2 .5-4 2.5-4.5 5.5-2 .5-3.5 2-4 3 3.5.5 6.5-.5 8-2s2-3.5 1.5-5z" fill="currentColor" fill-opacity=".12"/><path d="M6 17.5L4 21"/></svg>`,

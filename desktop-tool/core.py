@@ -75,9 +75,9 @@ def natural(s):
 
 
 def photo_sort_key(value):
-    path = Path(str(value))
+    path = Path(unquote(str(value).replace('\\', '/').split('?', 1)[0].split('#', 1)[0]))
     stem, number = path.stem, 0
-    match = re.match(r'^(.*?)\s*其([零一二三四五六七八九十百\d]+)$', stem)
+    match = re.match(r'^(.*?)\s*其\s*([零一二三四五六七八九十百\d]+)$', stem)
     if match and rename_qi.cn_parse(match.group(2)):
         stem, number = match.group(1).rstrip(' _-'), rename_qi.cn_parse(match.group(2))
     else:
@@ -410,9 +410,33 @@ def sync_album(text, title, entries):
         if album['array'] is None:
             raise ValueError('该相册缺少 photos 数组。')
         existing = set(album['refs'])
-        return doc.append(album['array'], [json.dumps(e, ensure_ascii=False) for e in entries if e['src'] not in existing])
+        updated = doc.append(album['array'], [json.dumps(e, ensure_ascii=False) for e in entries if e['src'] not in existing])
+        return sort_album_photos(updated, title)
     album = {'city': title, 'seal': title[:1], 'photos': entries}
-    return doc.append(doc.prop(doc.root, 'photos'), [json.dumps(album, ensure_ascii=False, indent=2)])
+    return sort_album_photos(doc.append(doc.prop(doc.root, 'photos'), [json.dumps(album, ensure_ascii=False, indent=2)]), title)
+
+
+def sort_album_photos(text, title):
+    """按各组首次出现的顺序归组，组内按序号排列，保留照片字段和注释。"""
+    doc = Document(text)
+    album = album_by_name(doc, title)
+    if album['array'] is None:
+        return text
+    groups, slots = {}, []
+    for obj in doc.objects(album['array']):
+        src = doc.string(doc.prop(obj, 'src'))
+        if not src:
+            continue
+        key = photo_sort_key(src)
+        group = (tuple(key[0]), tuple(key[1]))
+        start, end = doc.tokens[obj][1], doc.tokens[doc.pairs[obj]][2]
+        groups.setdefault(group, []).append((key, start, end, text[start:end]))
+        slots.append((start, end, text[start:end]))
+    ordered = [item for items in groups.values() for item in sorted(items, key=lambda item: item[0])]
+    edits = [(old[0], old[1], new[3]) for old, new in zip(slots, ordered) if old[2] != new[3]]
+    for start, end, content in sorted(edits, reverse=True):
+        text = text[:start] + content + text[end:]
+    return text
 
 
 def album_by_name(doc, name):
@@ -571,7 +595,7 @@ def read_album(root, name):
 def album_code(root, original, metadata):
     root = Path(root)
     text = (root / 'js/data.js').read_text(encoding='utf-8-sig')
-    updated = edit_album(text, original, metadata)
+    updated = sort_album_photos(edit_album(text, original, metadata), metadata['city'].strip())
     desc_file = root / 'js/album-desc.js'
     desc = edit_description(desc_file.read_text(encoding='utf-8-sig') if desc_file.exists() else None, original, metadata['city'].strip(), metadata.get('desc', '').strip())
     doc = Document(updated)
@@ -914,7 +938,7 @@ def upload_code(root, jobs, options):
         entries = [e for e in entries if e['src'] not in existing]
         if entries:
             parts.append('// 相册：' + q(name) + '\n// 以下条目加入这本相册的 photos 数组\n' + ',\n'.join(q(e) for e in entries) + ',')
-            text = sync_album(text, name, entries)
+        text = sync_album(text, name, entries)
     snippet = '\n\n'.join(parts) or '// 本次没有需要新增的照片代码（已存在相同路径，或尚未选择相册）。'
     return {'本次照片 data.js 片段': snippet, 'data.js': text}
 
