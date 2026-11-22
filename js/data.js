@@ -522,7 +522,7 @@ const SITE_DATA = {
       desc: "目前收录的北京著名园林有：圆明园、颐和园、北海公园、天坛公园、地坛公园、中山公园、陶然亭公园、景山公园、紫竹院公园、玉渊潭公园、奥林匹克森林公园等。",
       seal: "著名园林",
       star: true, 
-      tags: ["圆明园", "大水法", "海晏堂", "鸿慈永秙", "遗址", "鸳鸯", "荷"],
+      tags: ["圆明园", "大水法", "海晏堂", "鸿慈永秙", "遗址", "花丛", "鸳鸯"],
       photos: [
         { src: "assets/images/bj2/ymy/圆明园西洋楼景区的大水法遗址 其一.jpg", title: "圆明园西洋楼景区的大水法遗址 其一" },
         { src: "assets/images/bj2/ymy/圆明园西洋楼景区的大水法遗址 其二.jpg", title: "圆明园西洋楼景区的大水法遗址 其二" },
@@ -958,27 +958,29 @@ const SITE_DATA = {
       star: true, 
       tags: ["净月潭", "红旗街", "同志街", "电车"],
       photos: [
-        { src: "assets/images/changchun20260916018.jpg", title: "漫画轻轨" },
-        { src: "assets/images/changchun20260916004.jpg", title: "长春大学之春" },
         { src: "assets/images/changchun20260916001.jpg", title: "卫星广场午后" },
         { src: "assets/images/changchun20260916002.jpg", title: "友谊公园" },
+        { src: "assets/images/changchun20260916003.jpg", title: "同志街十字路口" },
+        { src: "assets/images/changchun20260916004.jpg", title: "长春大学之春" },
         { src: "assets/images/changchun20260916005.jpg", title: "文化广场" },
         { src: "assets/images/changchun20260916006.jpg", title: "净月潭" },
         { src: "assets/images/changchun20260916007.jpg", title: "净月潭其二" },
         { src: "assets/images/changchun20260916008.jpg", title: "净月潭其三" },
         { src: "assets/images/changchun20260916009.jpg", title: "净月潭其四" },
-        { src: "assets/images/changchun20260916012.jpg", title: "净月潭其五" },
-        { src: "assets/images/travel-8.jpg", title: "净月潭其六" },
-        { src: "assets/images/changchun20260916003.jpg", title: "同志街十字路口" },
         { src: "assets/images/changchun20260916010.jpg", title: "同志街其二" },
         { src: "assets/images/changchun20260916011.jpg", title: "长大之夜" },
+        { src: "assets/images/changchun20260916012.jpg", title: "净月潭其五" },
         { src: "assets/images/changchun20260916013.jpg", title: "红旗街电车" },
-        { src: "assets/images/changchun20260916017.jpg", title: "红旗街电车其二" },
         { src: "assets/images/changchun20260916014.jpg", title: "夜中三号线" },
         { src: "assets/images/changchun20260916015.jpg", title: "雪中长春站北站" },
         { src: "assets/images/changchun20260916016.jpg", title: "长春文庙" },
-        { src: "assets/images/changchun20260916019.jpg", title: "54路电车" }
-      ]
+        { src: "assets/images/changchun20260916017.jpg", title: "红旗街电车其二" },
+        { src: "assets/images/changchun20260916018.jpg", title: "漫画轻轨" },
+        { src: "assets/images/changchun20260916019.jpg", title: "54路电车" },
+        { src: "assets/images/travel-8.jpg", title: "净月潭其六" }
+      ],
+    
+      cover: ""
     },
     {
       city: "长春伪满和建国初期建筑",
@@ -1006,8 +1008,8 @@ const SITE_DATA = {
         { src: "assets/images/weiman17.jpg", title: "伪满皇宫缉熙楼二" },
         { src: "assets/images/weiman18.jpg", title: "伪满皇宫花园" },
         { src: "assets/images/weiman19.jpg", title: "伪满综合法衙旧址" },
-        { src: "assets/images/weiman20.jpg", title: "吉林大学基础医学院（伪满司法部旧址）" },
-        { src: "assets/images/weiman21.jpg", title: "吉林大学新民校区教学楼（伪满国务院旧址）" },
+        { src: "assets/images/weiman20.jpg", title: "吉林大学基础医学院（伪满国务院旧址 其一）" },
+        { src: "assets/images/weiman21.jpg", title: "吉林大学新民校区教学楼（伪满国务院旧址 其二）" },
         { src: "assets/images/weiman22.jpg", title: "吉林大学白求恩医学部（伪满司法部旧址）" },
         { src: "assets/images/weiman23.jpg", title: "吉林大学白求恩第一医院（伪满军事部旧址）" },
         { src: "assets/images/weiman24.jpg", title: "吉林大学第三医院（伪满经济部旧址）" },
@@ -1070,7 +1072,7 @@ const SITE_DATA = {
       desc: "",
       seal: "沈",
       star: true,  
-      tags: ["清故宫", "北陵公园", "中街", "工业博物馆", "教堂", "扫街"],
+      tags: ["清故宫", "北陵公园", "中街", "工业博物馆", "教堂", "扫街", "中国工业博物馆", "中山广场"],
       photos: [
         { src: "assets/images/travel-4.jpg", title: "北陵公园" },
         { src: "assets/images/sy2/sy201.jpg", title: "沈阳小南教堂" },
@@ -1114,7 +1116,9 @@ const SITE_DATA = {
         { src: "assets/images/sy2/sy239.jpg", title: "清故宫七" },
         { src: "assets/images/sy2/sy240.jpg", title: "清故宫八" },
         { src: "assets/images/sy2/sy241.jpg", title: "北陵公园三" }
-      ]
+      ],
+    
+      cover: ""
     },
     {
       city: "辽宁 大连",
@@ -1233,11 +1237,66 @@ const SITE_DATA = {
   
     {
       city: "山东 青州",
-      desc: "",
+      desc: "2025年冬至此游览。",
       seal: "青",
       photos: [
-        { src: "assets/images/travel-7.jpg", title: "青州古城落日" }
-      ]
+        { src: "assets/images/travel-7.jpg", title: "青州古城落日" },
+      
+      {"src": "assets/images/weifang_qingzhou/李清照纪念祠 其一.jpg", "title": "李清照纪念祠 其一"},
+      {"src": "assets/images/weifang_qingzhou/李清照纪念祠 其二.jpg", "title": "李清照纪念祠 其二"},
+      {"src": "assets/images/weifang_qingzhou/李清照纪念祠 其三.jpg", "title": "李清照纪念祠 其三"},
+      {"src": "assets/images/weifang_qingzhou/范公亭.jpg", "title": "范公亭"},
+      {"src": "assets/images/weifang_qingzhou/范公亭公园 其一.jpg", "title": "范公亭公园 其一"},
+      {"src": "assets/images/weifang_qingzhou/范公亭公园 其二.jpg", "title": "范公亭公园 其二"},
+      {"src": "assets/images/weifang_qingzhou/范公亭公园 其三.jpg", "title": "范公亭公园 其三"},
+      {"src": "assets/images/weifang_qingzhou/范公亭公园 其四.jpg", "title": "范公亭公园 其四"},
+      {"src": "assets/images/weifang_qingzhou/青州 昭德老街 其一.jpg", "title": "青州 昭德老街 其一"},
+      {"src": "assets/images/weifang_qingzhou/青州 昭德老街 其二.jpg", "title": "青州 昭德老街 其二"},
+      {"src": "assets/images/weifang_qingzhou/青州 清真寺.jpg", "title": "青州 清真寺"},
+      {"src": "assets/images/weifang_qingzhou/青州之冬 其一.jpg", "title": "青州之冬 其一"},
+      {"src": "assets/images/weifang_qingzhou/青州之冬 其二.jpg", "title": "青州之冬 其二"},
+      {"src": "assets/images/weifang_qingzhou/青州俯拍.jpg", "title": "青州俯拍"},
+      {"src": "assets/images/weifang_qingzhou/青州博物馆.jpg", "title": "青州博物馆"},
+      {"src": "assets/images/weifang_qingzhou/青州古城 三官殿.jpg", "title": "青州古城 三官殿"},
+      {"src": "assets/images/weifang_qingzhou/青州古城 俯瞰.jpg", "title": "青州古城 俯瞰"},
+      {"src": "assets/images/weifang_qingzhou/青州古城 偶园.jpg", "title": "青州古城 偶园"},
+      {"src": "assets/images/weifang_qingzhou/青州古城 清真寺.jpg", "title": "青州古城 清真寺"},
+      {"src": "assets/images/weifang_qingzhou/青州古城 街景.jpg", "title": "青州古城 街景"},
+      {"src": "assets/images/weifang_qingzhou/青州古城 远眺.jpg", "title": "青州古城 远眺"},
+      {"src": "assets/images/weifang_qingzhou/青州古城之夜 其一.jpg", "title": "青州古城之夜 其一"},
+      {"src": "assets/images/weifang_qingzhou/青州古城之夜 其二.jpg", "title": "青州古城之夜 其二"},
+      {"src": "assets/images/weifang_qingzhou/青州古城之夜 其三.jpg", "title": "青州古城之夜 其三"},
+      {"src": "assets/images/weifang_qingzhou/青州古城之夜 其四.jpg", "title": "青州古城之夜 其四"},
+      {"src": "assets/images/weifang_qingzhou/青州古城之夜 其五.jpg", "title": "青州古城之夜 其五"},
+      {"src": "assets/images/weifang_qingzhou/青州古城之夜 其六.jpg", "title": "青州古城之夜 其六"},
+      {"src": "assets/images/weifang_qingzhou/青州古城之夜 其七.jpg", "title": "青州古城之夜 其七"},
+      {"src": "assets/images/weifang_qingzhou/青州古城晚霞 其一.jpg", "title": "青州古城晚霞 其一"},
+      {"src": "assets/images/weifang_qingzhou/青州古城晚霞 其二.jpg", "title": "青州古城晚霞 其二"},
+      {"src": "assets/images/weifang_qingzhou/青州微笑.jpg", "title": "青州微笑"},
+      {"src": "assets/images/weifang_qingzhou/青州美术馆.jpg", "title": "青州美术馆"},
+      {"src": "assets/images/weifang_qingzhou/青州驼山 其一.jpg", "title": "青州驼山 其一"},
+      {"src": "assets/images/weifang_qingzhou/青州驼山 其二.jpg", "title": "青州驼山 其二"},
+      {"src": "assets/images/weifang_qingzhou/青州驼山 其三.jpg", "title": "青州驼山 其三"},
+      {"src": "assets/images/weifang_qingzhou/青州驼山 其四.jpg", "title": "青州驼山 其四"},
+      {"src": "assets/images/weifang_qingzhou/青州驼山 其五.jpg", "title": "青州驼山 其五"},
+      {"src": "assets/images/weifang_qingzhou/青州驼山 其六.jpg", "title": "青州驼山 其六"},
+      {"src": "assets/images/weifang_qingzhou/青州驼山 其七.jpg", "title": "青州驼山 其七"},
+      {"src": "assets/images/weifang_qingzhou/青州驼山 其八.jpg", "title": "青州驼山 其八"},
+      {"src": "assets/images/weifang_qingzhou/青州驼山 其九.jpg", "title": "青州驼山 其九"},
+      {"src": "assets/images/weifang_qingzhou/青州龙兴寺 其一.jpg", "title": "青州龙兴寺 其一"},
+      {"src": "assets/images/weifang_qingzhou/青州龙兴寺 其二.jpg", "title": "青州龙兴寺 其二"},
+      {"src": "assets/images/weifang_qingzhou/青州龙兴寺 其三.jpg", "title": "青州龙兴寺 其三"},
+      {"src": "assets/images/weifang_qingzhou/青州龙兴寺 其四.jpg", "title": "青州龙兴寺 其四"},
+      {"src": "assets/images/weifang_qingzhou/青州龙兴寺 其五.jpg", "title": "青州龙兴寺 其五"},
+      {"src": "assets/images/weifang_qingzhou/青州龙兴寺 其六.jpg", "title": "青州龙兴寺 其六"},
+      {"src": "assets/images/weifang_qingzhou/青州龙兴寺 其七.jpg", "title": "青州龙兴寺 其七"}
+    ],
+    
+      tags: ["青州古城", "青州驼山", "青州龙兴寺", "范公亭公园", "李清照纪念祠"],
+    
+      star: true,
+    
+      cover: "assets/images/weifang_qingzhou/青州古城之夜 其七.jpg"
     },
     {
       city: "湖北 武汉",
@@ -1297,7 +1356,13 @@ const SITE_DATA = {
         { src: "assets/images/tianjin/天津瓷房子.jpg", title: "天津瓷房子" },
         { src: "assets/images/tianjin/天津解放桥.jpg", title: "天津解放桥" },
         { src: "assets/images/tianjin/奥匈租界片区.jpg", title: "奥匈租界片区" }
-      ]
+      ],
+    
+      star: false,
+    
+      tags: ["天津", "西开教堂"],
+    
+      cover: ""
     },
     {
       city: "江苏 连云港",
@@ -1338,12 +1403,34 @@ const SITE_DATA = {
     },
     {
       city: "四川 成都",
-      desc: "",
+      desc: "2025年国庆至成都游玩。",
       seal: "蓉",
       photos: [
         { src: "assets/images/travel-15.jpg", title: "天府广场" },
-        { src: "assets/images/travel-25.jpg", title: "青羊宫" }
-      ]
+        { src: "assets/images/travel-25.jpg", title: "青羊宫" },
+      
+      {"src": "assets/images/chengdu/东郊记忆.jpg", "title": "东郊记忆"},
+      {"src": "assets/images/chengdu/保路运动纪念碑.jpg", "title": "保路运动纪念碑"},
+      {"src": "assets/images/chengdu/四川博物院.jpg", "title": "四川博物院"},
+      {"src": "assets/images/chengdu/四川大学.jpg", "title": "四川大学"},
+      {"src": "assets/images/chengdu/宽窄巷子.jpg", "title": "宽窄巷子"},
+      {"src": "assets/images/chengdu/成渝高铁.jpg", "title": "成渝高铁"},
+      {"src": "assets/images/chengdu/成都 天府广场.jpg", "title": "成都 天府广场"},
+      {"src": "assets/images/chengdu/成都 太古里.jpg", "title": "成都 太古里"},
+      {"src": "assets/images/chengdu/望江楼公园 其一.jpg", "title": "望江楼公园 其一"},
+      {"src": "assets/images/chengdu/望江楼公园 其二.jpg", "title": "望江楼公园 其二"},
+      {"src": "assets/images/chengdu/杜甫草堂.jpg", "title": "杜甫草堂"},
+      {"src": "assets/images/chengdu/武侯祠.jpg", "title": "武侯祠"},
+      {"src": "assets/images/chengdu/西南交通大学.jpg", "title": "西南交通大学"},
+      {"src": "assets/images/chengdu/青羊宫 其一.jpg", "title": "青羊宫 其一"},
+      {"src": "assets/images/chengdu/青羊宫 其二.jpg", "title": "青羊宫 其二"}
+    ],
+    
+      tags: ["天府广场", "青羊宫"],
+    
+      star: true,
+    
+      cover: "assets/images/chengdu/望江楼公园 其一.jpg"
     },
     {
       city: "黑龙江 哈尔滨",

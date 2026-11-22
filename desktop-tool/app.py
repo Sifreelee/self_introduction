@@ -250,6 +250,10 @@ class App(tk.Tk):
             row, _ = self.field(left, label, var)
             if var is self.edit_cover:
                 ttk.Button(row, text='选图', command=self.pick_cover).pack(side='left', padx=(7, 0))
+        tags_row = ttk.Frame(left)
+        tags_row.pack(fill='x', pady=3)
+        ttk.Button(tags_row, text='识别当前相册', command=self.detect_editor_tags).pack(side='left')
+        ttk.Button(tags_row, text='识别全部相册关键词', command=self.detect_all_tags).pack(side='left', padx=8)
         row = ttk.Frame(left)
         row.pack(fill='x', pady=5)
         ttk.Label(row, text='相册显示顺序', width=15).pack(side='left')
@@ -260,7 +264,7 @@ class App(tk.Tk):
         ttk.Button(row, text='前移', command=lambda: self.shift_position(-1)).pack(side='left', padx=(8, 5))
         ttk.Button(row, text='后移', command=lambda: self.shift_position(1)).pack(side='left')
         ttk.Checkbutton(left, text='给这个相册打星标', variable=self.edit_star).pack(anchor='w', pady=7)
-        ttk.Label(left, text='关键词用逗号、顿号或分号分隔，例如：青铜器，镇馆之宝。\n网站按照片标题匹配关键词。封面留空使用第一张照片。', style='Hint.TLabel', wraplength=490).pack(anchor='w', pady=4)
+        ttk.Label(left, text='按相册内全部照片识别，包含以前上传的照片；至少 3 张重复。\n可识别当前或全部相册，手动增删后保存。新增照片也会自动识别。\n关键词用逗号分隔；封面留空使用第一张照片。', style='Hint.TLabel', wraplength=490).pack(anchor='w', pady=4)
         ttk.Label(right, text='相册简介（可分段）').pack(anchor='w', pady=(5, 7))
         self.edit_desc = tk.Text(right, height=7, width=25, wrap='word', relief='flat', bg='#FCF9F1', fg=self.palette['ink'], font=('Microsoft YaHei UI', 10), padx=9, pady=8, undo=True)
         self.edit_desc.pack(fill='both', expand=True)
@@ -355,6 +359,68 @@ class App(tk.Tk):
             doc = core.Document((root / 'js/data.js').read_text(encoding='utf-8-sig'))
             count = len(core.album_by_name(doc, name)['refs'])
             self.edit_note.set('正在修改“%s” · 原有 %d 张照片会保留 · 简介已读取网页实际使用的内容' % (name, count))
+        except Exception as e:
+            self.error(e)
+
+    def detect_all_tags(self):
+        try:
+            root = self.root_path()
+            self.run('识别全部相册关键词', lambda: core.album_tags_plan(root),
+                     lambda plan: self.show_all_tags(root, plan))
+        except Exception as e:
+            self.error(e)
+
+    def show_all_tags(self, root, plan):
+        window = tk.Toplevel(self)
+        window.title('全部相册关键词 · 包含以前上传的照片')
+        window.geometry('960x640')
+        window.minsize(720, 420)
+        window.transient(self)
+        window.grab_set()
+        ttk.Label(window, text='已按每个相册的全部照片识别至少 3 张重复出现的词，并保留原有分类。\n可直接修改每行，用逗号分隔；点击“保存全部关键词”后写入网站。', style='Hint.TLabel', padding=12).pack(fill='x')
+        area = ttk.Frame(window)
+        area.pack(fill='both', expand=True, padx=12)
+        canvas = tk.Canvas(area, highlightthickness=0)
+        scroll = ttk.Scrollbar(area, orient='vertical', command=canvas.yview)
+        scroll.pack(side='right', fill='y')
+        canvas.pack(side='left', fill='both', expand=True)
+        canvas.configure(yscrollcommand=scroll.set)
+        body = ttk.Frame(canvas)
+        slot = canvas.create_window((0, 0), window=body, anchor='nw')
+        canvas.bind('<Configure>', lambda e: canvas.itemconfigure(slot, width=e.width))
+        body.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        body.columnconfigure(0, weight=1)
+        fields = []
+        for i, album in enumerate(plan['albums']):
+            ttk.Label(body, text='%s · 新识别 %d 个' % (album['name'], album['added'])).grid(row=i * 2, column=0, sticky='w', pady=(10, 3))
+            value = tk.StringVar(value='，'.join(album['tags']))
+            ttk.Entry(body, textvariable=value).grid(row=i * 2 + 1, column=0, sticky='ew', padx=(0, 10))
+            fields.append((album['name'], value))
+        row = ttk.Frame(window, padding=12)
+        row.pack(fill='x')
+        ttk.Button(row, text='取消', command=window.destroy).pack(side='left')
+        def save():
+            rows = [{'name': name, 'tags': [t.strip() for t in re.split(r'[,，;；、\n]+', value.get()) if t.strip()]} for name, value in fields]
+            def done(count):
+                window.destroy()
+                if self.editor_original:
+                    self.load_editor()
+                self.status.set('已保存 %d 个相册的关键词，可预览网站后上传 GitHub。' % count)
+            self.run('保存全部相册关键词', lambda: core.save_album_tags(root, STATE, rows, plan['hash']), done)
+        ttk.Button(row, text='保存全部关键词', style='Accent.TButton', command=save).pack(side='right')
+
+    def detect_editor_tags(self):
+        try:
+            self.guard_idle()
+            if not self.editor_original:
+                raise ValueError('请先选择已有相册；新相册添加照片时会自动识别关键词。')
+            root = self.root_path()
+            text = (root / 'js/data.js').read_text(encoding='utf-8-sig')
+            tags = core.suggest_album_tags(text, self.editor_original)
+            current = [t.strip() for t in re.split(r'[,，;；、\n]+', self.edit_tags.get()) if t.strip()]
+            merged = list(dict.fromkeys(current + tags))
+            self.edit_tags.set('，'.join(merged))
+            self.edit_note.set('已识别 %d 个关键词，新增 %d 个；可继续手动增删，点击“保存相册修改”后生效。' % (len(tags), len(merged) - len(set(current))))
         except Exception as e:
             self.error(e)
 
@@ -1171,7 +1237,7 @@ class App(tk.Tk):
         self.jobs_tree.delete(*self.jobs_tree.get_children())
         self.refresh_site()
         self.source_label.set('已完成，可预览已保存的文件或获取本次照片代码')
-        self.log('已添加 %d 个文件，网站里的相册照片代码已自动更新。' % count)
+        self.log('已添加 %d 个文件，相册照片和自动关键词已更新；可到“相册与代码”继续增删关键词。' % count)
 
     def invalidate_plan(self):
         self.plan = []

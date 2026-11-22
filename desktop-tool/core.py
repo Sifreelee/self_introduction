@@ -400,6 +400,79 @@ def q(value):
     return json.dumps(value, ensure_ascii=False)
 
 
+def suggest_album_tags(text, name, minimum=3):
+    """按不同照片计数，保留覆盖相同照片时更完整的词，忽略末尾序号。"""
+    doc = Document(text)
+    album = album_by_name(doc, name)
+    if album['array'] is None:
+        return []
+    support, seen = {}, set()
+    for photo in doc.objects(album['array']):
+        src = doc.string(doc.prop(photo, 'src'))
+        if not src or src in seen:
+            continue
+        seen.add(src)
+        title = doc.string(doc.prop(photo, 'title')).strip()
+        title = title or Path(unquote(urlsplit(src).path)).stem
+        title, _, _ = rename_qi.split_name(title, re.compile(r'^(?P<title>.*?)[ _-]*(?P<num>\d{1,4})$'))
+        words = set()
+        for token in re.findall(r'[^\W_]+', title.casefold()):
+            for start in range(len(token)):
+                for end in range(start + 2, len(token) + 1):
+                    word = token[start:end]
+                    if not word.isdigit():
+                        words.add(word)
+        for word in words:
+            support.setdefault(word, set()).add(src)
+    frequent = {word: photos for word, photos in support.items() if len(photos) >= minimum}
+    redundant = set()
+    for word, photos in frequent.items():
+        for short in (word[:-1], word[1:]):
+            if short in frequent and frequent[short] == photos:
+                redundant.add(short)
+    return sorted((word for word in frequent if word not in redundant),
+                  key=lambda word: (-len(frequent[word]), word))
+
+
+def add_automatic_album_tags(text, name):
+    doc = Document(text)
+    album = album_by_name(doc, name)
+    existing = doc.value(doc.prop(album['object'], 'tags')) or []
+    tags = list(dict.fromkeys(existing + suggest_album_tags(text, name)))
+    return set_album_property(text, name, 'tags', tags) if tags != existing else text
+
+
+def album_tags_plan(root):
+    config = Path(root) / 'js/data.js'
+    raw = config.read_bytes()
+    text = raw.decode('utf-8-sig')
+    doc = Document(text)
+    rows = []
+    for album in doc.albums():
+        existing = doc.value(doc.prop(album['object'], 'tags')) or []
+        suggested = suggest_album_tags(text, album['name'])
+        tags = list(dict.fromkeys(existing + suggested))
+        rows.append({'name': album['name'], 'tags': tags, 'added': len(tags) - len(set(existing))})
+    return {'hash': hashlib.sha256(raw).hexdigest(), 'albums': rows}
+
+
+def save_album_tags(root, state, rows, expected):
+    config = writable(root) / 'js/data.js'
+    if digest(config) != expected:
+        raise ValueError('网站代码已变化，请关闭窗口后重新识别全部相册。')
+    text = config.read_text(encoding='utf-8-sig')
+    names = set()
+    for row in rows:
+        name, tags = row['name'], row['tags']
+        if name in names or not isinstance(tags, list) or any(not isinstance(tag, str) for tag in tags):
+            raise ValueError('相册关键词列表无效，请重新识别。')
+        names.add(name)
+        text = set_album_property(text, name, 'tags', list(dict.fromkeys(t.strip() for t in tags if t.strip())))
+    with Transaction(state, '更新全部相册关键词') as tx:
+        tx.write(config, text.encode('utf-8'))
+    return len(rows)
+
+
 def sync_album(text, title, entries):
     doc = Document(text)
     matches = [a for a in doc.albums() if a['name'] == title]
@@ -410,10 +483,14 @@ def sync_album(text, title, entries):
         if album['array'] is None:
             raise ValueError('该相册缺少 photos 数组。')
         existing = set(album['refs'])
-        updated = doc.append(album['array'], [json.dumps(e, ensure_ascii=False) for e in entries if e['src'] not in existing])
+        added = [json.dumps(e, ensure_ascii=False) for e in entries if e['src'] not in existing]
+        updated = doc.append(album['array'], added)
+        if added:
+            updated = add_automatic_album_tags(updated, title)
         return sort_album_photos(updated, title)
     album = {'city': title, 'seal': title[:1], 'photos': entries}
-    return sort_album_photos(doc.append(doc.prop(doc.root, 'photos'), [json.dumps(album, ensure_ascii=False, indent=2)]), title)
+    updated = doc.append(doc.prop(doc.root, 'photos'), [json.dumps(album, ensure_ascii=False, indent=2)])
+    return sort_album_photos(add_automatic_album_tags(updated, title), title)
 
 
 def sort_album_photos(text, title):

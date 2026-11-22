@@ -53,11 +53,80 @@ const SITE_DATA = {
     def job(self, album='北京', target='assets/images/北京'):
         return [{'target': target, 'album': album, 'items': [(str(self.source / '透明.png'), '透明.png')]}]
 
+    def test_auto_tags_count_distinct_photos_and_remove_ordinals(self):
+        photos = [
+            {'src': 'a.jpg', 'title': '故宫午门 其一'},
+            {'src': 'b.jpg', 'title': '故宫午门 其二'},
+            {'src': 'c.jpg', 'title': '故宫午门 十一'},
+            {'src': 'd.jpg', 'title': '故宫角楼01'},
+            {'src': 'e.jpg', 'title': '北海 北海 北海'},
+            {'src': 'f.jpg', 'title': '北海'},
+            {'src': 'f.jpg', 'title': '北海'},
+        ]
+        text = 'const SITE_DATA = ' + json.dumps({'photos': [{'city': '北京', 'photos': photos}]}, ensure_ascii=False)
+        tags = core.suggest_album_tags(text, '北京')
+        self.assertEqual(tags, ['故宫', '故宫午门'])
+
+    def test_auto_tags_fallback_and_album_isolation(self):
+        albums = [{'city': '甲', 'photos': [
+            {'src': 'assets/%E9%A2%90%E5%92%8C%E5%9B%AD%20' + str(i) + '.jpg'} for i in range(3)
+        ]}, {'city': '乙', 'photos': [{'src': 'z.jpg', 'title': '颐和园'}]}]
+        text = 'const SITE_DATA = ' + json.dumps({'photos': albums})
+        self.assertEqual(core.suggest_album_tags(text, '甲'), ['颐和园'])
+        self.assertEqual(core.suggest_album_tags(text, '乙'), [])
+        self.assertEqual(core.suggest_album_tags('const SITE_DATA={photos:[{city:"空",photos:[]}]}', '空'), [])
+
+    def test_import_tags_match_preview_and_allow_manual_editing(self):
+        text = 'const SITE_DATA = ' + json.dumps({'photos': [{'city': '北京', 'tags': ['手动标签'], 'photos': [
+            {'src': 'old1.jpg', 'title': '颐和园 其一'},
+            {'src': 'old2.jpg', 'title': '颐和园 其二'}
+        ]}]}, ensure_ascii=False)
+        config = self.root / 'js/data.js'
+        config.write_text(text, encoding='utf-8')
+        source = self.source / '颐和园 其三.jpg'
+        Image.new('RGB', (10, 10)).save(str(source))
+        jobs = [{'target': 'assets/images/北京', 'album': '北京', 'items': [(str(source), source.name)]}]
+        opts = {'compress': False}
+        preview = core.upload_code(self.root, jobs, opts)['data.js']
+        self.assertEqual(config.read_text(encoding='utf-8'), text)
+        core.import_jobs(self.root, self.state, jobs, opts, lambda message: None)
+        self.assertEqual(config.read_text(encoding='utf-8'), preview)
+        self.assertEqual(core.read_album(self.root, '北京')['tags'], ['手动标签', '颐和园'])
+        metadata = self.meta()
+        metadata['tags'] = ['自己补充']
+        core.save_album(self.root, self.state, '北京', metadata)
+        core.import_jobs(self.root, self.state, jobs, opts, lambda message: None)
+        self.assertEqual(core.read_album(self.root, '北京')['tags'], ['自己补充'])
+
     def test_real_site_parser_and_folder_discovery(self):
         albums, dirs, colors = core.site_info(HERE.parent)
         self.assertGreater(len(albums), 5)
         self.assertIn('assets/images/bowu/qtq', dirs)
         self.assertEqual(colors['paper'], '#EFE8D6')
+
+    def test_all_album_tags_include_old_photos_and_keep_other_fields(self):
+        albums = [{'city': name, 'star': True, 'desc': '保留简介', 'tags': ['原有'], 'photos': [
+            {'src': '%s%d.jpg' % (name, i), 'title': '%s景点 其%s' % (name, '一二三'[i])} for i in range(3)
+        ]} for name in ('甲', '乙')]
+        config = self.root / 'js/data.js'
+        config.write_text('const SITE_DATA = ' + json.dumps({'photos': albums}), encoding='utf-8')
+        before = config.read_bytes()
+        plan = core.album_tags_plan(self.root)
+        self.assertEqual(config.read_bytes(), before, 'recognition must be read only')
+        self.assertEqual([row['tags'] for row in plan['albums']], [['原有', '甲景点'], ['原有', '乙景点']])
+        plan['albums'][0]['tags'] = ['自己添加']
+        core.save_album_tags(self.root, self.state, plan['albums'], plan['hash'])
+        self.assertEqual(core.read_album(self.root, '甲')['tags'], ['自己添加'])
+        self.assertEqual(core.read_album(self.root, '乙')['tags'], ['原有', '乙景点'])
+        doc = core.Document(config.read_text(encoding='utf-8'))
+        for album in doc.albums():
+            self.assertEqual(len(album['refs']), 3)
+            self.assertTrue(doc.value(doc.prop(album['object'], 'star')))
+            self.assertEqual(doc.value(doc.prop(album['object'], 'desc')), '保留简介')
+        saved = config.read_bytes()
+        with self.assertRaisesRegex(ValueError, '代码已变化'):
+            core.save_album_tags(self.root, self.state, plan['albums'], plan['hash'])
+        self.assertEqual(config.read_bytes(), saved)
 
     def meta(self, name='北京'):
         return {'city': name, 'seal': '京', 'star': True, 'tags': ['青铜器', '镇馆之宝', '青铜器'], 'desc': '新的简介\n\n第二段，含 `引号` 和 ${文字} 与 \\ 路径。', 'cover': ''}

@@ -43,6 +43,24 @@ if __name__ == '__main__':
             code = core.album_code(ui.root_path(), ui.editor_original, ui.editor_metadata())
             assert album['name'] in code['相册代码片段']
         ui.show_code({'data.js': 'const SITE_DATA = {photos: []};'}, '代码窗口测试')
+        ui.edit_tags.set('手工添加，原有分类')
+        with patch.object(core, 'suggest_album_tags', return_value=['原有分类', '自动识别']):
+            ui.detect_editor_tags()
+        assert ui.editor_metadata()['tags'] == ['手工添加', '原有分类', '自动识别']
+        ui.edit_tags.set('手工添加，新补充')
+        assert ui.editor_metadata()['tags'] == ['手工添加', '新补充']
+        ui.show_all_tags(ui.root_path(), {'hash': 'preview-only', 'albums': [
+            {'name': '旧相册甲', 'tags': ['故宫', '手工补充'], 'added': 1},
+            {'name': '旧相册乙', 'tags': ['颐和园'], 'added': 1}
+        ]})
+        tag_window = next(child for child in ui.winfo_children() if isinstance(child, app.tk.Toplevel)
+                          and child.title().startswith('全部相册关键词'))
+        tag_fields = [widget for widget in all_children(tag_window) if isinstance(widget, app.ttk.Entry)]
+        assert [widget.get() for widget in tag_fields] == ['故宫，手工补充', '颐和园']
+        tag_fields[0].delete(0, 'end')
+        tag_fields[0].insert(0, '自行修改')
+        assert tag_fields[0].get() == '自行修改'
+        tag_window.destroy()
         ui.update()
         for child in ui.winfo_children():
             if isinstance(child, app.tk.Toplevel):
