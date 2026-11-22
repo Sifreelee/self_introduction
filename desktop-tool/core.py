@@ -634,6 +634,41 @@ def replace_refs(text, mapping):
     return text
 
 
+def rename_photo_refs(text, mapping):
+    """按改名前的 src 匹配照片，同时更新路径和标题；不改无关 title。"""
+    doc, edits = Document(text), []
+    for album in doc.albums():
+        if album['array'] is None:
+            continue
+        for obj in doc.objects(album['array']):
+            src = doc.string(doc.prop(obj, 'src'))
+            if src not in mapping:
+                continue
+            title = Path(mapping[src]).stem
+            index = doc.prop(obj, 'title')
+            if index is not None:
+                # 动态表达式的边界不能安全判断，必须在移动照片前停止。
+                raw = doc.tokens[index][0]
+                if not (raw.startswith(('"', "'")) or raw in ('null', 'true', 'false', '[', '{') or re.fullmatch(r'\d+', raw)):
+                    raise ValueError('照片 title 使用了动态表达式，请先改为普通文本再重命名：' + src)
+                end = doc.pairs.get(index, index)
+                if doc.tokens[end + 1][0] not in (',', '}'):
+                    raise ValueError('照片 title 使用了动态表达式，请先改为普通文本再重命名：' + src)
+                edits.append((doc.tokens[index][1], doc.tokens[end][2], q(title)))
+            else:
+                end = doc.pairs[obj]
+                if doc.tokens[end - 1][0] != ',':
+                    at = doc.tokens[end - 1][2]
+                    edits.append((at, at, ','))
+                close = doc.tokens[end][1]
+                edits.append((close, close, '\n      title: ' + q(title) + '\n    '))
+    for start, end, content in sorted(edits, reverse=True):
+        text = text[:start] + content + text[end:]
+    updated = replace_refs(text, mapping)
+    Document(updated).albums()
+    return updated
+
+
 def site_info(root):
     root = Path(root).resolve()
     text = (root / 'js/data.js').read_text(encoding='utf-8-sig')
@@ -1002,24 +1037,54 @@ def import_jobs(root, state, jobs, options, log, progress=None):
     return len(tasks)
 
 
-def rename_plan(folder, mode, prefix, start, pad, recursive=False, filter_mode='全部', include_unchanged=False):
+def rename_plan(folder, mode, prefix, start, pad, recursive=False, filter_mode='全部', include_unchanged=False, add_prefix=None, selected_files=None):
     folder = Path(folder).resolve()
-    files = collect(folder, recursive)
+    if selected_files is None:
+        files = collect(folder, recursive)
+    else:
+        files, seen = [], set()
+        if not selected_files:
+            raise ValueError('请先选择需要改名的照片。')
+        for selected in selected_files:
+            path = Path(selected)
+            if path.is_symlink() or not path.is_file() or not within(path, folder):
+                raise ValueError('所选文件已移动、删除或不在当前文件夹内，请重新选择：' + str(path))
+            path = path.resolve()
+            if str(path).casefold() not in seen:
+                files.append(path)
+                seen.add(str(path).casefold())
+        files.sort(key=lambda path: photo_sort_key(path.relative_to(folder).as_posix()))
     if filter_mode == '仅中文':
         files = [p for p in files if re.search(r'[\u3400-\u9fff]', p.stem)]
     elif filter_mode == '仅英文':
         files = [p for p in files if not re.search(r'[\u3400-\u9fff]', p.stem)]
+    # None 兼容旧调用的“前缀＋数字”；界面显式传入勾选状态。
+    selected_prefix = str(prefix).strip() if add_prefix else ''
+    if add_prefix and (not selected_prefix or re.search(r'[<>:"/\\|?*\x00-\x1f]', selected_prefix) or selected_prefix.endswith('.')):
+        raise ValueError('已勾选添加前缀，请填写有效的前缀内容。')
     if mode == '其一／其二（按标题分组）':
         plan = []
         for parent in sorted({p.parent for p in files}):
-            rows = rename_qi.build_plan(str(parent), [p.name for p in files if p.parent == parent], 4, 'strip', 'number')
-            plan.extend((parent / a, parent / b) for a, b, _, _ in rows)
+            originals, seen = {}, set()
+            for p in files:
+                if p.parent != parent:
+                    continue
+                name = p.name
+                if selected_prefix and name.startswith(selected_prefix + ' '):
+                    name = name[len(selected_prefix) + 1:]
+                if name.casefold() in seen:
+                    raise ValueError('添加前缀后存在同名照片，请先区分：' + p.name)
+                seen.add(name.casefold())
+                originals[name] = p
+            rows = rename_qi.build_plan(str(parent), list(originals), 4, 'strip', 'number')
+            plan.extend((originals[a], parent / ((selected_prefix + ' ' if selected_prefix else '') + b)) for a, b, _, _ in rows)
     else:
-        if not prefix.strip() or re.search(r'[<>:"/\\|?*\x00-\x1f]', prefix) or prefix.endswith((' ', '.')):
+        if add_prefix is None and (not prefix.strip() or re.search(r'[<>:"/\\|?*\x00-\x1f]', prefix) or prefix.endswith((' ', '.'))):
             raise ValueError('请输入有效的文件名前缀。')
         if int(start) < 1 or not 0 <= int(pad) <= 8:
             raise ValueError('起始编号至少为 1，补零位数为 0～8。')
-        plan = [(p, p.with_name(prefix + str(i).zfill(int(pad)) + p.suffix.lower())) for i, p in enumerate(files, int(start))]
+        head = prefix if add_prefix is None else (selected_prefix + ' ' if selected_prefix else '')
+        plan = [(p, p.with_name(head + str(i).zfill(int(pad)) + p.suffix.lower())) for i, p in enumerate(files, int(start))]
     targets = [str(b).casefold() for _, b in plan]
     if len(targets) != len(set(targets)):
         raise ValueError('重命名会产生重复文件名，请更换规则。')
@@ -1047,7 +1112,7 @@ def apply_rename(root, state, plan, log, progress=None):
         report_progress(progress, '检查文件', i, total_work, '%d/%d 个 · %s' % (i, count, a.name))
     mapping = {a.relative_to(root).as_posix(): b.relative_to(root).as_posix() for a, b in plan if within(a, root)}
     before = config.read_bytes() if mapping and config.is_file() else None
-    updated = replace_refs(before.decode('utf-8-sig'), mapping) if before is not None else None
+    updated = rename_photo_refs(before.decode('utf-8-sig'), mapping) if before is not None else None
     moves = []
     try:
         for i, (original, target) in enumerate(plan):
@@ -1065,6 +1130,7 @@ def apply_rename(root, state, plan, log, progress=None):
             if config.read_bytes() != before:
                 raise ValueError('改名期间代码发生变化，请重试。')
             atomic(config, updated.encode('utf-8'))
+            log('已同步 data.js 的图片路径和 title（新文件名去掉扩展名）。')
     except Exception:
         # 失败时只移动文件名回原位置，不复制照片，不产生原图缓存。
         for move in moves:

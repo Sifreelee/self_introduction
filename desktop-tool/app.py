@@ -851,34 +851,45 @@ class App(tk.Tk):
 
     def rename_page(self, page):
         self.rename_dir = tk.StringVar()
+        self.rename_files = None
+        self.rename_selection_text = tk.StringVar(value='文件夹模式：处理目录内文件，点击“生成预览”检查。')
         row, _ = self.field(page, '文件夹', self.rename_dir)
-        ttk.Button(row, text='选择', command=lambda: self.choose_dir(self.rename_dir)).pack(side='left', padx=(8, 0))
+        ttk.Button(row, text='选择照片…', command=self.choose_rename_files).pack(side='left', padx=(8, 0))
+        ttk.Button(row, text='选择文件夹…', command=self.choose_rename_folder).pack(side='left', padx=(8, 0))
+        ttk.Label(page, textvariable=self.rename_selection_text, style='Hint.TLabel').pack(anchor='w', pady=(0, 3))
         self.rename_mode = tk.StringVar(value='其一／其二（按标题分组）')
         row = ttk.Frame(page)
         row.pack(fill='x', pady=5)
         ttk.Label(row, text='命名规则', width=15).pack(side='left')
-        ttk.Combobox(row, textvariable=self.rename_mode, state='readonly', values=['其一／其二（按标题分组）', '前缀＋数字']).pack(side='left', fill='x', expand=True)
+        ttk.Combobox(row, textvariable=self.rename_mode, state='readonly', values=['其一／其二（按标题分组）', '数字编号']).pack(side='left', fill='x', expand=True)
         self.filter_mode = tk.StringVar(value='全部')
         ttk.Combobox(row, textvariable=self.filter_mode, state='readonly', values=['全部', '仅中文', '仅英文'], width=10).pack(side='left', padx=(8, 0))
-        self.prefix = tk.StringVar(value='photo')
+        self.prefix = tk.StringVar(value='')
+        self.rename_add_prefix = tk.BooleanVar(value=False)
         self.start = tk.StringVar(value='1')
         self.pad = tk.StringVar(value='0')
         row = ttk.Frame(page)
         row.pack(fill='x', pady=5)
-        for label, var, width in [('前缀', self.prefix, 22), ('起始编号', self.start, 8), ('补零位数', self.pad, 8)]:
+        ttk.Checkbutton(row, text='添加前缀', variable=self.rename_add_prefix).pack(side='left', padx=(0, 7))
+        self.rename_prefix_entry = ttk.Entry(row, textvariable=self.prefix, width=22, state='disabled')
+        self.rename_prefix_entry.pack(side='left', padx=(0, 18))
+        self.rename_add_prefix.trace_add('write', lambda *_: self.rename_prefix_entry.configure(state='normal' if self.rename_add_prefix.get() else 'disabled'))
+        for label, var, width in [('起始编号', self.start, 8), ('补零位数', self.pad, 8)]:
             ttk.Label(row, text=label).pack(side='left', padx=(0, 7))
             ttk.Entry(row, textvariable=var, width=width).pack(side='left', padx=(0, 18))
         self.rename_recursive = tk.BooleanVar(value=False)
-        ttk.Checkbutton(row, text='包含子文件夹', variable=self.rename_recursive).pack(side='left')
-        ttk.Label(page, text='沿用现有“其一”规则：每组独立编号，十一开始不加“其”；单张只留标题。网站内图片会同步修改 data.js 引用。', style='Hint.TLabel', wraplength=970).pack(anchor='w', pady=5)
+        self.rename_recursive_check = ttk.Checkbutton(row, text='包含子文件夹', variable=self.rename_recursive)
+        self.rename_recursive_check.pack(side='left')
+        ttk.Label(page, text='两种规则均可勾选添加前缀，用一个空格连接，例如“圆明园 海晏堂”“圆明园 海晏堂 其一”。\n“其一”每组独立编号，十一开始不加“其”；单张只留标题。数字编号不保留原标题。网站内图片同步更新 data.js 路径和 title。', style='Hint.TLabel', wraplength=970).pack(anchor='w', pady=5)
         self.rename_tree = self.table(page, [('原文件名', 395), ('新文件名', 395), ('状态', 110)], 5)
         row = ttk.Frame(page)
         row.pack(fill='x', pady=3)
         ttk.Button(row, text='生成预览', command=self.preview_rename).pack(side='left')
         self.rename_apply = ttk.Button(row, text='按预览执行重命名', style='Accent.TButton', command=self.start_rename, state='disabled')
         self.rename_apply.pack(side='right')
-        for var in (self.rename_dir, self.rename_mode, self.filter_mode, self.prefix, self.start, self.pad, self.rename_recursive):
+        for var in (self.rename_dir, self.rename_mode, self.filter_mode, self.prefix, self.rename_add_prefix, self.start, self.pad, self.rename_recursive):
             var.trace_add('write', lambda *_: self.invalidate_plan())
+        self.rename_dir.trace_add('write', lambda *_: self.rename_folder_changed())
 
     def compress_page(self, page):
         self.comp_source = tk.StringVar()
@@ -1166,19 +1177,52 @@ class App(tk.Tk):
         self.plan = []
         self.rename_apply.configure(state='disabled')
 
+    def rename_folder_changed(self):
+        self.rename_files = None
+        self.rename_recursive_check.configure(state='normal')
+        self.rename_selection_text.set('文件夹模式：处理目录内文件，点击“生成预览”检查。')
+        self.rename_tree.delete(*self.rename_tree.get_children())
+
+    def choose_rename_folder(self):
+        try:
+            self.guard_idle()
+            self.choose_dir(self.rename_dir)
+        except Exception as e:
+            self.error(e)
+
+    def choose_rename_files(self):
+        try:
+            self.guard_idle()
+            initial = self.rename_dir.get()
+            paths = filedialog.askopenfilenames(parent=self, title='选择要批量改名的照片（可多选）',
+                initialdir=initial if Path(initial).is_dir() else str(BASE),
+                filetypes=[('照片', '*.jpg *.jpeg *.png *.webp *.bmp *.tif *.tiff *.gif *.svg'), ('所有文件', '*.*')])
+            if not paths:
+                return
+            selected = list(dict.fromkeys(str(Path(p).resolve()) for p in paths))
+            folder = os.path.commonpath([str(Path(p).parent) for p in selected])
+            self.rename_dir.set(folder)
+            self.rename_files = selected
+            self.rename_recursive_check.configure(state='disabled')
+            self.rename_selection_text.set('已选择 %d 个文件：仅处理所选照片，点击“生成预览”检查；选择文件夹可切回整目录。' % len(selected))
+            self.invalidate_plan()
+        except Exception as e:
+            self.error(e)
+
     def rename_options(self):
-        return (self.rename_dir.get(), self.rename_mode.get(), self.prefix.get(), self.start.get(), self.pad.get(), self.rename_recursive.get(), self.filter_mode.get())
+        selected = tuple(self.rename_files) if self.rename_files is not None else None
+        return (self.rename_dir.get(), self.rename_mode.get(), self.prefix.get(), self.start.get(), self.pad.get(), self.rename_recursive.get(), self.filter_mode.get(), selected, self.rename_add_prefix.get())
 
     def preview_rename(self):
         try:
             self.guard_idle()
             options = self.rename_options()
-            folder, mode, prefix, start, pad, recursive, filter_mode = options
+            folder, mode, prefix, start, pad, recursive, filter_mode, selected, add_prefix = options
             start, pad = int(start), int(pad)
             self.invalidate_plan()
             def work():
-                self.worker_progress('生成改名预览', 0, 0, '正在扫描文件夹')
-                preview = core.rename_plan(folder, mode, prefix, start, pad, recursive, filter_mode, include_unchanged=True)
+                self.worker_progress('生成改名预览', 0, 0, '正在读取所选照片' if selected is not None else '正在扫描文件夹')
+                preview = core.rename_plan(folder, mode, prefix, start, pad, recursive, filter_mode, include_unchanged=True, add_prefix=add_prefix, selected_files=selected)
                 changes = [(a, b) for a, b in preview if a != b]
                 hashes = {}
                 for i, (a, _) in enumerate(changes, 1):
@@ -1215,7 +1259,12 @@ class App(tk.Tk):
                     if core.digest(a) != hashes[str(a)]:
                         raise ValueError('文件在预览后发生变化，请重新生成预览。')
                 core.apply_rename(root, STATE, plan, self.worker_log, self.worker_progress)
-            self.run('批量重命名', work, lambda _: self.preview_rename())
+            def done(_):
+                if self.rename_files is not None:
+                    renamed = {str(a): str(b) for a, b in plan}
+                    self.rename_files = [renamed.get(p, p) for p in self.rename_files]
+                self.preview_rename()
+            self.run('批量重命名', work, done)
         except Exception as e:
             self.error(e)
 

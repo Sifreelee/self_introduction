@@ -19,6 +19,20 @@ if __name__ == '__main__':
         labels=[w.cget('text') for w in all_children(ui) if isinstance(w, app.ttk.Button)]
         assert '清除缓存' in labels
         assert '撤销上次文件操作' not in labels and '打开备份目录' not in labels
+        assert '添加前缀' in labels or any(isinstance(w, app.ttk.Checkbutton) and w.cget('text') == '添加前缀' for w in all_children(ui))
+        assert not ui.rename_add_prefix.get()
+        assert str(ui.rename_prefix_entry.cget('state')) == 'disabled'
+        for mode in ('其一／其二（按标题分组）', '数字编号'):
+            ui.rename_mode.set(mode)
+            ui.plan = [('old', 'new')]
+            ui.rename_apply.configure(state='normal')
+            ui.rename_add_prefix.set(True)
+            assert str(ui.rename_prefix_entry.cget('state')) == 'normal'
+            assert not ui.plan and str(ui.rename_apply.cget('state')) == 'disabled'
+            assert ui.rename_options()[-1] is True
+            ui.rename_add_prefix.set(False)
+            assert str(ui.rename_prefix_entry.cget('state')) == 'disabled'
+        ui.rename_mode.set('其一／其二（按标题分组）')
         # 真实网站的每本相册均能读取到表单，并生成代码；不保存、不修改网站。
         def fail(error):
             raise error
@@ -205,6 +219,43 @@ if __name__ == '__main__':
                     assert len(flow.rename_tree.get_children()) == 2
                     assert not flow.plan
                     assert all(flow.rename_tree.item(row, 'values')[-1] == '名称不变' for row in flow.rename_tree.get_children())
+                    # 选择部分照片时不会把整个目录纳入改名；完成后仍能预览所选的新文件名。
+                    chosen = folder / '选择照片改名'
+                    chosen.mkdir()
+                    selected = [chosen / '海晏堂1.jpg', chosen / '海晏堂2.jpg']
+                    untouched = chosen / '海晏堂3.jpg'
+                    for p in selected + [untouched]:
+                        p.write_bytes(b'photo')
+                    with patch.object(app.filedialog, 'askopenfilenames', return_value=tuple(str(p) for p in selected)):
+                        flow.choose_rename_files()
+                    assert len(flow.rename_files) == 2
+                    assert str(flow.rename_recursive_check.cget('state')) == 'disabled'
+                    assert '仅处理所选照片' in flow.rename_selection_text.get()
+                    with patch.object(app.filedialog, 'askopenfilenames', return_value=()):
+                        flow.choose_rename_files()
+                    assert len(flow.rename_files) == 2
+                    flow.rename_add_prefix.set(True)
+                    flow.prefix.set('圆明园')
+                    flow.preview_rename()
+                    deadline = time.monotonic() + 8
+                    while flow.busy and time.monotonic() < deadline:
+                        flow.update()
+                        time.sleep(.02)
+                    assert not errors and len(flow.plan) == 2, errors
+                    flow.start_rename()
+                    deadline = time.monotonic() + 8
+                    while flow.busy and time.monotonic() < deadline:
+                        flow.update()
+                        time.sleep(.02)
+                    assert not errors and not flow.plan, errors
+                    assert untouched.is_file()
+                    assert len(flow.rename_tree.get_children()) == 2
+                    assert all(Path(p).is_file() and Path(p).name.startswith('圆明园 ') for p in flow.rename_files)
+                    with patch.object(app.filedialog, 'askdirectory', return_value=str(chosen)):
+                        flow.choose_rename_folder()
+                    assert flow.rename_files is None
+                    assert str(flow.rename_recursive_check.cget('state')) == 'normal'
+                    assert not flow.plan and not flow.rename_tree.get_children()
                     process = Mock()
                     process.poll.return_value = None
                     with patch.object(core, 'launch_push_script', return_value=(process, folder / 'upload.bat')) as launch:

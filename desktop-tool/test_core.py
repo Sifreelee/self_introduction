@@ -542,6 +542,118 @@ const SITE_DATA = {
         plan = core.rename_plan(self.source, '前缀＋数字', 'bj', 1, 3, False, '仅英文')
         self.assertEqual([(a.name, b.name) for a, b in plan], [('IMG2.jpg', 'bj001.jpg'), ('IMG10.jpg', 'bj002.jpg')])
 
+    def test_optional_prefix_on_title_rule_is_repeatable_and_syncs_code(self):
+        folder = self.root / 'assets/images/北京'
+        for name in ('海晏堂.jpg', '长春园2.jpg', '长春园1.jpg'):
+            (folder / name).write_bytes(b'photo')
+        mode = '其一／其二（按标题分组）'
+        plan = core.rename_plan(folder, mode, '圆明园', 1, 0, add_prefix=True)
+        names = {b.name for a, b in plan}
+        self.assertIn('圆明园 海晏堂.jpg', names)
+        self.assertIn('圆明园 长春园 其一.jpg', names)
+        self.assertIn('圆明园 长春园 其二.jpg', names)
+        # 不勾选时忽略前缀内容。
+        plain = core.rename_plan(folder, mode, 'invalid/prefix', 1, 0, include_unchanged=True, add_prefix=False)
+        self.assertIn('海晏堂.jpg', {b.name for a, b in plain})
+        code = self.root / 'js/data.js'
+        text = code.read_text(encoding='utf-8').replace('故宫01.png', '海晏堂.jpg')
+        code.write_text(text, encoding='utf-8')
+        core.apply_rename(self.root, self.state, plan, lambda _: None)
+        self.assertIn('assets/images/北京/圆明园 海晏堂.jpg', code.read_text(encoding='utf-8'))
+        self.assertEqual(core.rename_plan(folder, mode, '圆明园', 1, 0, add_prefix=True), [])
+        preview = core.rename_plan(folder, mode, '圆明园', 1, 0, include_unchanged=True, add_prefix=True)
+        self.assertTrue(all(a == b for a, b in preview))
+
+    def test_optional_prefix_on_number_rule_and_invalid_prefix(self):
+        for name in ('IMG2.jpg', 'IMG10.jpg'):
+            (self.source / name).write_bytes(b'photo')
+        plain = core.rename_plan(self.source, '数字编号', 'ignored', 1, 3, filter_mode='仅英文', add_prefix=False)
+        self.assertEqual([b.name for a, b in plain], ['001.jpg', '002.jpg'])
+        prefixed = core.rename_plan(self.source, '数字编号', ' 圆明园 ', 1, 3, filter_mode='仅英文', add_prefix=True)
+        self.assertEqual([b.name for a, b in prefixed], ['圆明园 001.jpg', '圆明园 002.jpg'])
+        for mode in ('数字编号', '其一／其二（按标题分组）'):
+            for prefix in ('', ' ', 'bad/prefix', 'bad.'):
+                with self.assertRaises(ValueError):
+                    core.rename_plan(self.source, mode, prefix, 1, 0, add_prefix=True)
+
+    def test_rename_selected_photos_only_and_keeps_unselected_files(self):
+        a, b, untouched = [self.source / name for name in ('海晏堂1.jpg', '海晏堂2.jpg', '海晏堂3.jpg')]
+        for p in (a, b, untouched):
+            p.write_bytes(p.name.encode('utf-8'))
+        selected = [str(b), str(a), str(a)]
+        plan = core.rename_plan(self.source, '其一／其二（按标题分组）', '圆明园', 1, 0,
+            recursive=True, add_prefix=True, selected_files=selected)
+        self.assertEqual(len(plan), 2)
+        self.assertEqual({a for a, b in plan}, {a, b})
+        self.assertEqual({b.name for a, b in plan}, {'圆明园 海晏堂 其一.jpg', '圆明园 海晏堂 其二.jpg'})
+        core.apply_rename(self.root, self.state, plan, lambda _: None)
+        self.assertTrue(untouched.is_file())
+        self.assertTrue((self.source / '透明.png').is_file())
+        updated = [str(b) for a, b in plan]
+        again = core.rename_plan(self.source, '其一／其二（按标题分组）', '圆明园', 1, 0,
+            add_prefix=True, selected_files=updated, include_unchanged=True)
+        self.assertEqual(len(again), 2)
+        self.assertTrue(all(a == b for a, b in again))
+
+    def test_rename_selected_validation_and_existing_unselected_target(self):
+        photo = self.source / 'photo.jpg'
+        photo.write_bytes(b'photo')
+        kwargs = dict(add_prefix=False, selected_files=[str(photo)])
+        (self.source / '1.jpg').write_bytes(b'unselected')
+        with self.assertRaises(ValueError):
+            core.rename_plan(self.source, '数字编号', '', 1, 0, **kwargs)
+        for selected in ([], [str(self.source / 'missing.jpg')], [str(self.root / 'js/data.js')]):
+            with self.assertRaises(ValueError):
+                core.rename_plan(self.source, '数字编号', '', 1, 0, add_prefix=False, selected_files=selected)
+        self.assertEqual(photo.read_bytes(), b'photo')
+        self.assertEqual((self.source / '1.jpg').read_bytes(), b'unselected')
+
+    def test_rename_syncs_photo_titles_across_albums_and_keeps_other_fields(self):
+        old = 'assets/images/北京/故宫01.png'
+        new = 'assets/images/北京/圆明园 海晏堂.png'
+        text = '''const SITE_DATA = {photos: [
+          {city: '保留相册名', cover: 'assets/images/北京/故宫01.png', photos: [
+            {src: 'assets/images/北京/故宫01.png', title: '旧标题', tags: ['保留'], desc: '原简介'},
+            {src: 'assets/images/untouched.jpg', title: '自定义标题'}]},
+          {city: '另一本', photos: [
+            {title: '另一个旧标题', src: 'assets/images/北京/故宫01.png'},
+            {src: 'assets/images/北京/故宫01.png' // 保留行注释
+            },
+            {src: 'assets/images/北京/故宫01.png', /* 保留注释 */},
+          ]}
+        ]};'''
+        updated = core.rename_photo_refs(text, {old: new})
+        doc = core.Document(updated)
+        titles = [doc.string(doc.prop(obj, 'title')) for album in doc.albums() for obj in doc.objects(album['array'])]
+        self.assertEqual(titles, ['圆明园 海晏堂', '自定义标题', '圆明园 海晏堂', '圆明园 海晏堂', '圆明园 海晏堂'])
+        self.assertIn("city: '保留相册名'", updated)
+        self.assertIn("tags: ['保留'], desc: '原简介'", updated)
+        self.assertIn('// 保留行注释', updated)
+        self.assertIn('/* 保留注释 */', updated)
+        self.assertNotIn(old, updated)
+        config = self.root / 'js/data.js'
+        config.write_text(text, encoding='utf-8')
+        a, b = self.root / old, self.root / new
+        a.write_bytes(b'photo')
+        core.apply_rename(self.root, self.state, [(a, b)], lambda _: None)
+        self.assertEqual(config.read_text(encoding='utf-8'), updated)
+        self.assertFalse(a.exists())
+        self.assertEqual(b.read_bytes(), b'photo')
+
+    def test_dynamic_photo_title_stops_before_renaming_file(self):
+        old = 'assets/images/北京/故宫01.png'
+        a, b = self.root / old, self.root / 'assets/images/北京/改后.png'
+        a.write_bytes(b'photo')
+        config = self.root / 'js/data.js'
+        for dynamic in ('makeTitle()', "'旧标题' + extra"):
+            text = self.doc.replace('title: "故宫"', 'title: ' + dynamic)
+            config.write_text(text, encoding='utf-8')
+            with self.assertRaises(ValueError):
+                core.apply_rename(self.root, self.state, [(a, b)], lambda _: None)
+            self.assertEqual(a.read_bytes(), b'photo')
+            self.assertFalse(b.exists())
+            self.assertEqual(config.read_text(encoding='utf-8'), text)
+
     def test_compression_prepares_all_inputs_before_writing_outputs(self):
         dest=self.base/'导出'
         core.compress_folder(self.source,dest,self.state,self.opts,lambda _:None)
