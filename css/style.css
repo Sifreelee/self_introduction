@@ -621,6 +621,7 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 }
 /* 卡片外层容器：让星标可以挂到卡片外侧而不被 overflow:hidden 裁掉 */
 .photo-wrap { position: relative; }
+.photo-album { display: block; color: inherit; text-decoration: none; }
 .photo-card {
   position: relative; overflow: hidden;
   border: 1px solid var(--line); background: var(--card);

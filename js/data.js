@@ -1244,8 +1244,37 @@ const SITE_DATA = {
       desc: "",
       seal: "汉",
       photos: [
-        { src: "assets/images/travel-10.jpg", title: "黄鹤楼之夜" }
-      ]
+        { src: "assets/images/travel-10.jpg", title: "黄鹤楼之夜" },
+      
+      {"src": "assets/images/wuhan/武大古建.jpg", "title": "武大古建"},
+      {"src": "assets/images/wuhan/武大小径.jpg", "title": "武大小径"},
+      {"src": "assets/images/wuhan/武大牌坊.jpg", "title": "武大牌坊"},
+      {"src": "assets/images/wuhan/武汉中山像.jpg", "title": "武汉中山像"},
+      {"src": "assets/images/wuhan/武汉夜景 其一.jpg", "title": "武汉夜景 其一"},
+      {"src": "assets/images/wuhan/武汉夜景 其二.jpg", "title": "武汉夜景 其二"},
+      {"src": "assets/images/wuhan/武汉夜景 其三.jpg", "title": "武汉夜景 其三"},
+      {"src": "assets/images/wuhan/武汉扫街 其一.jpg", "title": "武汉扫街 其一"},
+      {"src": "assets/images/wuhan/武汉扫街 其二.jpg", "title": "武汉扫街 其二"},
+      {"src": "assets/images/wuhan/武汉扫街 其三.jpg", "title": "武汉扫街 其三"},
+      {"src": "assets/images/wuhan/武汉扫街 其四.jpg", "title": "武汉扫街 其四"},
+      {"src": "assets/images/wuhan/武汉扫街 其五.jpg", "title": "武汉扫街 其五"},
+      {"src": "assets/images/wuhan/武汉扫街 其六.jpg", "title": "武汉扫街 其六"},
+      {"src": "assets/images/wuhan/武汉扫街 其七.jpg", "title": "武汉扫街 其七"},
+      {"src": "assets/images/wuhan/武汉长江.jpg", "title": "武汉长江"},
+      {"src": "assets/images/wuhan/武汉青岛路.jpg", "title": "武汉青岛路"},
+      {"src": "assets/images/wuhan/江夜 其一.jpg", "title": "江夜 其一"},
+      {"src": "assets/images/wuhan/江夜 其二.jpg", "title": "江夜 其二"},
+      {"src": "assets/images/wuhan/江夜 其三.jpg", "title": "江夜 其三"},
+      {"src": "assets/images/wuhan/江汉关.jpg", "title": "江汉关"},
+      {"src": "assets/images/wuhan/江汉关一角.jpg", "title": "江汉关一角"},
+      {"src": "assets/images/wuhan/江汉路.jpg", "title": "江汉路"},
+      {"src": "assets/images/wuhan/清晨鄂都.jpg", "title": "清晨鄂都"},
+      {"src": "assets/images/wuhan/湖北省博物馆.jpg", "title": "湖北省博物馆"},
+      {"src": "assets/images/wuhan/黄鹤楼之夜.jpg", "title": "黄鹤楼之夜"},
+      {"src": "assets/images/wuhan/黄鹤楼之夜 其一.jpg", "title": "黄鹤楼之夜 其一"},
+      {"src": "assets/images/wuhan/黄鹤楼之夜 其二.jpg", "title": "黄鹤楼之夜 其二"},
+      {"src": "assets/images/wuhan/黎黄陂路.jpg", "title": "黎黄陂路"}
+    ]
     },
     {
       city: "中国 天津",
@@ -1272,11 +1301,40 @@ const SITE_DATA = {
     },
     {
       city: "江苏 连云港",
-      desc: "",
+      desc: "2025年夏到此游玩。",
       seal: "海",
       photos: [
-        { src: "assets/images/travel-12.jpg", title: "在海一方公园" }
-      ]
+        { src: "assets/images/travel-12.jpg", title: "在海一方公园" },
+      
+      {"src": "assets/images/lianyungang/在海一方 其一.jpg", "title": "在海一方 其一"},
+      {"src": "assets/images/lianyungang/在海一方 其二.jpg", "title": "在海一方 其二"},
+      {"src": "assets/images/lianyungang/在海一方 其三.jpg", "title": "在海一方 其三"},
+      {"src": "assets/images/lianyungang/在海一方 其四.jpg", "title": "在海一方 其四"},
+      {"src": "assets/images/lianyungang/港城与晚霞.jpg", "title": "港城与晚霞"},
+      {"src": "assets/images/lianyungang/港城之夜.jpg", "title": "港城之夜"},
+      {"src": "assets/images/lianyungang/港城结构 其一.jpg", "title": "港城结构 其一"},
+      {"src": "assets/images/lianyungang/港城结构 其二.jpg", "title": "港城结构 其二"},
+      {"src": "assets/images/lianyungang/港城结构 其三.jpg", "title": "港城结构 其三"},
+      {"src": "assets/images/lianyungang/港城结构 其四.jpg", "title": "港城结构 其四"},
+      {"src": "assets/images/lianyungang/港城结构 其五.jpg", "title": "港城结构 其五"},
+      {"src": "assets/images/lianyungang/港城结构 其六.jpg", "title": "港城结构 其六"},
+      {"src": "assets/images/lianyungang/连云港老街 其一.jpg", "title": "连云港老街 其一"},
+      {"src": "assets/images/lianyungang/连云港老街 其二.jpg", "title": "连云港老街 其二"},
+      {"src": "assets/images/lianyungang/连云港老街 其三.jpg", "title": "连云港老街 其三"},
+      {"src": "assets/images/lianyungang/连岛.jpg", "title": "连岛"},
+      {"src": "assets/images/lianyungang/连岛 其一.jpg", "title": "连岛 其一"},
+      {"src": "assets/images/lianyungang/连岛 其二.jpg", "title": "连岛 其二"},
+      {"src": "assets/images/lianyungang/连岛 其三.jpg", "title": "连岛 其三"},
+      {"src": "assets/images/lianyungang/连岛 其四.jpg", "title": "连岛 其四"},
+      {"src": "assets/images/lianyungang/连岛 其五.jpg", "title": "连岛 其五"},
+      {"src": "assets/images/lianyungang/连岛黄昏.jpg", "title": "连岛黄昏"}
+    ],
+    
+      star: false,
+    
+      tags: ["在海一方", "连岛", "港城", "连云港"],
+    
+      cover: "assets/images/lianyungang/连岛黄昏.jpg"
     },
     {
       city: "四川 成都",

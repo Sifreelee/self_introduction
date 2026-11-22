@@ -419,6 +419,25 @@ function initAlbumSearch() {
   });
 }
 
+// 相册名作为链接标识，调整相册排序后分享链接仍指向原相册。
+function getAlbumShareUrl(gi) {
+  const group = SITE_DATA.photos[gi];
+  if (!group) return "";
+  const url = new URL(window.location.href);
+  url.searchParams.set("album", group.city);
+  url.hash = "photos";
+  return url.href;
+}
+
+function openSharedAlbum() {
+  const name = new URL(window.location.href).searchParams.get("album");
+  if (name === null) return;
+  const gi = SITE_DATA.photos.findIndex(group => group.city === name);
+  if (gi < 0) return;
+  $("#photos").scrollIntoView();
+  openAlbum(gi);
+}
+
 function renderPhotos() {
   const groups = SITE_DATA.photos || [];
   const box = $("#photo-grid");
@@ -465,15 +484,15 @@ function renderPhotos() {
     return `
       <div class="photo-wrap reveal">
         ${starHTML(g)}
-        <figure class="photo-card photo-album" data-gi="${gi}" tabindex="0" role="button" aria-label="查看 ${esc(g.city)} 图集">
+        <a class="photo-card photo-album" href="${esc(getAlbumShareUrl(gi))}" data-gi="${gi}" aria-label="查看 ${esc(g.city)} 图集">
           ${coverHTML}
           ${sealHTML(g)}
           <span class="album-count">${photos.length} 张</span>
-          <figcaption class="photo-meta">
+          <span class="photo-meta">
             <span class="photo-title">${hitHTML(g.city, q)}</span>
             <span class="photo-place">${photos.length ? `共 ${photos.length} 张` : "等待添加照片"}</span>
-          </figcaption>
-        </figure>
+          </span>
+        </a>
       </div>`;
   }).join("");
 
@@ -500,7 +519,11 @@ function renderPhotos() {
     bindImgFallback(img, `assets/images/travel-${(i % 6) + 1}.svg`));
 
   box.querySelectorAll(".photo-album").forEach((el) => {
-    el.addEventListener("click", () => openAlbum(+el.dataset.gi));
+    el.addEventListener("click", (e) => {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button > 0) return;
+      e.preventDefault();
+      openAlbum(+el.dataset.gi);
+    });
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAlbum(+el.dataset.gi); }
     });
@@ -856,6 +879,7 @@ function openAlbum(gi) {
   const group = SITE_DATA.photos[gi];
   if (!group) return;
   browserGroup = group;
+  albumBrowser.dataset.albumUrl = getAlbumShareUrl(gi);
   browserTag = "";              // 每次打开相册都从「全部」开始
 
   // 标题 / 印章
@@ -920,6 +944,9 @@ function showLightboxPhoto() {
   const ph = albumPhotos[albumIndex];
   if (!ph) return;
   const img = $("#lightbox-img");
+  const gi = SITE_DATA.photos.findIndex(group => group.photos === albumPhotos
+    || (group.city === albumCity && (group.photos || []).includes(ph)));
+  lightbox.dataset.albumUrl = getAlbumShareUrl(gi);
   img.src = ph.src;
   img.alt = ph.title;
   // 没写标题时只显示城市名，避免出现「 · 北京」这种空标题
@@ -1367,3 +1394,4 @@ initBusuanzi();
 initReveal();
 addSectionClouds();
 onScroll();
+openSharedAlbum();

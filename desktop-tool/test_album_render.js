@@ -3,9 +3,10 @@ const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
 const source = fs.readFileSync(require('path').join(__dirname, '../js/main.js'), 'utf8');
-const render = source.slice(source.indexOf('function renderPhotos()'), source.indexOf('function renderSocial()'));
+const render = source.slice(source.indexOf('function getAlbumShareUrl('), source.indexOf('function renderSocial()'));
 const box = {innerHTML: '', querySelectorAll: () => []};
 const context = {
+  URL, window: {location: {href: 'https://sifreelee.github.io/self_introduction/'}},
   SITE_DATA: {photos: [
     {city: '新建空相册', photos: []},
     {city: '只有封面', cover: 'assets/images/封面.jpg', photos: []},

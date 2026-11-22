@@ -122,7 +122,7 @@ public class MainActivity extends Activity {
             + "})();";
 
     /**
-     * 页面交互注入脚本：长按图片 → 保存；长按空白 → 缓存管理。
+     * 页面交互注入脚本：长按图片 → 保存/复制相册链接；长按空白 → 缓存管理。
      *
      * 刻意不接管文字区域的长按，WebView 自带的选择 + 复制菜单要保留，
      * 一旦在这里 preventDefault 或 prevent 冒泡，文本就无法选中了。
@@ -130,21 +130,28 @@ public class MainActivity extends Activity {
     private static final String INTERACT_JS =
             "(function(){"
             + "if(window.__lxInteract)return;window.__lxInteract=1;"
-            + "var LP=520,timer=null,sx=0,sy=0,moved=false;"
+            + "var LP=520,timer=null,sx=0,sy=0,moved=false,suppressClick=false;"
             + "function clear(){if(timer){clearTimeout(timer);timer=null;}}"
             + "function abs(u){try{return new URL(u,location.href).href;}catch(e){return u;}}"
             + "function handle(el){"
             + "if(!el||!el.tagName)return;"
             + "var img=el.tagName==='IMG'?el:(el.closest?el.closest('img'):null);"
-            + "if(img){"
-            + "var src=img.currentSrc||img.src;"
-            + "if(src){window.AndroidBridge.onImage(abs(src),img.alt||'',img.title||'');}"
+            + "var card=el.closest?el.closest('.photo-album,.photo-shot'):null;"
+            + "var albumUrl='';"
+            + "if(card&&typeof getAlbumShareUrl==='function'){albumUrl=getAlbumShareUrl(+card.dataset.gi);}"
+            + "else if(el.closest){var panel=el.closest('#album-browser.open,#lightbox.open');"
+            + "if(panel)albumUrl=panel.dataset.albumUrl||'';}"
+            + "if(img||card){"
+            + "var src=img?(img.currentSrc||img.src):'';suppressClick=true;"
+            + "window.AndroidBridge.onAlbumImage(src?abs(src):'',img?img.alt||'':'相册',"
+            + "img?img.title||'':'',albumUrl);"
             + "return;}"
             + "if(el.closest&&el.closest('p,h1,h2,h3,h4,h5,li,blockquote,td,pre,code,"
             + ".album-browser-note-inner,.about-text'))return;"
             + "if(el.closest&&el.closest('a,button,input,textarea,select,.nav-links'))return;"
             + "window.AndroidBridge.onBlank();}"
             + "document.addEventListener('touchstart',function(e){"
+            + "suppressClick=false;"
             + "if(e.touches.length!==1){clear();return;}"
             + "var t=e.touches[0];sx=t.clientX;sy=t.clientY;moved=false;"
             + "var el=e.target;clear();"
@@ -156,6 +163,10 @@ public class MainActivity extends Activity {
             + "},{passive:true});"
             + "document.addEventListener('touchend',clear,{passive:true});"
             + "document.addEventListener('touchcancel',clear,{passive:true});"
+            + "document.addEventListener('click',function(e){if(suppressClick){"
+            + "suppressClick=false;e.preventDefault();e.stopImmediatePropagation();}},true);"
+            + "document.addEventListener('contextmenu',function(e){"
+            + "if(e.target.closest&&e.target.closest('img,.photo-album,.photo-shot'))e.preventDefault();});"
             + "})();";
 
     /**
@@ -1054,21 +1065,36 @@ public class MainActivity extends Activity {
 
     /** 长按图片后的操作菜单 */
     private void onImageLongPress(final String url, String alt, String title) {
+        onImageLongPress(url, alt, title, "");
+    }
+
+    private void onImageLongPress(final String url, String alt, String title,
+                                  final String albumUrl) {
         String label = title != null && !title.isEmpty() ? title
                 : (alt != null && !alt.isEmpty() ? alt : "图片");
         final String fileName = MediaSaver.sanitizeName(label);
 
-        String[] items = {"保存图片到相册", "复制图片链接"};
+        final List<String> items = new ArrayList<>();
+        final boolean hasImage = url != null && !url.isEmpty();
+        if (hasImage) {
+            items.add("保存图片到相册");
+            items.add("复制图片链接");
+        }
+        if (albumUrl != null && !albumUrl.isEmpty()) items.add("复制相册链接");
+        if (items.isEmpty()) return;
         new AlertDialog.Builder(this)
                 .setTitle(label.length() > 24 ? label.substring(0, 24) + "…" : label)
-                .setItems(items, new DialogInterface.OnClickListener() {
+                .setItems(items.toArray(new String[0]), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface d, int which) {
-                        if (which == 0) {
+                        if (hasImage && which == 0) {
                             requestSaveImage(url, fileName);
-                        } else {
+                        } else if (hasImage && which == 1) {
                             copyToClipboard(url);
                             toast("图片链接已复制");
+                        } else {
+                            copyToClipboard(albumUrl);
+                            toast("相册链接已复制");
                         }
                     }
                 })
@@ -1208,6 +1234,17 @@ public class MainActivity extends Activity {
 
     /** JS 桥。所有方法都在 WebView 的 JS 线程被调用，必须切回主线程 */
     private class Bridge {
+
+        @JavascriptInterface
+        public void onAlbumImage(final String url, final String alt, final String title,
+                                 final String albumUrl) {
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    onImageLongPress(url, alt, title, albumUrl);
+                }
+            });
+        }
 
         @JavascriptInterface
         public void onImage(final String url, final String alt, final String title) {
