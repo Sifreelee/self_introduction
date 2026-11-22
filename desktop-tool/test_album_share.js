@@ -4,12 +4,17 @@ const path = require('path');
 const vm = require('vm');
 const root = path.join(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'js/main.js'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const pageIds = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
 const albumName = '中国 武汉 & 江城 #1';
-let opened = -1, scrolled = false;
+let opened = -1, scrolled = false, selectedPhotos = false;
 const context = {
   URL, SITE_DATA: {photos: [{city: albumName}, {city: '北京'}]},
   window: {location: {href: 'https://example.com/site/?from=friend#profile'}},
-  $: () => ({scrollIntoView() { scrolled = true; }}),
+  $: selector => pageIds.has(selector.slice(1))
+    ? {scrollIntoView() { scrolled = true; }} : null,
+  document: {querySelector: selector => selector === '#works-tabs .tab[data-tab="photos"]'
+    ? {classList: {contains: () => false}, click() { selectedPhotos = true; }} : null},
   openAlbum(gi) { opened = gi; }
 };
 vm.createContext(context);
@@ -17,12 +22,17 @@ vm.runInContext(source.slice(source.indexOf('function getAlbumShareUrl('), sourc
 const link = context.getAlbumShareUrl(0);
 assert.equal(new URL(link).searchParams.get('album'), albumName);
 assert.equal(new URL(link).searchParams.get('from'), 'friend');
-assert.equal(new URL(link).hash, '#photos');
+assert(pageIds.has(new URL(link).hash.slice(1)), 'shared link anchor must exist in the actual HTML');
 context.SITE_DATA.photos.reverse();
 context.window.location.href = link;
 context.openSharedAlbum();
 assert.equal(opened, 1, 'reordering albums must preserve shared destination');
 assert(scrolled);
+assert(selectedPhotos, 'shared links activate the photos panel');
+opened = -1;
+context.window.location.href = link.replace(/#[^#]*$/, '#photos');
+context.openSharedAlbum();
+assert.equal(opened, 1, 'previously shared links still open the album');
 opened = -1;
 context.window.location.href = 'https://example.com/site/?album=missing';
 context.openSharedAlbum();

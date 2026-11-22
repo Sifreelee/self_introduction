@@ -1350,8 +1350,26 @@ const SITE_DATA = {
       desc: "",
       seal: "哈",
       photos: [
-        { src: "assets/images/travel-22.jpg", title: "中央大街" }
-      ]
+        { src: "assets/images/travel-22.jpg", title: "中央大街" },
+      
+      {"src": "assets/images/haerbin/中央大街 其一.jpg", "title": "中央大街 其一"},
+      {"src": "assets/images/haerbin/中央大街 其二.jpg", "title": "中央大街 其二"},
+      {"src": "assets/images/haerbin/中央大街 其三.jpg", "title": "中央大街 其三"},
+      {"src": "assets/images/haerbin/中央大街 其四.jpg", "title": "中央大街 其四"},
+      {"src": "assets/images/haerbin/中央大街 其五.jpg", "title": "中央大街 其五"},
+      {"src": "assets/images/haerbin/哈尔滨站 其一.jpg", "title": "哈尔滨站 其一"},
+      {"src": "assets/images/haerbin/哈尔滨站 其二.jpg", "title": "哈尔滨站 其二"},
+      {"src": "assets/images/haerbin/哈尔滨站 其三.jpg", "title": "哈尔滨站 其三"},
+      {"src": "assets/images/haerbin/索菲亚大教堂 其一.jpg", "title": "索菲亚大教堂 其一"},
+      {"src": "assets/images/haerbin/索菲亚大教堂 其二.jpg", "title": "索菲亚大教堂 其二"},
+      {"src": "assets/images/haerbin/索菲亚大教堂 其三.jpg", "title": "索菲亚大教堂 其三"}
+    ],
+    
+      star: false,
+    
+      tags: ["哈尔滨站", "索菲亚大教堂", "中央大街"],
+    
+      cover: "assets/images/haerbin/索菲亚大教堂 其一.jpg"
     },
        {
       city: "名胜古迹 三山五岳",

@@ -425,7 +425,7 @@ function getAlbumShareUrl(gi) {
   if (!group) return "";
   const url = new URL(window.location.href);
   url.searchParams.set("album", group.city);
-  url.hash = "photos";
+  url.hash = "works";
   return url.href;
 }
 
@@ -434,7 +434,10 @@ function openSharedAlbum() {
   if (name === null) return;
   const gi = SITE_DATA.photos.findIndex(group => group.city === name);
   if (gi < 0) return;
-  $("#photos").scrollIntoView();
+  const tab = document.querySelector('#works-tabs .tab[data-tab="photos"]');
+  if (tab && !tab.classList.contains("active")) tab.click();
+  const section = $("#works");
+  if (section) section.scrollIntoView();
   openAlbum(gi);
 }
 
