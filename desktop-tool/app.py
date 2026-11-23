@@ -22,10 +22,13 @@ STATE = BASE / '_data'
 
 
 class PhotoCheckList(ttk.Treeview):
-    """单击或空格即可勾选，兼容当前列表读取接口。"""
+    """只有独立的方框列可勾选；名称列仅切换焦点和预览。"""
     def __init__(self, parent, width=25, **kwargs):
-        super().__init__(parent, show='tree', selectmode='browse')
-        self.column('#0', width=width * 7, minwidth=100, stretch=True)
+        super().__init__(parent, columns=('check', 'name'), show='headings', selectmode='browse')
+        self.heading('check', text='选')
+        self.heading('name', text='名称')
+        self.column('check', width=34, minwidth=34, stretch=False, anchor='center')
+        self.column('name', width=width * 7, minwidth=100, stretch=True)
         self.values = []
         self.checked = set()
         self.bind('<Button-1>', self.toggle_row)
@@ -36,6 +39,10 @@ class PhotoCheckList(ttk.Treeview):
         if row:
             index = int(row)
             self.focus(row)
+            ttk.Treeview.selection_set(self, row)
+            if event.keysym != 'space' and self.identify_column(event.x) != '#1':
+                self.event_generate('<<RowPreview>>')
+                return 'break'
             if index in self.checked:
                 self.checked.remove(index)
             else:
@@ -51,7 +58,13 @@ class PhotoCheckList(ttk.Treeview):
     def insert(self, position, value):
         index = len(self.values)
         self.values.append(value)
-        super().insert('', 'end', iid=str(index), text='☐ ' + value)
+        super().insert('', 'end', iid=str(index), text='☐ ' + value, values=('☐', value))
+
+    def item(self, item, option=None, **kwargs):
+        if 'text' in kwargs:
+            text = kwargs['text']
+            kwargs['values'] = (text[:1], text[2:])
+        return super().item(item, option, **kwargs)
 
     def curselection(self):
         return tuple(sorted(self.checked))
@@ -68,7 +81,7 @@ class PhotoCheckList(ttk.Treeview):
 class App(tk.Tk):
     def __init__(self, maintenance=True):
         super().__init__()
-        self.title('山水清音 · 桌面管家 · 精选与地图编辑版')
+        self.title('山水清音 · 桌面管家 · 选图计数版')
         self.geometry('1180x860')
         self.minsize(1040, 780)
         self.configure(bg=core.PALETTE['paper'])
@@ -224,7 +237,7 @@ class App(tk.Tk):
         self.map_match = tk.BooleanVar()
         self.map_expected = None
         ttk.Label(page, text='点亮中国 · 地图照片', style='Title.TLabel').pack(anchor='w', pady=(0, 12))
-        ttk.Label(page, text='地图按省份展示，照片上的城市说明从这里读取。给每个城市选择对应相册；每座城市随机展示一张。\n照片区固定在地图与地点列表之间。选择跨城市相册时，可勾选仅使用标题含该城市名的照片。', style='Hint.TLabel', wraplength=900).pack(anchor='w', pady=(0, 14))
+        ttk.Label(page, text='单击方框勾选相册和照片。普通城市最多选 9 张候选图，每次随机展示 1 张；直辖市的 9 个位置可单独选图。\n照片区固定在地图与地点列表之间。跨城市相册可勾选仅使用标题含城市名的照片。', style='Hint.TLabel', wraplength=900).pack(anchor='w', pady=(0, 14))
         row = ttk.Frame(page)
         row.pack(fill='x', pady=5)
         ttk.Label(row, text='编辑城市', width=15).pack(side='left')
@@ -241,7 +254,14 @@ class App(tk.Tk):
         area.columnconfigure(2, weight=1)
         area.rowconfigure(1, weight=1)
         for col, text in enumerate(('相册', '指定照片（多选可随机；不选为全部）', '照片预览')):
-            ttk.Label(area, text=text).grid(row=0, column=col, sticky='w', padx=5)
+            if col != 1:
+                ttk.Label(area, text=text).grid(row=0, column=col, sticky='w', padx=5)
+        self.map_selected_count = tk.StringVar(value='已选 0 张 / 9 张')
+        count_header = ttk.Frame(area)
+        count_header.grid(row=0, column=1, sticky='ew', padx=(0, 8), pady=(0, 7))
+        ttk.Label(count_header, text='照片列表').pack(side='left')
+        self.map_count_label = ttk.Label(count_header, textvariable=self.map_selected_count, foreground=self.palette['cinnabar'], font=('Microsoft YaHei UI', 12, 'bold'))
+        self.map_count_label.pack(side='right')
         album_area = ttk.Frame(area)
         album_area.grid(row=1, column=0, sticky='nsew', padx=(0, 8))
         self.map_albums = PhotoCheckList(album_area, width=20)
@@ -252,17 +272,24 @@ class App(tk.Tk):
         self.map_albums.bind('<<ListboxSelect>>', lambda e: self.load_map_photos())
         photo_area = ttk.Frame(area)
         photo_area.grid(row=1, column=1, sticky='nsew', padx=(0, 8))
+        self.map_confirm_text = tk.StringVar(value='确认选取（已选 0 张）')
+        self.map_confirm_selection = ttk.Button(photo_area, textvariable=self.map_confirm_text, style='Accent.TButton', command=self.save_map_city)
+        self.map_confirm_selection.pack(side='bottom', fill='x', pady=(8, 0))
         self.map_photos = PhotoCheckList(photo_area, width=30)
         photo_scroll = ttk.Scrollbar(photo_area, command=self.map_photos.yview)
         photo_scroll.pack(side='right', fill='y')
         self.map_photos.pack(fill='both', expand=True)
         self.map_photos.configure(yscrollcommand=photo_scroll.set)
         self.map_photos.bind('<<ListboxSelect>>', lambda e: self.map_photo_checked())
+        self.map_photos.bind('<<RowPreview>>', lambda e: self.preview_map_photo())
         self.map_photo_preview = ttk.Label(area, text='选择照片后预览', anchor='center', width=22)
         self.map_photo_preview.grid(row=1, column=2, sticky='nsew')
         self.map_photo_options = []
         self.map_selected_photos = []
         self.map_slots = [''] * 9
+        self.map_saved_selection = None
+        self.map_selection_status = tk.StringVar(value='已选 0 / 9 张')
+        ttk.Label(page, textvariable=self.map_selection_status, style='Hint.TLabel').pack(anchor='w', pady=3)
         self.map_slots_button = ttk.Button(page, text='设置直辖市的 9 个展示位置…', command=self.edit_map_slots, state='disabled')
         self.map_slots_button.pack(anchor='w', pady=3)
         ttk.Checkbutton(page, text='只使用照片标题中包含该城市名的照片', variable=self.map_match, command=self.load_map_photos).pack(anchor='w')
@@ -271,7 +298,7 @@ class App(tk.Tk):
         ttk.Button(row, text='重新读取', command=self.load_map_city).pack(side='left')
         ttk.Button(row, text='预览本地网站', command=self.preview).pack(side='left', padx=8)
         ttk.Button(row, text='删除所选地点', command=self.delete_map_city).pack(side='left', padx=8)
-        ttk.Button(row, text='保存地图照片配置', style='Accent.TButton', command=self.save_map_city).pack(side='right')
+        ttk.Button(row, text='保存选取结果', style='Accent.TButton', command=self.save_map_city).pack(side='right')
 
     def delete_map_city(self):
         try:
@@ -296,6 +323,8 @@ class App(tk.Tk):
                 self.map_photo_options = []
                 self.map_photo_preview.configure(image='', text='请先选择城市')
                 self.map_hint.set('删除地点仅移除地图足迹，相册和照片保留。')
+                self.map_saved_selection = None
+                self.update_map_selection_status()
                 return
             root = self.root_path()
             data = featured.read_map_city(root, self.map_city.get())
@@ -311,6 +340,8 @@ class App(tk.Tk):
             self.map_slots_button.configure(state='normal' if self.map_city.get() in ('北京', '天津', '上海', '重庆') else 'disabled')
             self.map_photo_options = []
             self.load_map_photos()
+            self.map_saved_selection = self.map_selection_signature()
+            self.update_map_selection_status()
             place = next((p for p in featured.map_places(root) if p['city'] == self.map_city.get()), {})
             self.map_hint.set('所属省份：' + (place.get('province') or '待补录') + ' · 保存后预览，再上传 GitHub。')
         except Exception as e:
@@ -330,6 +361,22 @@ class App(tk.Tk):
                 if src not in self.map_slots and '' in self.map_slots:
                     self.map_slots[self.map_slots.index('')] = src
         self.preview_map_photo()
+        self.update_map_selection_status()
+
+    def map_selection_signature(self):
+        return (self.map_city.get(), tuple(self.map_albums.get(i) for i in self.map_albums.curselection()),
+                tuple(self.map_photo_options[i]['src'] for i in self.map_photos.curselection()),
+                tuple(self.map_slots), self.map_match.get())
+
+    def update_map_selection_status(self):
+        count = len(self.map_photos.curselection())
+        self.map_selected_count.set('已选 %d 张 / 9 张' % count)
+        self.map_confirm_text.set('确认选取（已选 %d 张）' % count)
+        state = '已保存' if self.map_expected is not None and self.map_selection_signature() == self.map_saved_selection else '未保存'
+        text = '已选 %d / 9 张 · %s' % (count, state)
+        if self.map_city.get() in ('北京', '天津', '上海', '重庆'):
+            text += ' · 已指定 %d / 9 个位置' % sum(bool(src) for src in self.map_slots)
+        self.map_selection_status.set(text)
 
     def edit_map_slots(self):
         window = tk.Toplevel(self)
@@ -389,7 +436,8 @@ class App(tk.Tk):
                 self.map_photos.item(str(i), text='☐ ' + self.map_photos.values[i])
                 if item['src'] in chosen:
                     self.map_photos.selection_set(i)
-            self.map_hint.set('9 个位置已设置，点击“保存地图照片配置”后生效。')
+            self.map_hint.set('9 个位置已设置，点击“保存选取结果”后生效。')
+            self.update_map_selection_status()
             window.destroy()
         ttk.Button(window, text='应用位置选择', command=apply, style='Accent.TButton').pack(pady=12)
 
@@ -398,22 +446,25 @@ class App(tk.Tk):
             albums = [self.map_albums.get(i) for i in self.map_albums.curselection()]
             selected = [self.map_photo_options[i]['src'] for i in self.map_photos.curselection()] if self.map_photo_options else self.map_selected_photos
             self.map_photo_options = featured.map_photo_options(self.root_path(), albums, self.map_city.get(), 'title' if self.map_match.get() else 'auto')
+            available = {item['src'] for item in self.map_photo_options}
+            self.map_slots = [src if src in available else '' for src in self.map_slots]
             self.map_photos.delete(0, 'end')
             for i, item in enumerate(self.map_photo_options):
                 self.map_photos.insert('end', item['title'] + ' · ' + item['album'])
                 if item['src'] in selected:
                     self.map_photos.selection_set(i)
             self.preview_map_photo()
+            self.update_map_selection_status()
         except Exception as e:
             self.error(e)
 
     def preview_map_photo(self):
         try:
             chosen = self.map_photos.curselection()
-            if not chosen:
+            focused = self.map_photos.focus()
+            if not chosen and not focused:
                 self.map_photo_preview.configure(image='', text='未指定照片：从相册随机展示')
                 return
-            focused = self.map_photos.focus()
             index = int(focused) if focused and int(focused) < len(self.map_photo_options) else chosen[-1]
             item = self.map_photo_options[index]
             root = self.root_path()
@@ -442,8 +493,9 @@ class App(tk.Tk):
                 self.load_map_city()
                 self.load_featured()
                 self.status.set('已保存地图城市照片：' + name)
-            slots = self.map_slots if city in ('北京', '天津', '上海', '重庆') else None
-            self.run('保存地图照片配置', lambda: featured.save_map_city(root, STATE, city, albums, match, self.map_expected, photos, slots), done)
+            slots = list(self.map_slots) if city in ('北京', '天津', '上海', '重庆') else None
+            expected = dict(self.map_expected)
+            self.run('保存选取结果', lambda: featured.save_map_city(root, STATE, city, albums, match, expected, photos, slots), done)
         except Exception as e:
             self.error(e)
 

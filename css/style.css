@@ -293,11 +293,15 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 .glance-open { display: inline-block; margin: 8px 4px 0; border-bottom: 1px solid var(--cinnabar); padding-bottom: 4px; color: var(--cinnabar); font-size: 14px; letter-spacing: .12em; }
 .glance-footnote { display: block; text-align: right; margin-top: 28px; font-size: 14px; letter-spacing: .2em; color: var(--ink-3); }
 .province-fill.lit { cursor: pointer; pointer-events: auto; }
+.city-map-svg { touch-action: manipulation; }
 #city-map-body .city-map-svg,
 #city-map-body .city-map-svg .province-fill,
 #city-map-body .city-map-svg .province-fill:focus { outline: none; -webkit-tap-highlight-color: transparent; }
 .province-preview { margin: 10px 0 22px; padding: 18px; background: #faf7ed; border: 1px solid var(--line); }
 .province-preview { overflow-anchor: none; }
+.province-preview.is-locked { border-color: var(--cinnabar); }
+.province-lock-note { height: 42px; overflow: hidden; margin: 0 0 12px; color: var(--ink-3); font-size: 14px; line-height: 1.5; }
+.province-preview.is-locked .province-lock-note { color: var(--cinnabar); }
 .province-preview-title { display: flex; align-items: baseline; gap: 16px; margin-bottom: 14px; height: 52px; overflow: hidden; }
 .province-preview-title strong { font: 26px var(--font-kai); color: var(--cinnabar); flex-shrink: 0; }
 .province-preview-title > span { font-size: 14px; color: var(--ink-3); }

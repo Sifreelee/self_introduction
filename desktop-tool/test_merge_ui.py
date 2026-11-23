@@ -98,7 +98,7 @@ with tempfile.TemporaryDirectory(dir=str(work)) as temp:
             assert ui.map_photo_options
             ui.map_photos.selection_set(0)
             ui.preview_map_photo()
-            ui.save_map_city()
+            ui.map_confirm_selection.invoke()
             wait(ui)
             assert not errors, errors
             assert app.featured.read_map_city(root, '母')['photos'] == ['assets/images/母/照片.jpg']
@@ -112,6 +112,25 @@ with tempfile.TemporaryDirectory(dir=str(work)) as temp:
             ui.map_albums.selection_set(0)
             ui.load_map_photos()
             from types import SimpleNamespace
+            ui.update()
+            bbox = ui.map_photos.bbox('0')
+            assert bbox
+            row_y = bbox[1] + bbox[3] // 2
+            ui.map_photos.toggle_row(SimpleNamespace(keysym='??', x=90, y=row_y))
+            assert ui.map_photos.curselection() == ()
+            assert '已选 0 / 9 张' in ui.map_selection_status.get()
+            ui.map_photos.toggle_row(SimpleNamespace(keysym='??', x=15, y=row_y))
+            assert ui.map_photos.curselection() == (0,)
+            assert '已选 1 / 9 张' in ui.map_selection_status.get()
+            assert ui.map_selected_count.get() == '已选 1 张 / 9 张'
+            assert ui.map_confirm_text.get() == '确认选取（已选 1 张）'
+            assert ui.map_count_label.winfo_ismapped()
+            assert ui.map_count_label.winfo_rooty() < ui.map_photos.winfo_rooty()
+            assert '未保存' in ui.map_selection_status.get()
+            ui.map_photos.toggle_row(SimpleNamespace(keysym='??', x=90, y=row_y))
+            assert ui.map_photos.curselection() == (0,)
+            ui.map_photos.toggle_row(SimpleNamespace(keysym='??', x=15, y=row_y))
+            assert ui.map_photos.curselection() == ()
             ui.map_photos.focus('0')
             ui.map_photos.toggle_row(SimpleNamespace(keysym='space', y=0))
             assert ui.map_photos.curselection() == (0,)
@@ -135,6 +154,18 @@ with tempfile.TemporaryDirectory(dir=str(work)) as temp:
             wait(ui)
             assert not errors, errors
             assert app.featured.read_map_city(root, '北京')['slots'][8] == 'assets/images/母/照片.jpg'
+            assert '已选 1 / 9 张' in ui.map_selection_status.get()
+            assert '已保存' in ui.map_selection_status.get()
+            ui.load_map_city()
+            assert ui.map_photos.curselection() == (0,)
+            reopened = app.App(maintenance=False)
+            try:
+                assert reopened.map_city.get() == '北京'
+                assert reopened.map_photos.curselection() == (0,)
+                assert '已选 1 / 9 张' in reopened.map_selection_status.get()
+                assert '已保存' in reopened.map_selection_status.get()
+            finally:
+                reopened.destroy()
         finally:
             ui.destroy()
 print('Merge UI: separate module, selection, preview, invalidation, overwrite, mother metadata and refreshed album lists passed.')

@@ -311,6 +311,29 @@ public class MainActivity extends Activity {
             "(function(){var b=document.getElementById('lx-settings-btn');"
             + "if(b)b.classList.remove('lx-active');})();";
 
+    /** 返回优先关闭页面内的浏览层，相册弹层不会创建 WebView 历史记录。 */
+    private static final String BACK_NAV_JS =
+            "(function(){"
+            + "var dialogs=document.querySelectorAll('dialog[open]');"
+            + "if(dialogs.length){dialogs[dialogs.length-1].close();return true;}"
+            + "function opened(id){var el=document.getElementById(id);return el&&el.classList.contains('open');}"
+            + "if(opened('lightbox')&&typeof closeLightbox==='function'){closeLightbox();"
+            + "if(!opened('album-browser')&&typeof SITE_DATA!=='undefined'&&typeof albumCity!=='undefined'){"
+            + "var gi=(SITE_DATA.photos||[]).findIndex(function(g){return g.city===albumCity;});"
+            + "if(gi>=0&&typeof openAlbum==='function')openAlbum(gi);}return true;}"
+            + "if(opened('album-browser')&&typeof closeAlbumBrowser==='function'){closeAlbumBrowser();"
+            + "var tab=document.querySelector('#works-tabs [data-tab=\"photos\"]');if(tab)tab.click();"
+            + "var works=document.getElementById('works');if(works)works.scrollIntoView({block:'start'});"
+            + "try{var u=new URL(location.href);u.searchParams.delete('album');u.hash='works';history.replaceState(null,'',u.href);}catch(e){}"
+            + "return true;}"
+            + "if(opened('city-map-modal')&&typeof closeCityMap==='function'){closeCityMap();return true;}"
+            + "if(opened('article-modal')&&typeof closeModal==='function'){closeModal();return true;}"
+            + "var nav=document.getElementById('nav-links');"
+            + "if(nav&&nav.classList.contains('show')){nav.classList.remove('show');"
+            + "var toggle=document.getElementById('nav-toggle');if(toggle)toggle.classList.remove('open');return true;}"
+            + "return false;})();";
+
+    private boolean backNavigationPending;
     private WebSwipeRefreshLayout refreshLayout;
     private FrameLayout root;
     private ProgressBar progressBar;
@@ -1334,20 +1357,37 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && webView != null) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (event.getRepeatCount() == 0) onBackPressed();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (webView == null) {
+            super.onBackPressed();
+            return;
+        }
+        if (backNavigationPending) return;
+        backNavigationPending = true;
+        webView.evaluateJavascript(BACK_NAV_JS, handled -> {
+            backNavigationPending = false;
+            if (isFinishing() || isDestroyed() || webView == null || "true".equals(handled)) return;
             String url = webView.getUrl();
             boolean onOffline = url != null && url.startsWith("file:///android_asset/");
             if (!onOffline && webView.canGoBack()) {
                 webView.goBack();
-                return true;
+                return;
             }
             if (onOffline) {
                 // 离线页返回时重新尝试线上地址
                 webView.loadUrl(HOME_URL);
-                return true;
+                return;
             }
-        }
-        return super.onKeyDown(keyCode, event);
+            MainActivity.super.onBackPressed();
+        });
     }
 
     @Override

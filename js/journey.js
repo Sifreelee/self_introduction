@@ -46,7 +46,7 @@
     const preview = document.createElement('section');
     preview.className = 'province-preview';
     preview.setAttribute('aria-label', '省份照片预览');
-    preview.innerHTML = '<div class="province-preview-title">把鼠标移到点亮的省份，看看沿途风景</div><div class="province-samples"></div>';
+    preview.innerHTML = '<div class="province-preview-title">悬停点亮的省份，看看沿途风景</div><p class="province-lock-note" aria-live="polite"></p><div class="province-samples"></div>';
     body.querySelector('.city-map-stage').after(preview);
     const chooser = document.createElement('div');
     chooser.className = 'city-album-chooser';
@@ -57,7 +57,20 @@
     parsed.forEach(city => { counts[city.prov] = (counts[city.prov] || 0) + 1; });
     const slots = Math.max(9, ...Object.values(counts));
     preview.style.setProperty('--sample-rows', Math.ceil(slots / 3));
-    let currentPid = '';
+    let currentPid = '', lockedPid = '';
+    function updateLockState() {
+      cityMapLockedPid = lockedPid;
+      preview.classList.toggle('is-locked', !!lockedPid);
+      preview.querySelector('.province-lock-note').textContent = lockedPid
+        ? '已锁定当前省份 · 再次单击该省解锁，也可单击其他省份切换'
+        : '悬停预览 · 单击省份锁定当前照片';
+      body.querySelectorAll('.province-fill.lit').forEach(path => path.setAttribute('aria-pressed', String(path.dataset.pid === lockedPid)));
+    }
+    function toggleProvince(pid) {
+      lockedPid = lockedPid === pid ? '' : pid;
+      sample(pid, false);
+      updateLockState();
+    }
     function sample(pid, force) {
       if (pid === currentPid && !force) return;
       const cities = parsed.filter(city => PROVINCE_ID[city.prov] === pid);
@@ -107,6 +120,7 @@
       focusProvince(pid, null);
     }
     function visitCity(chip) {
+      if (lockedPid) { cityMapLockedPid = lockedPid; focusProvince(lockedPid, null); }
       const city = chip.childNodes[0].textContent.trim();
       const albums = cityAlbums(city);
       chooser.hidden = false;
@@ -118,26 +132,28 @@
       chooser.scrollIntoView({behavior: 'smooth', block: 'nearest'});
     }
     const tip = body.querySelector('.city-map-tip');
-    if (tip) tip.textContent = '悬停省份随机看照片 · 点击城市查看相关相册，自行选择进入（手机可点省份预览）';
+    if (tip) tip.textContent = '悬停省份预览 · 单击锁定，再次单击解锁 · 点击城市选择相关相册';
     body.querySelectorAll('.province-fill.lit').forEach(path => {
       path.setAttribute('role', 'button'); path.setAttribute('tabindex', '0');
       const name = Object.keys(PROVINCE_ID).find(key => PROVINCE_ID[key] === path.dataset.pid);
-      path.setAttribute('aria-label', '预览' + name + '的照片');
-      path.addEventListener('mouseenter', () => sample(path.dataset.pid, true));
-      path.addEventListener('focus', () => sample(path.dataset.pid));
-      path.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sample(path.dataset.pid, true); } });
+      path.setAttribute('aria-label', name + '：悬停预览，单击或按 Enter 锁定与解锁');
+      path.addEventListener('mouseenter', () => { if (!lockedPid) sample(path.dataset.pid, true); });
+      path.addEventListener('focus', () => { if (!lockedPid) sample(path.dataset.pid, false); });
+      path.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProvince(path.dataset.pid); } });
     });
     body.onclick = e => {
       const province = e.target.closest('.province-fill.lit');
-      if (province) sample(province.dataset.pid, true);
+      if (province) toggleProvince(province.dataset.pid);
       const chip = e.target.closest('.city-chip[data-pid]');
       if (chip) visitCity(chip);
     };
+    body.ondblclick = null;
     body.querySelectorAll('.city-chip[data-pid]').forEach(chip => chip.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') visitCity(chip);
     }));
     const first = parsed.find(city => PROVINCE_ID[city.prov]);
     if (first) sample(PROVINCE_ID[first.prov]);
+    updateLockState();
   };
   renderRecent();
   renderMapEntry();
