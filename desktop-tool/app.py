@@ -14,6 +14,7 @@ import webbrowser
 
 from PIL import Image, ImageTk, ImageOps
 import core
+import album_merge
 
 BASE = Path(sys.executable).parent if getattr(sys, 'frozen', False) else Path(__file__).resolve().parent
 STATE = BASE / '_data'
@@ -117,7 +118,7 @@ class App(tk.Tk):
         self.tabs = ttk.Notebook(self)
         self.tabs.pack(fill='both', expand=True, padx=28, pady=4)
         pages = []
-        for name in ('壹  添加照片', '贰  相册与代码', '叁  批量改名', '肆  压缩打包', '伍  GitHub', '陆  我的设计'):
+        for name in ('壹  添加照片', '贰  相册与代码', '叁  批量改名', '肆  压缩打包', '伍  GitHub', '陆  我的设计', '柒  相册合并'):
             page = ttk.Frame(self.tabs, padding=18)
             self.tabs.add(page, text=name)
             pages.append(page)
@@ -127,6 +128,7 @@ class App(tk.Tk):
         self.compress_page(pages[3])
         self.github_page(pages[4])
         self.design_page(pages[5])
+        self.merge_page(pages[6])
         bottom = ttk.Frame(self, padding=(28, 7, 28, 14))
         bottom.pack(fill='x')
         row = ttk.Frame(bottom)
@@ -169,6 +171,118 @@ class App(tk.Tk):
         ttk.Checkbutton(row, text='导入时压缩图片', variable=self.do_compress).pack(side='left')
         ttk.Checkbutton(row, text='PNG 保留透明和格式', variable=self.keep_png).pack(side='left', padx=15)
         ttk.Checkbutton(row, text='同名文件自动覆盖', variable=self.overwrite).pack(side='left')
+
+    def merge_page(self, page):
+        self.merge_plan = None
+        self.merge_mother = tk.StringVar()
+        self.merge_folder = tk.StringVar()
+        row, _ = self.field(page, '母相册', self.merge_mother)
+        # 只允许从现有相册选择；照片目标文件夹可与相册名不同。
+        for widget in row.winfo_children():
+            if isinstance(widget, ttk.Entry):
+                widget.destroy()
+        self.merge_mother_combo = ttk.Combobox(row, textvariable=self.merge_mother, state='readonly')
+        self.merge_mother_combo.pack(side='left', fill='x', expand=True)
+        self.merge_mother_combo.bind('<<ComboboxSelected>>', self.merge_mother_selected)
+        row, _ = self.field(page, '母文件夹', self.merge_folder)
+        ttk.Button(row, text='选择文件夹…', command=self.pick_merge_folder).pack(side='left', padx=7)
+        ttk.Label(page, text='保留母相册名称、简介、星标、印章简写和封面；关键词合并去重。\n仅移动相册里已登记的照片。同名照片用并入相册覆盖；多本冲突时，列表中靠后的相册优先。', style='Hint.TLabel', wraplength=940).pack(anchor='w', pady=7)
+        body = ttk.Frame(page)
+        body.pack(fill='both', expand=True)
+        body.columnconfigure(0, weight=1)
+        body.columnconfigure(1, weight=2)
+        body.rowconfigure(1, weight=1)
+        ttk.Label(body, text='选择要并入的相册（可多选）').grid(row=0, column=0, sticky='w', pady=4)
+        ttk.Label(body, text='合并预览').grid(row=0, column=1, sticky='w', padx=(14, 0), pady=4)
+        choices = ttk.Frame(body)
+        choices.grid(row=1, column=0, sticky='nsew')
+        self.merge_sources = tk.Listbox(choices, selectmode='extended', exportselection=False, bg=self.palette['card'], relief='flat', font=('Microsoft YaHei UI', 10))
+        scrollbar = ttk.Scrollbar(choices, orient='vertical', command=self.merge_sources.yview)
+        scrollbar.pack(side='right', fill='y')
+        self.merge_sources.pack(fill='both', expand=True)
+        self.merge_sources.configure(yscrollcommand=scrollbar.set)
+        self.merge_sources.bind('<<ListboxSelect>>', lambda e: self.invalidate_merge())
+        self.merge_preview = tk.Text(body, width=40, height=7, wrap='word', state='disabled', relief='flat', bg=self.palette['card'], padx=12, pady=10, font=('Microsoft YaHei UI', 10))
+        self.merge_preview.grid(row=1, column=1, sticky='nsew', padx=(14, 0))
+        row = ttk.Frame(page)
+        row.pack(fill='x', pady=(12, 0))
+        ttk.Button(row, text='生成合并预览', command=self.preview_merge).pack(side='left')
+        ttk.Button(row, text='预览本地网站', command=self.preview).pack(side='left', padx=8)
+        self.merge_apply = ttk.Button(row, text='确认合并相册', style='Accent.TButton', state='disabled', command=self.apply_album_merge)
+        self.merge_apply.pack(side='right')
+        self.merge_mother.trace_add('write', lambda *_: self.invalidate_merge())
+        self.merge_folder.trace_add('write', lambda *_: self.invalidate_merge())
+
+    def invalidate_merge(self):
+        self.merge_plan = None
+        self.merge_apply.configure(state='disabled')
+        self.merge_preview.configure(state='normal')
+        self.merge_preview.delete('1.0', 'end')
+        self.merge_preview.insert('1.0', '选择母相册、母文件夹和要并入的相册，然后生成预览。确认后才会修改文件；合并后被并入的相册条目会移除。')
+        self.merge_preview.configure(state='disabled')
+
+    def merge_mother_selected(self, _=None):
+        try:
+            album = next(a for a in self.albums if a['name'] == self.merge_mother.get())
+            folders = [str(Path(ref).parent).replace('\\', '/') for ref in album['refs'] if ref.startswith('assets/')]
+            self.merge_folder.set(folders[0] if folders else '')
+            self.merge_sources.selection_clear(0, 'end')
+            self.invalidate_merge()
+        except Exception as e:
+            self.error(e)
+
+    def pick_merge_folder(self):
+        try:
+            root = self.root_path()
+            folder = filedialog.askdirectory(title='选择母相册照片文件夹', initialdir=str(root / (self.merge_folder.get() or 'assets/images')))
+            if folder:
+                path = Path(folder).resolve()
+                if not core.within(path, root / 'assets'):
+                    raise ValueError('请选择当前网站 assets 内的文件夹。')
+                self.merge_folder.set(path.relative_to(root).as_posix())
+        except Exception as e:
+            self.error(e)
+
+    def preview_merge(self):
+        try:
+            root = self.root_path()
+            mother, folder = self.merge_mother.get(), self.merge_folder.get()
+            sources = [self.merge_sources.get(i) for i in self.merge_sources.curselection()]
+            self.invalidate_merge()
+            def done(plan):
+                current = [self.merge_sources.get(i) for i in self.merge_sources.curselection()]
+                if (self.merge_mother.get(), self.merge_folder.get(), current) != (mother, folder, sources):
+                    return
+                self.merge_plan = plan
+                lines = ['母相册：' + mother, '母文件夹：' + plan['folder'], '并入相册：' + '、'.join(sources),
+                         '合并后照片：%d 张' % plan['photos'], '简介 / 星标 / 印章简写 / 封面：沿用母相册',
+                         '合并关键词：' + '，'.join(plan['tags']), '同名覆盖：%d 个' % len(plan['overwrites'])]
+                lines.extend(plan['overwrites'])
+                lines.append('确认后移动已登记照片并移除并入相册；不提供撤销，请先核对。')
+                self.merge_preview.configure(state='normal')
+                self.merge_preview.delete('1.0', 'end')
+                self.merge_preview.insert('1.0', '\n\n'.join(lines))
+                self.merge_preview.configure(state='disabled')
+                self.merge_apply.configure(state='normal')
+            self.run('生成相册合并预览', lambda: album_merge.plan_merge(root, mother, sources, folder, self.worker_progress), done)
+        except Exception as e:
+            self.error(e)
+
+    def apply_album_merge(self):
+        try:
+            root = self.root_path()
+            if not self.merge_plan:
+                raise ValueError('请先生成合并预览。')
+            plan = self.merge_plan
+            def done(name):
+                self.refresh_site()
+                self.edit_choice.set(name)
+                self.album.set(name)
+                self.load_editor()
+                self.status.set('已合并到“%s”，可预览网站后上传 GitHub。' % name)
+            self.run('合并相册', lambda: album_merge.apply_merge(root, STATE, plan, self.worker_progress), done)
+        except Exception as e:
+            self.error(e)
 
     def import_page(self, page):
         ttk.Label(page, text='选照片 → 选网站里的存放文件夹 → 选展示相册 → 点击添加。程序会复制照片并自动改好网站代码，原图保留。', style='Hint.TLabel', wraplength=950).pack(anchor='w')
@@ -1059,6 +1173,14 @@ class App(tk.Tk):
                 self.jobs_tree.delete(*self.jobs_tree.get_children())
             self.album_combo['values'] = [''] + [a['name'] for a in albums]
             self.edit_combo['values'] = [a['name'] for a in albums]
+            self.merge_mother_combo['values'] = [a['name'] for a in albums]
+            self.merge_sources.delete(0, 'end')
+            for item in albums:
+                self.merge_sources.insert('end', item['name'])
+            if self.merge_mother.get() not in self.merge_mother_combo['values']:
+                self.merge_mother.set('')
+                self.merge_folder.set('')
+            self.invalidate_merge()
             if not preserve_jobs:
                 self.new_album()
             self.target_combo['values'] = dirs

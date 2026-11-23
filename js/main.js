@@ -1017,6 +1017,7 @@ $("#modal-close").addEventListener("click", closeModal);
 modal.querySelector(".modal-backdrop").addEventListener("click", closeModal);
 
 document.addEventListener("keydown", (e) => {
+  if (document.querySelector('dialog[open]')) return;
   if (e.key === "Escape") {
     if (lightbox.classList.contains("open")) { closeLightbox(); return; }
     if (albumBrowser.classList.contains("open")) { closeAlbumBrowser(); return; }

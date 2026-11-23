@@ -281,7 +281,9 @@ public class MainActivity extends Activity {
             + "try{window.AndroidBridge.onSettings();}catch(err){}"
             + "});"
             + "var toggle=document.getElementById('nav-toggle');"
-            + "if(toggle&&toggle.parentNode===inner){inner.insertBefore(b,toggle);}"
+            + "var utilities=document.getElementById('nav-utilities');"
+            + "if(utilities){utilities.appendChild(b);}"
+            + "else if(toggle&&toggle.parentNode===inner){inner.insertBefore(b,toggle);}"
             + "else{inner.appendChild(b);}"
             + "}"
             // 立即试一次；导航栏还没渲染出来就每 100ms 再试，最多 12 秒。
@@ -1070,6 +1072,12 @@ public class MainActivity extends Activity {
 
     private void onImageLongPress(final String url, String alt, String title,
                                   final String albumUrl) {
+        webView.evaluateJavascript("Boolean(window.photoAdmin&&window.photoAdmin.isAdmin())",
+                result -> showImageMenu(url, alt, title, albumUrl, "true".equals(result)));
+    }
+
+    private void showImageMenu(final String url, String alt, String title,
+                               final String albumUrl, final boolean admin) {
         String label = title != null && !title.isEmpty() ? title
                 : (alt != null && !alt.isEmpty() ? alt : "图片");
         final String fileName = MediaSaver.sanitizeName(label);
@@ -1077,8 +1085,8 @@ public class MainActivity extends Activity {
         final List<String> items = new ArrayList<>();
         final boolean hasImage = url != null && !url.isEmpty();
         if (hasImage) {
-            items.add("保存图片到相册");
-            items.add("复制图片链接");
+            items.add(admin ? "保存图片到相册" : "管理员登录后保存图片");
+            if (admin) items.add("复制图片链接");
         }
         if (albumUrl != null && !albumUrl.isEmpty()) items.add("复制相册链接");
         if (items.isEmpty()) return;
@@ -1089,9 +1097,11 @@ public class MainActivity extends Activity {
                     public void onClick(DialogInterface d, int which) {
                         if (hasImage && which == 0) {
                             requestSaveImage(url, fileName);
-                        } else if (hasImage && which == 1) {
-                            copyToClipboard(url);
-                            toast("图片链接已复制");
+                        } else if (hasImage && admin && which == 1) {
+                            requirePhotoAdmin(() -> {
+                                copyToClipboard(url);
+                                toast("图片链接已复制");
+                            });
                         } else {
                             copyToClipboard(albumUrl);
                             toast("相册链接已复制");
@@ -1102,7 +1112,21 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    private void requestSaveImage(String url, String name) {
+    private void requirePhotoAdmin(final Runnable action) {
+        webView.evaluateJavascript("Boolean(window.photoAdmin&&window.photoAdmin.isAdmin())", result -> {
+            if ("true".equals(result)) action.run();
+            else {
+                webView.evaluateJavascript("if(window.photoAdmin)window.photoAdmin.requestLogin();", null);
+                toast("请先登录管理员模式");
+            }
+        });
+    }
+
+    private void requestSaveImage(final String url, final String name) {
+        requirePhotoAdmin(() -> requestAuthorizedSaveImage(url, name));
+    }
+
+    private void requestAuthorizedSaveImage(String url, String name) {
         if (MediaSaver.needsLegacyPermission()
                 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -1134,6 +1158,11 @@ public class MainActivity extends Activity {
 
     /** 优先用已缓存的文件，避免重复下载；没有缓存才走网络 */
     private void doSaveImage(final String url, final String name) {
+        // 权限弹窗返回时再次检查，避免登录已到期或已退出仍继续保存。
+        requirePhotoAdmin(() -> saveAuthorizedImage(url, name));
+    }
+
+    private void saveAuthorizedImage(final String url, final String name) {
         toast("正在保存…");
         io.execute(new Runnable() {
             @Override
@@ -1234,6 +1263,11 @@ public class MainActivity extends Activity {
 
     /** JS 桥。所有方法都在 WebView 的 JS 线程被调用，必须切回主线程 */
     private class Bridge {
+
+        @JavascriptInterface
+        public void downloadImage(final String url, final String name) {
+            ui.post(() -> requestSaveImage(url, MediaSaver.sanitizeName(name)));
+        }
 
         @JavascriptInterface
         public void onAlbumImage(final String url, final String alt, final String title,
