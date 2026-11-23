@@ -1,4 +1,4 @@
-// 地图与荔荔精选由桌面管家编辑。
+// 荔荔精选由桌面管家编辑。
 window.JOURNEY_CONFIG = {
   "recent": {
     "album": "辽宁 大连",
