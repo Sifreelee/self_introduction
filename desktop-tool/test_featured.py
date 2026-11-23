@@ -80,6 +80,27 @@ class FeaturedTests(unittest.TestCase):
                 self.assertEqual(data['cities'], [entry for entry in entries if not entry.startswith('大同')])
                 self.assertEqual(data['photos'], albums)
 
+    def test_municipality_slots_and_candidate_limit(self):
+        work = Path(__file__).parent / '.test-work'
+        work.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=str(work)) as temp:
+            root = Path(temp)
+            (root / 'js').mkdir()
+            (root / 'index.html').write_text('<script src="js/journey-config.js"></script>', encoding='utf-8')
+            photos = ['assets/photo%d.jpg' % i for i in range(12)]
+            data = {'cities': ['北京'], 'photos': [{'city': '北京', 'photos': [{'src': src, 'title': src} for src in photos]}]}
+            (root / 'js/data.js').write_text('const SITE_DATA=' + json.dumps(data) + ';', encoding='utf-8')
+            before = featured.read(root)['expected']
+            slots = list(reversed(photos[:9]))
+            featured.save_map_city(root, root / 'state', '北京', ['北京'], 'auto', before, photos[:9], slots)
+            result = featured.read_map_city(root, '北京')
+            self.assertEqual(result['slots'], slots)
+            self.assertEqual(result['photos'], photos[:9])
+            with self.assertRaisesRegex(ValueError, '最多勾选 9'):
+                featured.save_map_city(root, root / 'state', '北京', ['北京'], 'auto', result['expected'], photos[:10])
+            with self.assertRaisesRegex(ValueError, '不能重复'):
+                featured.save_map_city(root, root / 'state', '北京', ['北京'], 'auto', result['expected'], photos[:9], [photos[0]] * 9)
+
 
 if __name__ == '__main__':
     unittest.main()

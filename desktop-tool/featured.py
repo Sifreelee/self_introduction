@@ -106,7 +106,8 @@ def read_map_city(root, city):
             if city in album['name'] or any(city in title for title in titles):
                 albums.append(album['name'])
     return {'albums': albums, 'match': config.get('cityPhotoMatch', {}).get(city, 'auto'),
-            'photos': config.get('cityPhotos', {}).get(city, []), 'expected': data['expected']}
+            'photos': config.get('cityPhotos', {}).get(city, []),
+            'slots': config.get('cityPhotoSlots', {}).get(city, []), 'expected': data['expected']}
 
 
 def map_photo_options(root, albums, city='', match='auto'):
@@ -125,7 +126,7 @@ def map_photo_options(root, albums, city='', match='auto'):
     return options
 
 
-def save_map_city(root, state, city, albums, match, expected, photos=None):
+def save_map_city(root, state, city, albums, match, expected, photos=None, slots=None):
     root = core.writable(root)
     for name, fingerprint in expected.items():
         if core.digest(root / name) != fingerprint:
@@ -139,10 +140,18 @@ def save_map_city(root, state, city, albums, match, expected, photos=None):
     config.setdefault('cityAlbums', {})[city] = list(dict.fromkeys(albums))
     config.setdefault('cityPhotoMatch', {})[city] = 'title' if match == 'title' else 'auto'
     if photos is not None:
+        if len(set(photos)) > 9:
+            raise ValueError('每个城市最多勾选 9 张照片。')
         available = {item['src'] for item in map_photo_options(root, albums, city, match)}
         if any(photo not in available for photo in photos):
             raise ValueError('指定照片不在已选相册中，请重新选择。')
         config.setdefault('cityPhotos', {})[city] = list(dict.fromkeys(photos))
+    if slots is not None:
+        available = {item['src'] for item in map_photo_options(root, albums, city, match)}
+        chosen = [photo for photo in slots if photo]
+        if city not in ('北京', '天津', '上海', '重庆') or len(slots) != 9 or len(set(chosen)) != len(chosen) or any(photo not in available for photo in chosen):
+            raise ValueError('直辖市需要 9 个位置，指定照片不能重复或超出已选相册。')
+        config.setdefault('cityPhotoSlots', {})[city] = slots
     output = '// 地图与荔荔精选由桌面管家编辑。\nwindow.JOURNEY_CONFIG = ' + json.dumps(config, ensure_ascii=False, indent=2) + ';\n'
     file = root / 'js/journey-config.js'
     index = root / 'index.html'
@@ -192,7 +201,7 @@ def delete_map_city(root, state, city, expected):
     if not removed:
         raise ValueError('该地点已不存在，请重新读取。')
     config = read(root)['config']
-    for key in ('cityAlbums', 'cityPhotos', 'cityPhotoMatch'):
+    for key in ('cityAlbums', 'cityPhotos', 'cityPhotoMatch', 'cityPhotoSlots'):
         config.get(key, {}).pop(city, None)
     output = '// 地图与荔荔精选由桌面管家编辑。\nwindow.JOURNEY_CONFIG = ' + json.dumps(config, ensure_ascii=False, indent=2) + ';\n'
     config_path, index = root / 'js/journey-config.js', root / 'index.html'

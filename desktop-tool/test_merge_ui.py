@@ -25,7 +25,7 @@ with tempfile.TemporaryDirectory(dir=str(work)) as temp:
         (root / name).mkdir(parents=True)
     (root / 'index.html').write_text('<html></html>', encoding='utf-8')
     (root / 'css/style.css').write_text(':root{}', encoding='utf-8')
-    (root / 'js/data.js').write_text('''const SITE_DATA = {cities: ['母@山西'], photos: [
+    (root / 'js/data.js').write_text('''const SITE_DATA = {cities: ['母@山西', '北京'], photos: [
       {city: '母', seal: '母印', star: true, desc: '母简介', tags: ['甲'], photos: [
         {src: 'assets/images/母/照片.jpg', title: '母照片'}]},
       {city: '子', seal: '子印', star: false, tags: ['乙'], photos: [
@@ -105,10 +105,36 @@ with tempfile.TemporaryDirectory(dir=str(work)) as temp:
             ui.delete_map_city()
             wait(ui)
             assert not errors, errors
-            assert not ui.map_city.get()
-            assert app.featured.map_places(root) == []
+            assert ui.map_city.get() == '北京'
+            assert [place['city'] for place in app.featured.map_places(root)] == ['北京']
             assert core.read_album(root, '母')['city'] == '母'
             assert (root / 'assets/images/母/照片.jpg').exists()
+            ui.map_albums.selection_set(0)
+            ui.load_map_photos()
+            from types import SimpleNamespace
+            ui.map_photos.focus('0')
+            ui.map_photos.toggle_row(SimpleNamespace(keysym='space', y=0))
+            assert ui.map_photos.curselection() == (0,)
+            assert ui.map_photos.item('0', 'text').startswith('☑')
+            ui.edit_map_slots()
+            window = next(child for child in ui.winfo_children() if isinstance(child, app.tk.Toplevel))
+            def descend(parent):
+                for child in parent.winfo_children():
+                    yield child
+                    yield from descend(child)
+            combos = [child for child in descend(window) if isinstance(child, app.ttk.Combobox)]
+            assert len(combos) == 9
+            for combo in combos:
+                combo.current(0)
+            combos[8].current(1)
+            apply = next(child for child in descend(window) if isinstance(child, app.ttk.Button) and child.cget('text') == '应用位置选择')
+            apply.invoke()
+            assert ui.map_slots[:8] == [''] * 8
+            assert ui.map_slots[8] == 'assets/images/母/照片.jpg'
+            ui.save_map_city()
+            wait(ui)
+            assert not errors, errors
+            assert app.featured.read_map_city(root, '北京')['slots'][8] == 'assets/images/母/照片.jpg'
         finally:
             ui.destroy()
 print('Merge UI: separate module, selection, preview, invalidation, overwrite, mother metadata and refreshed album lists passed.')

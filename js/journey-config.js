@@ -1,4 +1,4 @@
-// 荔荔精选由桌面管家编辑。
+// 地图与荔荔精选由桌面管家编辑。
 window.JOURNEY_CONFIG = {
   "recent": {
     "album": "辽宁 大连",
@@ -19,12 +19,16 @@ window.JOURNEY_CONFIG = {
     "天津": [
       "文物介绍及科普",
       "中国 天津"
+    ],
+    "北京": [
+      "中国 北京之夏"
     ]
   },
   "cityPhotoMatch": {
     "渭南": "auto",
     "青岛": "title",
-    "天津": "auto"
+    "天津": "auto",
+    "北京": "auto"
   },
   "cityPhotos": {
     "渭南": [
@@ -33,6 +37,9 @@ window.JOURNEY_CONFIG = {
     "青岛": [
       "assets/images/wuhan/武汉青岛路.jpg"
     ],
-    "天津": []
+    "天津": [],
+    "北京": [
+      "assets/images/bj2/圆明园 鸿慈永秙 其二.jpg"
+    ]
   }
 };

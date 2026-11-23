@@ -55,7 +55,7 @@
     const cache = new Map();
     const counts = {};
     parsed.forEach(city => { counts[city.prov] = (counts[city.prov] || 0) + 1; });
-    const slots = Math.max(6, ...Object.values(counts));
+    const slots = Math.max(9, ...Object.values(counts));
     preview.style.setProperty('--sample-rows', Math.ceil(slots / 3));
     let currentPid = '';
     function sample(pid, force) {
@@ -64,13 +64,14 @@
       if (!cities.length) return;
       currentPid = pid;
       const province = cities[0].prov;
+      const municipality = ['北京', '天津', '上海', '重庆'].includes(province);
       if (!cache.has(pid)) {
         const photos = new Map();
         cities.forEach(city => cityAlbums(city.name, true).forEach(({group, gi}) => {
           const preferred = (config.cityPhotos || {})[city.name] || [];
           const shared = (config.cityPhotoMatch || {})[city.name] === 'title' || (!group.city.includes(city.name) && !(config.cityAlbums || {})[city.name]?.includes(group.city));
-          (group.photos || []).filter(photo => (!shared || (photo.title || '').includes(city.name)) && (!preferred.length || preferred.includes(photo.src))).forEach(photo => {
-            if (photo.src && !photos.has(photo.src)) photos.set(photo.src, {src: photo.src, city: city.name, title: photo.title || city.name, gi});
+          (group.photos || []).filter(photo => !shared || (photo.title || '').includes(city.name)).forEach(photo => {
+            if (photo.src && !photos.has(photo.src)) photos.set(photo.src, {src: photo.src, city: city.name, title: photo.title || city.name, gi, preferred: preferred.includes(photo.src)});
           });
         }));
         cache.set(pid, [...photos.values()]);
@@ -81,8 +82,19 @@
         [pool[i], pool[j]] = [pool[j], pool[i]];
       }
       const picks = [], used = new Set();
-      cities.forEach(city => {
-        const photo = pool.find(photo => photo.city === city.name && !used.has(photo.src));
+      if (municipality) {
+        const ordered = (config.cityPhotoSlots || {})[cities[0].name] || [];
+        const reserved = new Set(ordered.filter(Boolean));
+        const candidates = pool.filter(photo => photo.preferred).concat(pool.filter(photo => !photo.preferred));
+        for (let i = 0; i < 9; i++) {
+          let photo = candidates.find(photo => photo.src === ordered[i] && !used.has(photo.src));
+          if (!photo) photo = candidates.find(photo => !used.has(photo.src) && !reserved.has(photo.src));
+          if (photo) { picks.push(photo); used.add(photo.src); }
+          else picks.push({city: cities[0].name, title: '照片待补充'});
+        }
+      } else cities.forEach(city => {
+        const preferred = (config.cityPhotos || {})[city.name] || [];
+        const photo = pool.find(photo => photo.city === city.name && !used.has(photo.src) && (!preferred.length || photo.preferred));
         if (photo) { picks.push(photo); used.add(photo.src); }
         else picks.push({city: city.name, title: '照片待整理'});
       });
