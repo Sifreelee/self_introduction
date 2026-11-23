@@ -7,7 +7,7 @@
   <title>洛晴跃飞</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260923f">
   <!-- ?v= 是版本号：改了 style.css 却没生效时，把数字加一即可绕过浏览器缓存 -->
-  <link rel="stylesheet" href="css/style.css?v=20261123-admin-nav2">
+  <link rel="stylesheet" href="css/style.css?v=20261123-admin-status">
 </head>
 <body>
 
@@ -223,6 +223,7 @@
       </span>
       <figcaption id="lightbox-caption"></figcaption>
       <button type="button" id="photo-download" class="photo-download">管理员登录后下载</button>
+      <p id="photo-download-status" class="photo-download-status" role="status" aria-live="polite"></p>
     </figure>
   </div>
 
@@ -252,7 +253,11 @@
       <p id="admin-login-error" role="alert"></p>
       <div class="admin-dialog-buttons"><button type="submit">登录</button></div>
     </form>
-    <div id="admin-session" hidden><p>管理员模式已开启，可下载相册照片。退出后关闭下载权限。</p><button type="button" id="admin-logout">退出登录</button></div>
+    <div id="admin-session" hidden>
+      <p>管理员模式已开启，可下载相册照片。退出后关闭下载权限。</p>
+      <p id="admin-status" class="admin-status" role="status" aria-live="polite"></p>
+      <button type="button" id="admin-logout">退出登录</button>
+    </div>
     <div class="admin-dialog-buttons"><button type="button" id="admin-cancel">关闭</button></div>
   </dialog>
   <dialog id="photo-actions" class="admin-dialog" aria-labelledby="photo-actions-title">
@@ -260,7 +265,6 @@
     <p>下载照片需要登录管理员模式。</p>
     <div class="admin-dialog-buttons"><button id="photo-share-link" type="button">复制相册链接</button><button id="photo-action-login" type="button">管理员登录</button><button id="photo-action-close" type="button">关闭</button></div>
   </dialog>
-  <p id="admin-status" class="admin-status" role="status" aria-live="polite"></p>
 
   <script src="js/album-desc.js?v=20260923f"></script>
   <script src="js/data.js?v=20260923f"></script>
@@ -268,7 +272,7 @@
   <script src="js/photo-order.js?v=20261120-order"></script>
   <script src="js/main.js?v=20261122-album-share-fix"></script>
   <script src="js/photo-admin-auth.js?v=20261123-admin-v2"></script>
-  <script src="js/photo-admin.js?v=20261123-admin-nav"></script>
+  <script src="js/photo-admin.js?v=20261123-admin-status"></script>
   <script src="js/last-updated.js?v=20261027a"></script>
 
   <!-- 访问量统计：不蒜子（免注册、免账号）。脚本被拦截或服务不可用时，页脚计数会自动隐藏 -->

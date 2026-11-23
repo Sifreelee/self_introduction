@@ -128,8 +128,10 @@ section, .hero { scroll-margin-top: calc(var(--nav-h) - 6px); }
 .admin-dialog button, .photo-download { padding: 9px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); font-size: 16px; cursor: pointer; }
 .admin-dialog button[type="submit"] { background: var(--cinnabar); color: white; }
 #admin-login-error { color: var(--cinnabar); min-height: 1.5em; }
-.admin-status { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 3000; max-width: calc(100vw - 32px); padding: 8px 14px; border-radius: 6px; background: var(--card); color: var(--ink); font-size: 14px; box-shadow: 0 2px 12px #0002; pointer-events: none; }
+.admin-status { color: var(--ink-2); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
 .admin-status:empty { display: none; }
+.photo-download-status { color: #E5DEC8; font-size: 14px; text-align: center; }
+.photo-download-status:empty { display: none; }
 .photo-download { margin-top: 12px; flex-shrink: 0; }
 .photo-guest :is(.photo-album,.photo-shot,#album-browser,#lightbox) img { -webkit-touch-callout: none; -webkit-user-drag: none; user-select: none; }
 .nav-links a {

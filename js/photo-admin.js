@@ -7,6 +7,7 @@
   const error = document.getElementById('admin-login-error');
   const status = document.getElementById('admin-status');
   const download = document.getElementById('photo-download');
+  const downloadStatus = document.getElementById('photo-download-status');
   const actions = document.getElementById('photo-actions');
   let timer, lastFocus;
   function update() {
@@ -69,6 +70,7 @@
     finally { document.getElementById('admin-password').value = ''; submit.disabled = false; update(); }
   });
   async function savePhoto(img) {
+    downloadStatus.textContent = '';
     if (!update()) { requestLogin(); return; }
     if (!img || !img.getAttribute('src')) return;
     const url = new URL(img.currentSrc || img.src, location.href);
@@ -90,7 +92,7 @@
       document.body.appendChild(link);
       link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
-    } catch (err) { status.textContent = err.message || '照片下载失败，请稍后重试'; }
+    } catch (err) { downloadStatus.textContent = err.message || '照片下载失败，请稍后重试'; }
     finally { download.disabled = false; }
   }
   download.addEventListener('click', () => savePhoto(document.getElementById('lightbox-img')));
