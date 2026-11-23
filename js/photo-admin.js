@@ -96,7 +96,7 @@
     finally { download.disabled = false; }
   }
   download.addEventListener('click', () => savePhoto(document.getElementById('lightbox-img')));
-  const scope = '.photo-album,.photo-shot,#album-browser,#lightbox';
+  const scope = '.photo-album,.photo-shot,.glance-paper,.province-sample,#album-browser,#lightbox';
   document.addEventListener('contextmenu', e => {
     const area = e.target.closest && e.target.closest(scope);
     if (!area || update()) return;

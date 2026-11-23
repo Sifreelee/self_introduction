@@ -1326,6 +1326,7 @@ function bindCityChipFocus() {
 
 function openCityMap() {
   renderCityMap();
+  if (window.initMapExplorer) window.initMapExplorer();
   cityMapModal.classList.add("open");
   cityMapModal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";

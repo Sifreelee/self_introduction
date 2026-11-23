@@ -25,7 +25,7 @@ with tempfile.TemporaryDirectory(dir=str(work)) as temp:
         (root / name).mkdir(parents=True)
     (root / 'index.html').write_text('<html></html>', encoding='utf-8')
     (root / 'css/style.css').write_text(':root{}', encoding='utf-8')
-    (root / 'js/data.js').write_text('''const SITE_DATA = {photos: [
+    (root / 'js/data.js').write_text('''const SITE_DATA = {cities: ['母@山西'], photos: [
       {city: '母', seal: '母印', star: true, desc: '母简介', tags: ['甲'], photos: [
         {src: 'assets/images/母/照片.jpg', title: '母照片'}]},
       {city: '子', seal: '子印', star: false, tags: ['乙'], photos: [
@@ -70,6 +70,45 @@ with tempfile.TemporaryDirectory(dir=str(work)) as temp:
             assert (root / 'assets/images/母/照片.jpg').read_bytes() == b'child'
             assert not (root / 'assets/images/子/照片.jpg').exists()
             assert ui.edit_choice.get() == '母'
+            assert '荔荔精选' in ui.tabs.tab(7, 'text')
+            ui.featured_album.set('母')
+            ui.load_featured_photos(True)
+            assert ui.featured_src.get() == 'assets/images/母/照片.jpg'
+            assert ui.featured_photo_options
+            ui.featured_photo_combo.current(0)
+            ui.choose_featured_album_photo()
+            assert ui.featured_album.get() == '母'
+            photo = folder / '新的精选.jpg'
+            app.Image.new('RGB', (20, 20)).save(str(photo))
+            ui.tabs.select(7)
+            with patch.object(app.filedialog, 'askopenfilename', return_value=str(photo)):
+                ui.pick_featured_photo()
+            ui.choose_featured_album_photo()
+            assert ui.featured_source == str(photo.resolve())
+            ui.featured_album.set('母')
+            ui.featured_note.set('手动编辑的配文')
+            ui.save_featured()
+            wait(ui)
+            assert not errors, errors
+            assert app.featured.read(root)['recent']['note'] == '手动编辑的配文'
+            assert (root / 'assets/images/featured/新的精选.jpg').exists()
+            ui.tabs.select(8)
+            ui.map_city.set('母')
+            ui.load_map_city()
+            assert ui.map_photo_options
+            ui.map_photos.selection_set(0)
+            ui.preview_map_photo()
+            ui.save_map_city()
+            wait(ui)
+            assert not errors, errors
+            assert app.featured.read_map_city(root, '母')['photos'] == ['assets/images/母/照片.jpg']
+            ui.delete_map_city()
+            wait(ui)
+            assert not errors, errors
+            assert not ui.map_city.get()
+            assert app.featured.map_places(root) == []
+            assert core.read_album(root, '母')['city'] == '母'
+            assert (root / 'assets/images/母/照片.jpg').exists()
         finally:
             ui.destroy()
 print('Merge UI: separate module, selection, preview, invalidation, overwrite, mother metadata and refreshed album lists passed.')

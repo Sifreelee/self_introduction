@@ -15,6 +15,7 @@ import webbrowser
 from PIL import Image, ImageTk, ImageOps
 import core
 import album_merge
+import featured
 
 BASE = Path(sys.executable).parent if getattr(sys, 'frozen', False) else Path(__file__).resolve().parent
 STATE = BASE / '_data'
@@ -23,7 +24,7 @@ STATE = BASE / '_data'
 class App(tk.Tk):
     def __init__(self, maintenance=True):
         super().__init__()
-        self.title('山水清音 · 桌面管家')
+        self.title('山水清音 · 桌面管家 · 精选与地图编辑版')
         self.geometry('1180x860')
         self.minsize(1040, 780)
         self.configure(bg=core.PALETTE['paper'])
@@ -83,7 +84,7 @@ class App(tk.Tk):
         s.configure('Work.Horizontal.TProgressbar', background=p['teal'], troughcolor='#E7DFC8', thickness=12)
         s.map('Treeview', background=[('selected', p['teal'])], foreground=[('selected', '#FFFFFF')])
         s.configure('TNotebook', tabmargins=(0, 10, 0, 0))
-        s.configure('TNotebook.Tab', padding=(20, 11), background='#E7DFC8')
+        s.configure('TNotebook.Tab', padding=(8, 11), background='#E7DFC8')
         s.map('TNotebook.Tab', background=[('selected', p['card'])], foreground=[('selected', p['cinnabar'])])
 
     def build(self):
@@ -94,7 +95,7 @@ class App(tk.Tk):
         title = ttk.Frame(header)
         title.pack(side='left')
         ttk.Label(title, text='山水清音 · 桌面管家', style='Title.TLabel').pack(anchor='w')
-        ttk.Label(title, text='整理一册山水，留存一路行迹', style='Hint.TLabel').pack(anchor='w', pady=(3, 0))
+        ttk.Label(title, text='整理一册山水，留存一路行迹 · 精选与地图编辑版', style='Hint.TLabel').pack(anchor='w', pady=(3, 0))
         self.art = tk.Label(header, bg=self.palette['paper'])
         self.art.pack(side='right')
         bar = ttk.Frame(self, padding=(28, 0, 28, 8))
@@ -118,7 +119,7 @@ class App(tk.Tk):
         self.tabs = ttk.Notebook(self)
         self.tabs.pack(fill='both', expand=True, padx=28, pady=4)
         pages = []
-        for name in ('壹  添加照片', '贰  相册与代码', '叁  批量改名', '肆  压缩打包', '伍  GitHub', '陆  我的设计', '柒  相册合并'):
+        for name in ('壹  添加照片', '贰  相册与代码', '叁  批量改名', '肆  压缩打包', '伍  GitHub', '陆  我的设计', '柒  相册合并', '捌  荔荔精选', '玖  地图照片'):
             page = ttk.Frame(self.tabs, padding=18)
             self.tabs.add(page, text=name)
             pages.append(page)
@@ -129,6 +130,8 @@ class App(tk.Tk):
         self.github_page(pages[4])
         self.design_page(pages[5])
         self.merge_page(pages[6])
+        self.featured_page(pages[7])
+        self.map_photos_page(pages[8])
         bottom = ttk.Frame(self, padding=(28, 7, 28, 14))
         bottom.pack(fill='x')
         row = ttk.Frame(bottom)
@@ -171,6 +174,300 @@ class App(tk.Tk):
         ttk.Checkbutton(row, text='导入时压缩图片', variable=self.do_compress).pack(side='left')
         ttk.Checkbutton(row, text='PNG 保留透明和格式', variable=self.keep_png).pack(side='left', padx=15)
         ttk.Checkbutton(row, text='同名文件自动覆盖', variable=self.overwrite).pack(side='left')
+
+    def map_photos_page(self, page):
+        self.map_city = tk.StringVar()
+        self.map_match = tk.BooleanVar()
+        self.map_expected = None
+        ttk.Label(page, text='点亮中国 · 地图照片', style='Title.TLabel').pack(anchor='w', pady=(0, 12))
+        ttk.Label(page, text='地图按省份展示，照片上的城市说明从这里读取。给每个城市选择对应相册；每座城市随机展示一张。\n照片区固定在地图与地点列表之间。选择跨城市相册时，可勾选仅使用标题含该城市名的照片。', style='Hint.TLabel', wraplength=900).pack(anchor='w', pady=(0, 14))
+        row = ttk.Frame(page)
+        row.pack(fill='x', pady=5)
+        ttk.Label(row, text='编辑城市', width=15).pack(side='left')
+        self.map_city_combo = ttk.Combobox(row, textvariable=self.map_city, state='readonly')
+        self.map_city_combo.pack(side='left', fill='x', expand=True)
+        self.map_city_combo.bind('<<ComboboxSelected>>', lambda e: self.load_map_city())
+        self.map_hint = tk.StringVar()
+        ttk.Label(page, textvariable=self.map_hint, style='Hint.TLabel').pack(anchor='w', pady=8)
+        ttk.Label(page, text='对应相册（可多选；清空选择可暂停该城市的照片）').pack(anchor='w')
+        area = ttk.Frame(page)
+        area.pack(fill='both', expand=True, pady=8)
+        area.columnconfigure(0, weight=1)
+        area.columnconfigure(1, weight=2)
+        area.columnconfigure(2, weight=1)
+        area.rowconfigure(1, weight=1)
+        for col, text in enumerate(('相册', '指定照片（多选可随机；不选为全部）', '照片预览')):
+            ttk.Label(area, text=text).grid(row=0, column=col, sticky='w', padx=5)
+        album_area = ttk.Frame(area)
+        album_area.grid(row=1, column=0, sticky='nsew', padx=(0, 8))
+        self.map_albums = tk.Listbox(album_area, width=20, selectmode='extended', exportselection=False, font=('Microsoft YaHei UI', 10), bg=self.palette['card'], relief='flat')
+        scroll = ttk.Scrollbar(album_area, command=self.map_albums.yview)
+        scroll.pack(side='right', fill='y')
+        self.map_albums.pack(fill='both', expand=True)
+        self.map_albums.configure(yscrollcommand=scroll.set)
+        self.map_albums.bind('<<ListboxSelect>>', lambda e: self.load_map_photos())
+        photo_area = ttk.Frame(area)
+        photo_area.grid(row=1, column=1, sticky='nsew', padx=(0, 8))
+        self.map_photos = tk.Listbox(photo_area, width=30, selectmode='extended', exportselection=False, font=('Microsoft YaHei UI', 10), bg=self.palette['card'], relief='flat')
+        photo_scroll = ttk.Scrollbar(photo_area, command=self.map_photos.yview)
+        photo_scroll.pack(side='right', fill='y')
+        self.map_photos.pack(fill='both', expand=True)
+        self.map_photos.configure(yscrollcommand=photo_scroll.set)
+        self.map_photos.bind('<<ListboxSelect>>', lambda e: self.preview_map_photo())
+        self.map_photo_preview = ttk.Label(area, text='选择照片后预览', anchor='center', width=22)
+        self.map_photo_preview.grid(row=1, column=2, sticky='nsew')
+        self.map_photo_options = []
+        self.map_selected_photos = []
+        ttk.Checkbutton(page, text='只使用照片标题中包含该城市名的照片', variable=self.map_match, command=self.load_map_photos).pack(anchor='w')
+        row = ttk.Frame(page)
+        row.pack(fill='x', pady=12)
+        ttk.Button(row, text='重新读取', command=self.load_map_city).pack(side='left')
+        ttk.Button(row, text='预览本地网站', command=self.preview).pack(side='left', padx=8)
+        ttk.Button(row, text='删除所选地点', command=self.delete_map_city).pack(side='left', padx=8)
+        ttk.Button(row, text='保存地图照片配置', style='Accent.TButton', command=self.save_map_city).pack(side='right')
+
+    def delete_map_city(self):
+        try:
+            root = self.root_path()
+            city = self.map_city.get()
+            if not city or self.map_expected is None:
+                raise ValueError('请先选择要删除的地点。')
+            expected = dict(self.map_expected)
+            def done(name):
+                self.refresh_site()
+                self.status.set('已删除地点“%s”，相册和照片文件均保留。' % name)
+            self.run('删除所选地点（保留相册照片）', lambda: featured.delete_map_city(root, STATE, city, expected), done)
+        except Exception as e:
+            self.error(e)
+
+    def load_map_city(self):
+        try:
+            if not self.map_city.get():
+                self.map_expected = None
+                self.map_albums.delete(0, 'end')
+                self.map_photos.delete(0, 'end')
+                self.map_photo_options = []
+                self.map_photo_preview.configure(image='', text='请先选择城市')
+                self.map_hint.set('删除地点仅移除地图足迹，相册和照片保留。')
+                return
+            root = self.root_path()
+            data = featured.read_map_city(root, self.map_city.get())
+            self.map_expected = data['expected']
+            self.map_albums.delete(0, 'end')
+            for i, album in enumerate(self.albums):
+                self.map_albums.insert('end', album['name'])
+                if album['name'] in data['albums']:
+                    self.map_albums.selection_set(i)
+            self.map_match.set(data['match'] == 'title')
+            self.map_selected_photos = data['photos']
+            self.map_photo_options = []
+            self.load_map_photos()
+            place = next((p for p in featured.map_places(root) if p['city'] == self.map_city.get()), {})
+            self.map_hint.set('所属省份：' + (place.get('province') or '待补录') + ' · 保存后预览，再上传 GitHub。')
+        except Exception as e:
+            self.error(e)
+
+    def load_map_photos(self):
+        try:
+            albums = [self.map_albums.get(i) for i in self.map_albums.curselection()]
+            selected = [self.map_photo_options[i]['src'] for i in self.map_photos.curselection()] if self.map_photo_options else self.map_selected_photos
+            self.map_photo_options = featured.map_photo_options(self.root_path(), albums, self.map_city.get(), 'title' if self.map_match.get() else 'auto')
+            self.map_photos.delete(0, 'end')
+            for i, item in enumerate(self.map_photo_options):
+                self.map_photos.insert('end', item['title'] + ' · ' + item['album'])
+                if item['src'] in selected:
+                    self.map_photos.selection_set(i)
+            self.preview_map_photo()
+        except Exception as e:
+            self.error(e)
+
+    def preview_map_photo(self):
+        try:
+            chosen = self.map_photos.curselection()
+            if not chosen:
+                self.map_photo_preview.configure(image='', text='未指定照片：从相册随机展示')
+                return
+            item = self.map_photo_options[chosen[-1]]
+            root = self.root_path()
+            path = root / item['src']
+            if not core.within(path, root / 'assets') or not path.is_file():
+                self.map_photo_preview.configure(image='', text='此照片暂不能本地预览')
+                return
+            with Image.open(str(path)) as image:
+                photo = ImageOps.exif_transpose(image).convert('RGB')
+                photo.thumbnail((180, 160))
+                self.map_photo_image = ImageTk.PhotoImage(photo)
+            self.map_photo_preview.configure(image=self.map_photo_image, text='')
+        except Exception:
+            self.map_photo_preview.configure(image='', text='暂不能预览这张照片')
+
+    def save_map_city(self):
+        try:
+            root = self.root_path()
+            if self.map_expected is None:
+                raise ValueError('请先选择城市并读取配置。')
+            city = self.map_city.get()
+            albums = [self.map_albums.get(i) for i in self.map_albums.curselection()]
+            match = 'title' if self.map_match.get() else 'auto'
+            photos = [self.map_photo_options[i]['src'] for i in self.map_photos.curselection()]
+            def done(name):
+                self.load_map_city()
+                self.load_featured()
+                self.status.set('已保存地图城市照片：' + name)
+            self.run('保存地图照片配置', lambda: featured.save_map_city(root, STATE, city, albums, match, self.map_expected, photos), done)
+        except Exception as e:
+            self.error(e)
+
+    def featured_page(self, page):
+        self.featured_source = None
+        self.featured_expected = None
+        self.featured_album = tk.StringVar()
+        self.featured_src = tk.StringVar()
+        self.featured_title = tk.StringVar()
+        self.featured_note = tk.StringVar()
+        self.featured_photo_options = []
+        ttk.Label(page, text='荔荔精选', style='Title.TLabel').pack(anchor='w', pady=(0, 12))
+        ttk.Label(page, text='选择精选相册后自动带出封面，点击网页精选卡片直接进入这本相册。\n也可从相册里另选照片，或自行上传替换；保存后预览，再上传 GitHub。', style='Hint.TLabel', wraplength=900).pack(anchor='w', pady=(0, 18))
+        body = ttk.Frame(page)
+        body.pack(fill='both', expand=True)
+        body.columnconfigure(0, weight=1)
+        left = ttk.Frame(body)
+        left.grid(row=0, column=0, sticky='nsew', padx=(0, 20))
+        right = ttk.Frame(body)
+        right.grid(row=0, column=1, sticky='ne')
+        ttk.Label(right, text='当前精选照片', style='Hint.TLabel').pack(anchor='w', pady=(4, 8))
+        self.featured_thumbnail = tk.Canvas(right, width=220, height=180, bg=self.palette['card'], highlightthickness=1, highlightbackground='#D3C8AC')
+        self.featured_thumbnail.pack()
+        self.featured_preview_image = None
+        row = ttk.Frame(left)
+        row.pack(fill='x', pady=5)
+        ttk.Label(row, text='跳转相册', width=15).pack(side='left')
+        self.featured_combo = ttk.Combobox(row, textvariable=self.featured_album, state='readonly')
+        self.featured_combo.pack(side='left', fill='x', expand=True)
+        self.featured_combo.bind('<<ComboboxSelected>>', lambda e: self.load_featured_photos(True))
+        row = ttk.Frame(left)
+        row.pack(fill='x', pady=5)
+        ttk.Label(row, text='相册中的照片', width=15).pack(side='left')
+        self.featured_photo_combo = ttk.Combobox(row, state='readonly')
+        self.featured_photo_combo.pack(side='left', fill='x', expand=True)
+        self.featured_photo_combo.bind('<<ComboboxSelected>>', lambda e: self.choose_featured_album_photo())
+        self.field(left, '照片标题', self.featured_title)
+        row, _ = self.field(left, '精选照片路径', self.featured_src)
+        ttk.Button(row, text='更换照片…', command=self.pick_featured_photo).pack(side='left', padx=7)
+        self.field(left, '配文', self.featured_note)
+        self.featured_hint = tk.StringVar(value='点击重新读取，可载入现有精选。')
+        ttk.Label(left, textvariable=self.featured_hint, style='Hint.TLabel', wraplength=900).pack(anchor='w', pady=14)
+        row = ttk.Frame(page)
+        row.pack(fill='x', pady=12)
+        ttk.Button(row, text='重新读取精选', command=self.load_featured).pack(side='left')
+        ttk.Button(row, text='预览本地网站', command=self.preview).pack(side='left', padx=8)
+        ttk.Button(row, text='保存荔荔精选', style='Accent.TButton', command=self.save_featured).pack(side='right')
+
+        self.featured_src.trace_add('write', lambda *_: self.preview_featured_photo())
+
+    def preview_featured_photo(self):
+        self.featured_thumbnail.delete('all')
+        self.featured_preview_image = None
+        try:
+            if self.featured_source:
+                path = Path(self.featured_source)
+            else:
+                root = self.root_path()
+                path = root / self.featured_src.get()
+                if not self.featured_src.get() or not core.within(path, root / 'assets'):
+                    raise ValueError('No local image')
+            with Image.open(str(path)) as image:
+                photo = ImageOps.exif_transpose(image).convert('RGB')
+                photo.thumbnail((210, 170))
+                self.featured_preview_image = ImageTk.PhotoImage(photo)
+            self.featured_thumbnail.create_image(110, 90, image=self.featured_preview_image)
+        except Exception:
+            self.featured_thumbnail.create_text(110, 90, text='暂无可预览的照片', fill='#777064', font=('Microsoft YaHei UI', 10))
+
+    def load_featured(self):
+        try:
+            data = featured.read(self.root_path())
+            self.featured_expected = data['expected']
+            self.featured_source = None
+            for key, var in [('album', self.featured_album), ('src', self.featured_src), ('title', self.featured_title), ('note', self.featured_note)]:
+                var.set(data['recent'].get(key, ''))
+            self.load_featured_photos()
+            self.featured_hint.set('已读取当前精选。更换照片和编辑文字后，点击保存才会修改网站。')
+        except Exception as e:
+            self.error(e)
+
+    def load_featured_photos(self, use_cover=False):
+        try:
+            name = self.featured_album.get()
+            self.featured_photo_options = featured.map_photo_options(self.root_path(), [name]) if name else []
+            cover = core.read_album(self.root_path(), name).get('cover') if name else ''
+            if cover and not any(item['src'] == cover for item in self.featured_photo_options):
+                self.featured_photo_options.insert(0, {'src': cover, 'title': Path(cover).stem, 'album': name})
+            if use_cover:
+                self.featured_source = None
+                first = next((item for item in self.featured_photo_options if item['src'] == cover), None)
+                first = first or (self.featured_photo_options[0] if self.featured_photo_options else None)
+                self.featured_src.set(first['src'] if first else '')
+                self.featured_title.set(first['title'] if first else name)
+                self.featured_hint.set('已绑定相册“%s”，可另选照片或自行上传替换。' % name)
+            current = self.featured_src.get()
+            if current and not any(item['src'] == current for item in self.featured_photo_options):
+                self.featured_photo_options.insert(0, {'src': current, 'title': self.featured_title.get() or '自行选择的照片', 'album': name})
+            self.featured_photo_combo['values'] = [item['title'] + ' · ' + item['src'] for item in self.featured_photo_options]
+            chosen = next((i for i, item in enumerate(self.featured_photo_options) if item['src'] == current), -1)
+            if chosen >= 0:
+                self.featured_photo_combo.current(chosen)
+            else:
+                self.featured_photo_combo.set('')
+        except Exception as e:
+            self.error(e)
+
+    def choose_featured_album_photo(self):
+        index = self.featured_photo_combo.current()
+        if index >= 0:
+            item = self.featured_photo_options[index]
+            if item['src'] != self.featured_src.get():
+                self.featured_source = None
+            self.featured_src.set(item['src'])
+            self.featured_title.set(item['title'])
+
+    def pick_featured_photo(self):
+        try:
+            root = self.root_path()
+            name = filedialog.askopenfilename(title='选择荔荔精选照片', initialdir=str(root / 'assets/images'), filetypes=[('照片', '*.jpg *.jpeg *.png *.webp')])
+            if not name:
+                return
+            source = Path(name).resolve()
+            if core.within(source, root / 'assets'):
+                self.featured_source = None
+                self.featured_src.set(source.relative_to(root).as_posix())
+                matches = [album['name'] for album in self.albums if self.featured_src.get() in album['refs']]
+                if matches and self.featured_album.get() not in matches:
+                    self.featured_album.set(matches[0])
+            else:
+                self.featured_source = str(source)
+                self.featured_src.set('assets/images/featured/' + source.name)
+            self.featured_title.set(source.stem)
+            self.load_featured_photos()
+            self.featured_hint.set('已选择：' + str(source) + '；保存时复制到网站，原文件保留。')
+        except Exception as e:
+            self.error(e)
+
+    def save_featured(self):
+        try:
+            root = self.root_path()
+            if self.featured_expected is None:
+                raise ValueError('请先重新读取精选。')
+            values = {'album': self.featured_album.get(), 'src': self.featured_src.get(), 'title': self.featured_title.get(), 'note': self.featured_note.get()}
+            source = self.featured_source
+            if source and values['src'] != 'assets/images/featured/' + Path(source).name:
+                raise ValueError('待复制照片与路径不一致，请重新选择照片。')
+            def done(title):
+                self.load_featured()
+                self.status.set('已更新荔荔精选：' + title + '；可预览并上传 GitHub。')
+            self.run('保存荔荔精选', lambda: featured.save(root, STATE, values, self.featured_expected, source), done)
+        except Exception as e:
+            self.error(e)
 
     def merge_page(self, page):
         self.merge_plan = None
@@ -1173,6 +1470,13 @@ class App(tk.Tk):
                 self.jobs_tree.delete(*self.jobs_tree.get_children())
             self.album_combo['values'] = [''] + [a['name'] for a in albums]
             self.edit_combo['values'] = [a['name'] for a in albums]
+            self.featured_combo['values'] = [a['name'] for a in albums]
+            self.load_featured()
+            places = featured.map_places(root)
+            self.map_city_combo['values'] = list(dict.fromkeys(place['city'] for place in places))
+            if self.map_city.get() not in self.map_city_combo['values']:
+                self.map_city.set(places[0]['city'] if places else '')
+            self.load_map_city()
             self.merge_mother_combo['values'] = [a['name'] for a in albums]
             self.merge_sources.delete(0, 'end')
             for item in albums:
