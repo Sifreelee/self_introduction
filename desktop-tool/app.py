@@ -16,6 +16,7 @@ from PIL import Image, ImageTk, ImageOps
 import core
 import album_merge
 import featured
+from video_page import VideoPage
 
 BASE = Path(sys.executable).parent if getattr(sys, 'frozen', False) else Path(__file__).resolve().parent
 STATE = BASE / '_data'
@@ -81,7 +82,7 @@ class PhotoCheckList(ttk.Treeview):
 class App(tk.Tk):
     def __init__(self, maintenance=True):
         super().__init__()
-        self.title('山水清音 · 桌面管家 · 选图计数版')
+        self.title('山水清音 · 桌面管家 · 视频压缩版')
         self.geometry('1180x860')
         self.minsize(1040, 780)
         self.configure(bg=core.PALETTE['paper'])
@@ -176,7 +177,7 @@ class App(tk.Tk):
         self.tabs = ttk.Notebook(self)
         self.tabs.pack(fill='both', expand=True, padx=28, pady=4)
         pages = []
-        for name in ('壹  添加照片', '贰  相册与代码', '叁  批量改名', '肆  压缩打包', '伍  GitHub', '陆  我的设计', '柒  相册合并', '捌  荔荔精选', '玖  地图照片'):
+        for name in ('壹  添加照片', '贰  相册与代码', '叁  批量改名', '肆  压缩打包', '伍  GitHub', '陆  我的设计', '柒  相册合并', '捌  荔荔精选', '玖  地图照片', '拾  视频'):
             page = ttk.Frame(self.tabs, padding=18)
             self.tabs.add(page, text=name)
             pages.append(page)
@@ -189,6 +190,7 @@ class App(tk.Tk):
         self.merge_page(pages[6])
         self.featured_page(pages[7])
         self.map_photos_page(pages[8])
+        self.video_page = VideoPage(pages[9], self, STATE)
         bottom = ttk.Frame(self, padding=(28, 7, 28, 14))
         bottom.pack(fill='x')
         row = ttk.Frame(bottom)
@@ -1645,6 +1647,8 @@ class App(tk.Tk):
                 self.last_upload_code = None
                 self.last_upload_files = []
             self.loaded_site = root
+            self.video_page.catalog = None
+            self.video_page.reload()
             self.albums = albums
             if not preserve_jobs:
                 self.jobs.clear()

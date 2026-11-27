@@ -8,6 +8,8 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260923f">
   <!-- ?v= 是版本号：改了 style.css 却没生效时，把数字加一即可绕过浏览器缓存 -->
   <link rel="stylesheet" href="css/style.css?v=20261123-province-lock">
+  <link rel="stylesheet" href="css/motion.css?v=20261127-moments">
+  <link rel="stylesheet" href="css/videos.css?v=20261127-expand">
 </head>
 <body>
 
@@ -54,6 +56,14 @@
       </svg>
     </div>
     <div class="hero-mist"></div>
+    <div class="hero-atmosphere" aria-hidden="true">
+      <div class="mist-ribbon mist-ribbon-far"></div>
+      <div class="mist-ribbon mist-ribbon-near"></div>
+      <div class="water-light"></div>
+      <svg class="hero-birds" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 29 Q22 20 32 29 Q42 20 52 29 M80 16 Q87 10 94 16 Q101 10 108 16 M129 39 Q135 34 141 39 Q147 34 153 39"/>
+      </svg>
+    </div>
     <div class="hero-content">
       <div class="hero-vertical">
         <h1 class="hero-title" id="hero-title">洛晴跃飞</h1>
@@ -123,6 +133,14 @@
           </form>
           <p class="album-search-hint" id="album-search-hint" hidden></p>
           <div class="photo-grid" id="photo-grid"><!-- JS 渲染 --></div>
+          <!-- 零碎日月独立分区，位于照片列表下方 -->
+          <section class="moments-section" id="moments" aria-labelledby="moments-title">
+            <div class="moments-divider" aria-hidden="true"><span>·</span></div>
+            <div class="moments-heading"><span class="moments-seal" aria-hidden="true">映</span><h3 class="moments-title" id="moments-title">零碎日月</h3><span class="moments-subtitle">一段影像 · 一页日常</span></div>
+            <p class="video-intro">把日子里的片刻，留在光影之间。<span>鼠标停留播放 · 手机长按播放</span></p>
+            <div id="video-preview-tools" hidden></div>
+            <div class="photo-grid video-grid" id="video-grid"></div>
+          </section>
         </div>
 
         <!-- 旅行随笔 -->
@@ -281,6 +299,9 @@
   <script src="js/photo-admin-auth.js?v=20261123-admin-v2"></script>
   <script src="js/photo-admin.js?v=20261123-journey-city"></script>
   <script src="js/last-updated.js?v=20261027a"></script>
+  <script src="js/motion.js?v=20261127-moments"></script>
+  <script src="js/video-config.js?v=c8cbfae651bb"></script>
+  <script src="js/videos.js?v=20261127-hover-load"></script>
 
   <!-- 访问量统计：不蒜子（免注册、免账号）。脚本被拦截或服务不可用时，页脚计数会自动隐藏 -->
   <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>

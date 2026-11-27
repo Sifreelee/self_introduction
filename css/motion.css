@@ -1,0 +1,40 @@
+/* 动态初稿：复用山水背景和现有照片，无新增视频资源。 */
+.hero-atmosphere { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.mist-ribbon { position: absolute; left: -25%; width: 150%; height: 34%; filter: blur(22px); background: radial-gradient(ellipse at center, #f3f6ef88, #edf3ef22 48%, transparent 72%); }
+.mist-ribbon-far { top: 32%; opacity: .6; animation: ribbon-far 24s ease-in-out infinite alternate; }
+.mist-ribbon-near { top: 62%; opacity: .7; animation: ribbon-near 19s ease-in-out infinite alternate; }
+.water-light { position: absolute; left: 12%; right: 12%; bottom: 8%; height: 23%; opacity: .18; transform: perspective(180px) rotateX(48deg); background: repeating-linear-gradient(174deg, transparent 0 22px, #fff9e588 23px, transparent 25px 44px); mask-image: radial-gradient(ellipse, #000, transparent 68%); animation: water-glimmer 9s ease-in-out infinite alternate; }
+.hero-birds { position: absolute; top: 24%; left: 66%; width: clamp(95px, 12vw, 180px); stroke: var(--teal); stroke-width: 1.5; stroke-linecap: round; opacity: .48; animation: birds-drift 23s ease-in-out infinite alternate; }
+@keyframes ribbon-far { from { transform: translate(-5%, 5%) scaleX(.9); } to { transform: translate(9%, -10%) scaleX(1.08); } }
+@keyframes ribbon-near { from { transform: translate(9%, 8%); } to { transform: translate(-8%, -9%); } }
+@keyframes water-glimmer { from { background-position: 0 0; opacity: .12; } to { background-position: 30px 18px; opacity: .28; } }
+@keyframes birds-drift { from { transform: translate(-26px, 8px) rotate(-3deg); } to { transform: translate(38px, -12px) rotate(3deg); } }
+
+.postcard-control:focus-visible { outline: 2px solid var(--cinnabar); outline-offset: 4px; }
+
+.glance-image.motion-postcard { aspect-ratio: 4 / 3; isolation: isolate; }
+.motion-postcard img { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transform: scale(1.015); transition: opacity 1.4s ease; animation: postcard-pan 13s ease-in-out infinite alternate; }
+.motion-postcard img.is-current { opacity: 1; }
+.motion-postcard img.is-incoming { z-index: 1; }
+.motion-postcard .glance-seal { z-index: 2; }
+@keyframes postcard-pan { from { transform: scale(1.015) translateX(-.3%); } to { transform: scale(1.08) translateX(.7%); } }
+.postcard-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: 22px; color: var(--ink-3); font-size: 14px; }
+.postcard-control { border: 0; border-bottom: 1px solid var(--line-2); background: transparent; padding: 5px 0; color: var(--teal); font-size: 14px; }
+.postcard-control:hover { color: var(--cinnabar); border-color: var(--cinnabar); }
+.postcard-control:disabled { opacity: .5; cursor: wait; }
+.postcard-hold img { animation-play-state: paused; }
+.motion-paused .hero *, .motion-paused .sec-cloud-layer *, .motion-paused .motion-postcard img,
+.motion-sleeping .hero *, .motion-sleeping .sec-cloud-layer *, .motion-sleeping .motion-postcard img,
+.motion-outside *, .motion-paused .album-star, .motion-sleeping .album-star { animation-play-state: paused !important; }
+.motion-paused .motion-postcard img, .motion-sleeping .motion-postcard img { transition: none; }
+@media (max-width: 560px) {
+  .hero-birds { top: 23%; left: 68%; opacity: .35; }
+  .mist-ribbon { filter: blur(14px); }
+  .postcard-controls { margin-top: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero *, .sec-cloud-layer *, .motion-postcard img, .album-star { animation: none !important; }
+  .hero-scroll { opacity: 1; }
+  .motion-postcard img { transition: none; transform: none; }
+  .hero-birds { transform: none; }
+}

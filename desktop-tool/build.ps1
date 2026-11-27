@@ -32,7 +32,9 @@ if ($LASTEXITCODE -ne 0) { throw '生成图标失败。' }
 # onedir 不会在启动时向系统临时目录解压，整个文件夹可直接移动到非 C 盘。
 $stagedDist = Join-Path $buildRoot 'staged-dist'
 $pushSource = Join-Path (Split-Path $toolDir -Parent) 'push.bat'
-& $Python -m PyInstaller --noconfirm --clean --windowed --onedir --name 'ShanshuiManager' --icon $iconPath --add-data "$pushSource;resources" --runtime-hook (Join-Path $toolDir 'runtime_paths.py') --paths (Split-Path $toolDir -Parent) --distpath $stagedDist --workpath (Join-Path $buildRoot 'work') --specpath $buildRoot (Join-Path $toolDir 'app.py')
+$ffmpegSource = Join-Path $toolDir '_data/tools/ffmpeg.exe'
+if (-not (Test-Path -LiteralPath $ffmpegSource)) { throw '缺少视频编码器：请将 ffmpeg.exe 放入 desktop-tool/_data/tools 后打包。' }
+& $Python -m PyInstaller --noconfirm --clean --windowed --onedir --name 'ShanshuiManager' --icon $iconPath --add-data "$pushSource;resources" --add-data "$ffmpegSource;resources" --runtime-hook (Join-Path $toolDir 'runtime_paths.py') --paths (Split-Path $toolDir -Parent) --distpath $stagedDist --workpath (Join-Path $buildRoot 'work') --specpath $buildRoot (Join-Path $toolDir 'app.py')
 if ($LASTEXITCODE -ne 0) { throw 'EXE 打包失败。' }
 $previousDir = Join-Path $distDir 'ShanshuiManager'
 $releaseDir = $previousDir
