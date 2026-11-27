@@ -122,7 +122,7 @@ public class MainActivity extends Activity {
             + "})();";
 
     /**
-     * 页面交互注入脚本：长按图片 → 保存/复制相册链接；长按空白 → 缓存管理。
+     * 页面交互注入脚本：长按图片 → 保存/复制相册链接；视频手势由网页处理。
      *
      * 刻意不接管文字区域的长按，WebView 自带的选择 + 复制菜单要保留，
      * 一旦在这里 preventDefault 或 prevent 冒泡，文本就无法选中了。
@@ -135,6 +135,7 @@ public class MainActivity extends Activity {
             + "function abs(u){try{return new URL(u,location.href).href;}catch(e){return u;}}"
             + "function handle(el){"
             + "if(!el||!el.tagName)return;"
+            + "if(el.closest&&el.closest('.video-card,.video-viewer'))return;"
             + "var img=el.tagName==='IMG'?el:(el.closest?el.closest('img'):null);"
             + "var card=el.closest?el.closest('.photo-album,.photo-shot'):null;"
             + "var albumUrl='';"
@@ -149,12 +150,13 @@ public class MainActivity extends Activity {
             + "if(el.closest&&el.closest('p,h1,h2,h3,h4,h5,li,blockquote,td,pre,code,"
             + ".album-browser-note-inner,.about-text'))return;"
             + "if(el.closest&&el.closest('a,button,input,textarea,select,.nav-links'))return;"
-            + "window.AndroidBridge.onBlank();}"
+            + "}"
             + "document.addEventListener('touchstart',function(e){"
             + "suppressClick=false;"
             + "if(e.touches.length!==1){clear();return;}"
             + "var t=e.touches[0];sx=t.clientX;sy=t.clientY;moved=false;"
             + "var el=e.target;clear();"
+            + "if(el.closest&&el.closest('.video-card,.video-viewer'))return;"
             + "timer=setTimeout(function(){timer=null;if(!moved)handle(el);},LP);"
             + "},{passive:true});"
             + "document.addEventListener('touchmove',function(e){"
@@ -444,7 +446,8 @@ public class MainActivity extends Activity {
         s.setDisplayZoomControls(false);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        s.setMediaPlaybackRequiresUserGesture(true);
+        // 网页在按住 400ms 后才播放预览，不能要求 play() 与 touchstart 同步发生。
+        s.setMediaPlaybackRequiresUserGesture(false);
         s.setTextZoom(100);
         // 站点为移动优先的响应式布局，保持自身 viewport 缩放策略即可
         s.setBlockNetworkImage(false);
@@ -458,7 +461,7 @@ public class MainActivity extends Activity {
 
         userAgent = s.getUserAgentString();
 
-        // 注入 JS 桥：图片长按、空白长按、资源清单回传。
+        // 注入 JS 桥：图片长按、设置按钮、资源清单回传。视频手势交给网页。
         // 注意：绝不能调 setLongClickable(false)，那会连带废掉 WebView 的
         // 长按选中文字能力，文本就无法复制了。
         webView.addJavascriptInterface(new Bridge(), "AndroidBridge");
@@ -1312,13 +1315,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void onBlank() {
-            ui.post(new Runnable() {
-                @Override
-                public void run() {
-                    // 长按空白处 = 设置入口的兜底（菜单注入失败时仍可用）
-                    showSettings();
-                }
-            });
+            // 兼容旧缓存脚本的调用，不再允许长按空白进入设置。
         }
 
         @JavascriptInterface

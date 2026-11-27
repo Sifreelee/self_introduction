@@ -222,7 +222,7 @@
       touchStart = {id: event.pointerId, x: event.clientX, y: event.clientY};
       longPressed = false;
       clearTimeout(holdTimer);
-      holdTimer = setTimeout(() => { longPressed = true; if (!manual) start(); }, 400);
+      holdTimer = setTimeout(() => { longPressed = true; manual = false; start(); }, 400);
     });
     stage.addEventListener('pointermove', event => {
       if (touchStart && Math.hypot(event.clientX - touchStart.x, event.clientY - touchStart.y) > 12) { suppressClickUntil = Date.now() + 700; clearTimeout(holdTimer); controller.stopPreview(); }

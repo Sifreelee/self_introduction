@@ -23,6 +23,14 @@ window.VIDEO_CONFIG = {
       "src": "assets/videos/video-1eff5650608f.mp4",
       "poster": "assets/videos/video-1eff5650608f.jpg",
       "duration": 79.72
+    },
+    {
+      "title": "渝南回声",
+      "description": "重庆初次快闪",
+      "location": "重庆 南岸",
+      "src": "assets/videos/video-b85feb74cf99.mp4",
+      "poster": "assets/videos/video-b85feb74cf99.jpg",
+      "duration": 14.86
     }
   ]
 };
