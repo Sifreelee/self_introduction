@@ -31,6 +31,14 @@ window.VIDEO_CONFIG = {
       "src": "assets/videos/video-b85feb74cf99.mp4",
       "poster": "assets/videos/video-b85feb74cf99.jpg",
       "duration": 14.86
+    },
+    {
+      "title": "南岸小记",
+      "description": "南岸区温暖午后",
+      "location": "重庆 南岸",
+      "src": "assets/videos/video-9c8fd5aa31b2.mp4",
+      "poster": "assets/videos/video-9c8fd5aa31b2.jpg",
+      "duration": 29.91
     }
   ]
 };
